@@ -28,7 +28,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 export default function RootNavigator() {
   return (
     <Stack.Navigator
-      initialRouteName="Main"
+      initialRouteName="Onboarding"
       screenOptions={{
         headerShown: false,
         contentStyle: { backgroundColor: "#FFFFFF" },
