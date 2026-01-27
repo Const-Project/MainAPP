@@ -4,89 +4,26 @@ import type { RootStackParamList } from "./types";
 // 메인 탭
 import MainTabNavigator from "./MainTabNavigator";
 
-// 플레이스홀더 (추후 실제 스크린으로 교체)
-import PlaceholderScreen from "@/pages/placeholder/PlaceholderScreen";
-
 // 실제 스크린
 import OnboardingScreen from "@/pages/onboarding/OnboardingScreen";
 import RegisterScreen from "@/pages/register/RegisterScreen";
 import FeedDiaryScreen from "@/pages/feed/FeedDiaryScreen";
 import FeedAvatarScreen from "@/pages/feed/FeedAvatarScreen";
+import FollowScreen from "@/pages/follow/FollowScreen";
+import LogDetailScreen from "@/pages/log/LogDetailScreen";
+import WriteDiaryScreen from "@/pages/dailyMission/WriteDiaryScreen";
+import OxQuizScreen from "@/pages/dailyMission/OxQuizScreen";
+import MultipleChoiceQuizScreen from "@/pages/dailyMission/MultipleChoiceQuizScreen";
+import AvatarCreationScreen from "@/pages/registration/AvatarCreationScreen";
+import SelectionDetailScreen from "@/pages/registration/SelectionDetailScreen";
+import CreationDetailScreen from "@/pages/registration/CreationDetailScreen";
+import PlantNicknameScreen from "@/pages/registration/PlantNicknameScreen";
+import UnlockGardenScreen from "@/pages/delivery/UnlockGardenScreen";
+import DeliveryScreen from "@/pages/delivery/DeliveryScreen";
+import DeliveryCompleteScreen from "@/pages/delivery/DeliveryCompleteScreen";
+import ProfileScreen from "@/pages/profile/ProfileScreen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
-
-function ProfileScreen() {
-  return <PlaceholderScreen title="프로필" description="사용자 프로필 화면" />;
-}
-
-function FollowScreen() {
-  return <PlaceholderScreen title="팔로우" description="팔로우 관리" />;
-}
-
-function LogDetailScreen() {
-  return <PlaceholderScreen title="로그 상세" description="성장 기록 상세 보기" />;
-}
-
-function DeliveryScreen() {
-  return <PlaceholderScreen title="배송" description="식물 배송 정보" />;
-}
-
-function DeliveryCompleteScreen() {
-  return <PlaceholderScreen title="배송 완료" description="배송이 완료되었습니다" />;
-}
-
-function UnlockGardenScreen() {
-  return (
-    <PlaceholderScreen title="정원 잠금 해제" description="새로운 정원 공간 열기" />
-  );
-}
-
-// 등록 플로우 스크린들
-function RegistrationAvatarScreen() {
-  return (
-    <PlaceholderScreen title="아바타 선택" description="식물 아바타를 선택하세요" />
-  );
-}
-
-function RegistrationCreationDetailScreen() {
-  return (
-    <PlaceholderScreen
-      title="생성 상세"
-      description="식물 생성 정보를 입력하세요"
-    />
-  );
-}
-
-function RegistrationSelectionDetailScreen() {
-  return (
-    <PlaceholderScreen
-      title="선택 상세"
-      description="식물 선택 정보를 확인하세요"
-    />
-  );
-}
-
-function RegistrationPlantNicknameScreen() {
-  return (
-    <PlaceholderScreen
-      title="식물 별명"
-      description="식물에게 별명을 지어주세요"
-    />
-  );
-}
-
-// 데일리 미션 스크린들
-function DailyMissionWriteDiaryScreen() {
-  return <PlaceholderScreen title="일기 쓰기" description="오늘의 식물 일기" />;
-}
-
-function DailyMissionQuizMultipleChoiceScreen() {
-  return <PlaceholderScreen title="객관식 퀴즈" description="식물 지식 퀴즈" />;
-}
-
-function DailyMissionQuizOxScreen() {
-  return <PlaceholderScreen title="OX 퀴즈" description="참/거짓 퀴즈" />;
-}
 
 export default function RootNavigator() {
   return (
@@ -116,14 +53,14 @@ export default function RootNavigator() {
       <Stack.Screen
         name="Profile"
         component={ProfileScreen}
-        options={{ headerShown: true, title: "프로필" }}
+        options={{ headerShown: false }}
       />
 
       {/* 팔로우 */}
       <Stack.Screen
         name="Follow"
         component={FollowScreen}
-        options={{ headerShown: true, title: "팔로우" }}
+        options={{ headerShown: false }}
       />
 
       {/* 피드 상세 */}
@@ -142,67 +79,63 @@ export default function RootNavigator() {
       <Stack.Screen
         name="LogDetail"
         component={LogDetailScreen}
-        options={{ headerShown: true, title: "성장 기록" }}
+        options={{ headerShown: false }}
       />
 
       {/* 배송 */}
       <Stack.Screen
         name="Delivery"
         component={DeliveryScreen}
-        options={{ headerShown: true, title: "배송" }}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="DeliveryComplete"
         component={DeliveryCompleteScreen}
-        options={{
-          headerShown: true,
-          title: "배송 완료",
-          headerBackVisible: false,
-        }}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="UnlockGarden"
         component={UnlockGardenScreen}
-        options={{ headerShown: true, title: "정원 확장" }}
+        options={{ headerShown: false }}
       />
 
       {/* 식물 등록 플로우 */}
       <Stack.Screen
         name="RegistrationAvatar"
-        component={RegistrationAvatarScreen}
-        options={{ headerShown: true, title: "아바타 선택" }}
+        component={AvatarCreationScreen}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="RegistrationCreationDetail"
-        component={RegistrationCreationDetailScreen}
-        options={{ headerShown: true, title: "식물 등록" }}
+        component={CreationDetailScreen}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="RegistrationSelectionDetail"
-        component={RegistrationSelectionDetailScreen}
-        options={{ headerShown: true, title: "식물 선택" }}
+        component={SelectionDetailScreen}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="RegistrationPlantNickname"
-        component={RegistrationPlantNicknameScreen}
-        options={{ headerShown: true, title: "별명 짓기" }}
+        component={PlantNicknameScreen}
+        options={{ headerShown: false }}
       />
 
       {/* 데일리 미션 */}
       <Stack.Screen
         name="DailyMissionWriteDiary"
-        component={DailyMissionWriteDiaryScreen}
-        options={{ headerShown: true, title: "일기 쓰기" }}
+        component={WriteDiaryScreen}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="DailyMissionQuizMultipleChoice"
-        component={DailyMissionQuizMultipleChoiceScreen}
-        options={{ headerShown: true, title: "객관식 퀴즈" }}
+        component={MultipleChoiceQuizScreen}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="DailyMissionQuizOx"
-        component={DailyMissionQuizOxScreen}
-        options={{ headerShown: true, title: "OX 퀴즈" }}
+        component={OxQuizScreen}
+        options={{ headerShown: false }}
       />
     </Stack.Navigator>
   );

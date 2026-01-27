@@ -7,8 +7,7 @@ type ReqConfig = InternalAxiosRequestConfig & {
   _skipAuth?: boolean;
 };
 
-// 환경변수는 app.config.ts 또는 .env에서 설정
-const API_URL = process.env.EXPO_PUBLIC_API_URL || "https://api.napulnapul.com";
+const API_URL = process.env.EXPO_PUBLIC_API_URL
 
 const api = axios.create({
   baseURL: API_URL,

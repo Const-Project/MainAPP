@@ -152,3 +152,141 @@ export function SendIcon({ size = 32 }: IconProps) {
     </Svg>
   );
 }
+
+// 토글 On 아이콘
+export function ToggleOnIcon({ size = 36 }: IconProps) {
+  const scale = size / 36;
+  return (
+    <Svg width={size} height={24 * scale} viewBox="0 0 36 24" fill="none">
+      <Path
+        d="M10 2H26C31.5228 2 36 6.47715 36 12C36 17.5228 31.5228 22 26 22H10C4.47715 22 0 17.5228 0 12C0 6.47715 4.47715 2 10 2Z"
+        fill="#7DC960"
+      />
+      <Circle cx={26} cy={12} r={8} fill="white" />
+    </Svg>
+  );
+}
+
+// 토글 Off 아이콘
+export function ToggleOffIcon({ size = 36 }: IconProps) {
+  const scale = size / 36;
+  return (
+    <Svg width={size} height={24 * scale} viewBox="0 0 36 24" fill="none">
+      <Path
+        d="M10 2H26C31.5228 2 36 6.47715 36 12C36 17.5228 31.5228 22 26 22H10C4.47715 22 0 17.5228 0 12C0 6.47715 4.47715 2 10 2Z"
+        fill="#BFBFBF"
+      />
+      <Circle cx={10} cy={12} r={8} fill="white" />
+    </Svg>
+  );
+}
+
+// X 마크 아이콘 (닫기/삭제)
+export function XmarkIcon({ size = 16, color = "#171717" }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 16 16" fill="none">
+      <Path
+        d="M1 1L15 15"
+        stroke={color}
+        strokeWidth={1.5}
+        strokeLinecap="round"
+      />
+      <Path
+        d="M15 1L1 15"
+        stroke={color}
+        strokeWidth={1.5}
+        strokeLinecap="round"
+      />
+    </Svg>
+  );
+}
+
+// OX 퀴즈 - O 아이콘
+export function OXOIcon({ size = 32, color = "#7DC960" }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <Circle
+        cx={16}
+        cy={16}
+        r={12}
+        stroke={color}
+        strokeWidth={4}
+        fill="none"
+      />
+    </Svg>
+  );
+}
+
+// OX 퀴즈 - X 아이콘
+export function OXXIcon({ size = 32, color = "#EF4444" }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <Path
+        d="M6 6L26 26"
+        stroke={color}
+        strokeWidth={4}
+        strokeLinecap="round"
+      />
+      <Path
+        d="M26 6L6 26"
+        stroke={color}
+        strokeWidth={4}
+        strokeLinecap="round"
+      />
+    </Svg>
+  );
+}
+
+// 체크 아이콘
+export function CheckIcon({ size = 24, color = "#7DC960" }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Circle cx={12} cy={12} r={12} fill={color} />
+      <Path
+        d="M7 12L10.5 15.5L17 9"
+        stroke="white"
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
+// 미체크 아이콘
+export function UnCheckIcon({ size = 24, color = "#D1D5DB" }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Circle
+        cx={12}
+        cy={12}
+        r={11}
+        stroke={color}
+        strokeWidth={2}
+        fill="none"
+      />
+    </Svg>
+  );
+}
+
+// 카메라 아이콘
+export function CameraIcon({ size = 24, color = "#6B7280" }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M23 19C23 19.5304 22.7893 20.0391 22.4142 20.4142C22.0391 20.7893 21.5304 21 21 21H3C2.46957 21 1.96086 20.7893 1.58579 20.4142C1.21071 20.0391 1 19.5304 1 19V8C1 7.46957 1.21071 6.96086 1.58579 6.58579C1.96086 6.21071 2.46957 6 3 6H7L9 3H15L17 6H21C21.5304 6 22.0391 6.21071 22.4142 6.58579C22.7893 6.96086 23 7.46957 23 8V19Z"
+        stroke={color}
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M12 17C14.2091 17 16 15.2091 16 13C16 10.7909 14.2091 9 12 9C9.79086 9 8 10.7909 8 13C8 15.2091 9.79086 17 12 17Z"
+        stroke={color}
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
