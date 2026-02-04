@@ -8,7 +8,7 @@ import {
   StyleSheet,
 } from "react-native";
 
-const TrackingImg = require("@/assets/images/물주기/tracking.png");
+const TrackingImg = require("@/assets/images/tracking.webp");
 const CharImg = require("@/assets/images/char.png");
 
 interface TrackingModalProps {
@@ -40,10 +40,10 @@ export default function TrackingModal({ onClose }: TrackingModalProps) {
                 앞으로도 같이 열심히 키워봐요!
               </Text>
               <TouchableOpacity
-                style={styles.secondaryButton}
+                style={styles.primaryButton}
                 onPress={() => setIsLiked(false)}
               >
-                <Text style={styles.secondaryButtonText}>좋아요</Text>
+                <Text style={styles.primaryButtonText}>좋아요 !</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -58,7 +58,7 @@ export default function TrackingModal({ onClose }: TrackingModalProps) {
                 거에요!{"\n"}그때까지 제가 함께하겠습니다.
               </Text>
               <TouchableOpacity style={styles.primaryButton} onPress={onClose}>
-                <Text style={styles.primaryButtonText}>고마워요</Text>
+                <Text style={styles.primaryButtonText}>고마워요 !</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderRadius: 16,
     padding: 24,
-    width: "85%",
+    width: "80%",
     alignItems: "center",
     gap: 16,
   },
@@ -89,6 +89,7 @@ const styles = StyleSheet.create({
     color: "#171717",
   },
   content: {
+    width: "100%",
     alignItems: "center",
     gap: 24,
   },
@@ -106,22 +107,9 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 20,
   },
-  secondaryButton: {
-    width: "100%",
-    paddingVertical: 14,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    alignItems: "center",
-  },
-  secondaryButtonText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#171717",
-  },
   primaryButton: {
     width: "100%",
-    paddingVertical: 14,
+    padding: 14,
     borderRadius: 8,
     backgroundColor: "#7DC960",
     alignItems: "center",

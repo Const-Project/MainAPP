@@ -17,6 +17,14 @@ interface HomeAvatarProps {
   isModalOpen: boolean;
 }
 
+const CHAR_W = 80;
+const CHAR_H = 100;
+
+const BALLOON_W = 260;
+const BALLOON_MIN_H = 140;
+
+const GAP = 12; // 캐릭터-말풍선 간격
+
 export default function HomeAvatar({
   isWater,
   avatarUri,
@@ -29,7 +37,7 @@ export default function HomeAvatar({
   const [isOpenBird, setIsOpenBird] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [isAnswered, setIsAnswered] = useState(
-    missions.length > 2 ? missions[2].completed : false
+    missions.length > 2 ? missions[2].completed : false,
   );
 
   useEffect(() => {
@@ -41,10 +49,8 @@ export default function HomeAvatar({
     }
   }, [isChecked]);
 
-  const handlePress = () => {
-    if (!isAnswered) {
-      setToastMessage("마음 체크를 먼저 완료해주세요!");
-    }
+  const handleAvatarPress = () => {
+    if (!isAnswered) setToastMessage("마음 체크를 먼저 완료해주세요!");
   };
 
   const handleBirdPress = () => {
@@ -64,60 +70,77 @@ export default function HomeAvatar({
 
   return (
     <View style={styles.container}>
+      {/*  아바타: 고정 레이어 */}
       <TouchableOpacity
-        style={styles.avatarArea}
-        onPress={handlePress}
+        style={styles.avatarLayer}
+        onPress={handleAvatarPress}
         activeOpacity={1}
       >
-        {/* 아바타 이미지 */}
         <Image
           source={{ uri: avatarUri }}
           style={styles.avatarImage}
           resizeMode="contain"
         />
 
-        {/* 물주기 오버레이 */}
         <Image
           source={WateringImg}
           style={[styles.wateringImage, { opacity: isWater ? 1 : 0 }]}
           resizeMode="contain"
         />
+      </TouchableOpacity>
 
-        {/* 새 */}
-        <TouchableOpacity
-          style={styles.birdContainer}
-          onPress={handleBirdPress}
-          activeOpacity={0.7}
-        >
-          <Image source={BirdImg} style={styles.birdImage} resizeMode="contain" />
-        </TouchableOpacity>
+      {/* 새: 고정 레이어 */}
+      <TouchableOpacity
+        style={styles.birdContainer}
+        onPress={handleBirdPress}
+        activeOpacity={0.7}
+      >
+        <Image source={BirdImg} style={styles.birdImage} resizeMode="contain" />
+      </TouchableOpacity>
 
-        {/* 말풍선 + 캐릭터 */}
-        <View style={styles.balloonWrapper}>
+      {/* 캐릭터 기준 앵커:
+          - charAnchor 위치만 고정하면
+          - 말풍선은 항상 캐릭터 위로 뜸
+      */}
+      <View style={styles.charAnchor} pointerEvents="box-none">
+        {/* 말풍선: 캐릭터 위 */}
+        <View style={styles.balloonWrapper} pointerEvents="box-none">
           {!isAnswered && isChecked === 0 && (
             <View style={styles.balloon}>
               <Text style={styles.balloonText}>
-                오늘도 만나서 정말 반가워요!{"\n"}괜찮으시다면 오늘 하루는 어떠셨는지
-                {"\n"}살짝 알려주시겠어요?
+                오늘도 만나서 정말 반가워요!{"\n"}괜찮으시다면 오늘 하루는
+                어떠셨는지{"\n"}살짝 알려주시겠어요?
               </Text>
               <TouchableOpacity
                 style={styles.checkButton}
                 onPress={() => setIsModalOpen(true)}
+                activeOpacity={0.85}
               >
                 <Text style={styles.checkButtonText}>마음 건강 체크</Text>
               </TouchableOpacity>
             </View>
           )}
+
           {isChecked > 0 && !isAnswered && (
             <View style={styles.balloon}>
               <Text style={styles.balloonText}>{getBalloonText()}</Text>
             </View>
           )}
-          <TouchableOpacity onPress={() => setIsModalOpen(true)}>
-            <Image source={Char2Img} style={styles.charImage} resizeMode="contain" />
-          </TouchableOpacity>
         </View>
-      </TouchableOpacity>
+
+        {/* 캐릭터: 아래(고정) */}
+        <TouchableOpacity
+          style={styles.charTouchable}
+          onPress={() => setIsModalOpen(true)}
+          activeOpacity={0.85}
+        >
+          <Image
+            source={Char2Img}
+            style={styles.charImage}
+            resizeMode="contain"
+          />
+        </TouchableOpacity>
+      </View>
 
       {/* 모달들 */}
       {isOpenBird && <BirdModal onClose={() => setIsOpenBird(false)} />}
@@ -144,8 +167,10 @@ const styles = StyleSheet.create({
     width: "100%",
     justifyContent: "flex-end",
     alignItems: "center",
+    position: "relative",
   },
-  avatarArea: {
+
+  avatarLayer: {
     width: "100%",
     alignItems: "center",
     paddingBottom: 160,
@@ -161,21 +186,35 @@ const styles = StyleSheet.create({
     top: -40,
     left: "25%",
   },
+
+  // ✅ 새 위치 고정
   birdContainer: {
     position: "absolute",
     bottom: 160,
-    right: 60,
+    right: 80,
   },
   birdImage: {
     width: 96,
     height: 96,
   },
+
+  charAnchor: {
+    position: "absolute",
+    bottom: 160,
+    left: 0,
+    width: Math.max(BALLOON_W, CHAR_W),
+    alignItems: "center",
+  },
+
   balloonWrapper: {
     position: "absolute",
-    top: -120,
+    bottom: CHAR_H + GAP,
+    width: BALLOON_W,
     alignItems: "center",
   },
   balloon: {
+    width: BALLOON_W,
+    minHeight: BALLOON_MIN_H,
     backgroundColor: "#FFFFFF",
     borderRadius: 12,
     paddingVertical: 20,
@@ -206,9 +245,13 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#FFFFFF",
   },
+
+  charTouchable: {
+    // 필요하면 터치 영역만 키우기:
+    // padding: 4,
+  },
   charImage: {
-    width: 80,
-    height: 100,
-    marginTop: 8,
+    width: CHAR_W,
+    height: CHAR_H,
   },
 });

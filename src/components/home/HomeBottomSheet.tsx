@@ -18,8 +18,8 @@ import Svg, { Path } from "react-native-svg";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
-const SNAP_CLOSED = SCREEN_HEIGHT - 120; // 하단 120px만 보이는 상태
-const SNAP_OPEN = SCREEN_HEIGHT * 0.25; // 위로 75% 열림
+const SNAP_CLOSED = SCREEN_HEIGHT - 150; // 하단 130px만 보이는 상태
+const SNAP_OPEN = SCREEN_HEIGHT * 0.2; // 위로 75% 열림
 
 function RightArrowIcon({ size = 32 }: { size?: number }) {
   return (
@@ -53,11 +53,16 @@ interface HomeBottomSheetProps {
   setIsModalOpen: (open: boolean) => void;
 }
 
-export default function HomeBottomSheet({ setIsModalOpen }: HomeBottomSheetProps) {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+export default function HomeBottomSheet({
+  setIsModalOpen,
+}: HomeBottomSheetProps) {
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { data } = usePanelApi();
 
-  const [isChecked, setIsChecked] = useState(data?.isCheckingCompleted || false);
+  const [isChecked, setIsChecked] = useState(
+    data?.isCheckingCompleted || false,
+  );
   const [isChecked2, setIsChecked2] = useState(data?.isDairyCompleted || false);
   const [isChecked3, setIsChecked3] = useState(data?.isQuizCompleted || false);
   const [percent, setPercent] = useState(data?.wishTree?.progressPercent || 0);
@@ -83,7 +88,9 @@ export default function HomeBottomSheet({ setIsModalOpen }: HomeBottomSheetProps
         translateY.setValue(0);
       },
       onPanResponderMove: (_, gesture) => {
-        translateY.setValue(gesture.dy);
+        const next = lastSnap.current + gesture.dy;
+        const clamped = Math.min(Math.max(next, SNAP_OPEN), SNAP_CLOSED);
+        translateY.setValue(clamped - lastSnap.current);
       },
       onPanResponderRelease: (_, gesture) => {
         translateY.flattenOffset();
@@ -99,7 +106,7 @@ export default function HomeBottomSheet({ setIsModalOpen }: HomeBottomSheetProps
           bounciness: 4,
         }).start();
       },
-    })
+    }),
   ).current;
 
   const randomQuizPath = () => {
@@ -170,11 +177,7 @@ export default function HomeBottomSheet({ setIsModalOpen }: HomeBottomSheetProps
               >
                 {mission.label}
               </Text>
-              {mission.on ? (
-                <CheckIcon size={32} />
-              ) : (
-                <RightArrowIcon />
-              )}
+              {mission.on ? <CheckIcon size={32} /> : <RightArrowIcon />}
             </TouchableOpacity>
           ))}
         </View>
@@ -191,9 +194,8 @@ export default function HomeBottomSheet({ setIsModalOpen }: HomeBottomSheetProps
           <Text style={styles.wishTreeText}>
             {percent >= 100 ? (
               <>
-                지금 바로{" "}
-                <Text style={styles.primaryText}>새로운 텃밭</Text>을 열 수
-                있어요!
+                지금 바로 <Text style={styles.primaryText}>새로운 텃밭</Text>을
+                열 수 있어요!
               </>
             ) : (
               <>
@@ -212,9 +214,7 @@ export default function HomeBottomSheet({ setIsModalOpen }: HomeBottomSheetProps
           </View>
 
           <View style={styles.progressBar}>
-            <View
-              style={[styles.progressFill, { width: `${percent}%` }]}
-            />
+            <View style={[styles.progressFill, { width: `${percent}%` }]} />
           </View>
         </View>
       </View>
