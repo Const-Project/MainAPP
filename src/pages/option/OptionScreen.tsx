@@ -13,6 +13,7 @@ import {
   ToggleOnIcon,
   ToggleOffIcon,
 } from "@/assets/icons/CommonIcons";
+import DeleteAccountModal from "@/components/option/DeleteAccountModal";
 
 type Props = MainTabScreenProps<"Option">;
 
@@ -40,14 +41,14 @@ function MenuItem({ label, onPress, danger, rightElement }: MenuItemProps) {
 
 export default function OptionScreen({ navigation }: Props) {
   const [pushNotification, setPushNotification] = useState(true);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const handlePushNotificationToggle = () => {
     setPushNotification(!pushNotification);
   };
 
   const handleUserNicknameChange = () => {
-    // TODO: 유저 닉네임 변경 화면으로 이동
-    // navigation.navigate("ChangeUserNickname");
+    navigation.navigate("ChangeNickname");
   };
 
   const handleAvatarNicknameChange = () => {
@@ -56,18 +57,15 @@ export default function OptionScreen({ navigation }: Props) {
   };
 
   const handleTerms = () => {
-    // TODO: 이용 약관 화면으로 이동
-    // navigation.navigate("Terms");
+    navigation.navigate("Terms");
   };
 
   const handleServiceInfo = () => {
-    // TODO: 서비스 안내 화면으로 이동
-    // navigation.navigate("ServiceInfo");
+    navigation.navigate("ServiceInfo");
   };
 
   const handleWithdraw = () => {
-    // TODO: 회원 탈퇴 화면으로 이동
-    // navigation.navigate("Withdraw");
+    setShowDeleteModal(true);
   };
 
   return (
@@ -112,6 +110,12 @@ export default function OptionScreen({ navigation }: Props) {
         {/* 회원 탈퇴 */}
         <MenuItem label="회원 탈퇴" onPress={handleWithdraw} danger />
       </ScrollView>
+
+      {/* 회원 탈퇴 모달 */}
+      <DeleteAccountModal
+        visible={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+      />
     </SafeAreaView>
   );
 }

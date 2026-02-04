@@ -44,6 +44,11 @@ export type RootStackParamList = {
   DailyMissionWriteDiary: undefined;
   DailyMissionQuizMultipleChoice: undefined;
   DailyMissionQuizOx: undefined;
+
+  // 설정
+  ChangeNickname: undefined;
+  Terms: undefined;
+  ServiceInfo: undefined;
 };
 
 /**

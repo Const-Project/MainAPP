@@ -22,6 +22,9 @@ import UnlockGardenScreen from "@/pages/delivery/UnlockGardenScreen";
 import DeliveryScreen from "@/pages/delivery/DeliveryScreen";
 import DeliveryCompleteScreen from "@/pages/delivery/DeliveryCompleteScreen";
 import ProfileScreen from "@/pages/profile/ProfileScreen";
+import ChangeNicknameScreen from "@/pages/option/ChangeNicknameScreen";
+import TermsScreen from "@/pages/option/TermsScreen";
+import ServiceInfoScreen from "@/pages/option/ServiceInfoScreen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -135,6 +138,23 @@ export default function RootNavigator() {
       <Stack.Screen
         name="DailyMissionQuizOx"
         component={OxQuizScreen}
+        options={{ headerShown: false }}
+      />
+
+      {/* 설정 */}
+      <Stack.Screen
+        name="ChangeNickname"
+        component={ChangeNicknameScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="Terms"
+        component={TermsScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="ServiceInfo"
+        component={ServiceInfoScreen}
         options={{ headerShown: false }}
       />
     </Stack.Navigator>

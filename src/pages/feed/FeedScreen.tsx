@@ -1,22 +1,36 @@
-import React from "react";
+import React, { useCallback, useMemo } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
-  ScrollView,
+  FlatList,
+  Image,
   StyleSheet,
+  Dimensions,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { MainTabScreenProps } from "@/navigation/types";
 
 import { UserPlusIcon } from "@/assets/icons/CommonIcons";
-import FeedList from "@/components/feed/FeedList";
-import { useFeed } from "@/hooks/feed/useFeedApi";
+import { useInfiniteFeed } from "@/hooks/feed/useFeedApi";
+import type { RandomFeedItem } from "@/types/feed/feedApi.type";
+
+const { width } = Dimensions.get("window");
+const NUM_COLUMNS = 3;
+const ITEM_SIZE = width / NUM_COLUMNS;
 
 type Props = MainTabScreenProps<"Feed">;
 
 export default function FeedScreen({ navigation }: Props) {
-  const { data: result, isLoading, error } = useFeed();
+  const {
+    data,
+    isLoading,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteFeed();
 
   const handleUserPlusClick = () => {
     navigation.navigate("Follow");
@@ -30,8 +44,78 @@ export default function FeedScreen({ navigation }: Props) {
     }
   };
 
-  // API 결과가 null/빈 배열이면 빈 배열로 대체
-  const dataForRender = result && result.length > 0 ? result : [];
+  const feedData = useMemo(() => {
+    if (!data?.pages) return [];
+    return data.pages.flatMap(page => page.result.items);
+  }, [data]);
+
+  const handleEndReached = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  const renderItem = useCallback(
+    ({ item }: { item: RandomFeedItem }) => (
+      <TouchableOpacity
+        style={styles.gridItem}
+        onPress={() => handleSelectPost(item.postId, item.postType)}
+        activeOpacity={0.8}
+      >
+        <Image
+          source={{ uri: item.imageUrl }}
+          style={styles.image}
+          resizeMode="cover"
+        />
+      </TouchableOpacity>
+    ),
+    []
+  );
+
+  const renderFooter = useCallback(() => {
+    if (!isFetchingNextPage) return null;
+    return (
+      <View style={styles.footerLoader}>
+        <ActivityIndicator size="small" color="#7DC960" />
+      </View>
+    );
+  }, [isFetchingNextPage]);
+
+  const keyExtractor = useCallback(
+    (item: RandomFeedItem) => `${item.postType}-${item.postId}`,
+    []
+  );
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container} edges={["top"]}>
+        <View style={styles.header}>
+          <View style={styles.headerSpacer} />
+          <Text style={styles.headerTitle}>둘러보기</Text>
+          <View style={styles.headerSpacer} />
+        </View>
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color="#7DC960" />
+          <Text style={styles.loadingText}>로딩 중...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView style={styles.container} edges={["top"]}>
+        <View style={styles.header}>
+          <View style={styles.headerSpacer} />
+          <Text style={styles.headerTitle}>둘러보기</Text>
+          <View style={styles.headerSpacer} />
+        </View>
+        <View style={styles.centerContainer}>
+          <Text style={styles.errorText}>피드를 불러오지 못했습니다.</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -48,18 +132,18 @@ export default function FeedScreen({ navigation }: Props) {
         </TouchableOpacity>
       </View>
 
-      {/* 둘러보기 사진 블록 */}
-      <ScrollView
-        style={styles.scrollView}
+      {/* 무한 스크롤 피드 그리드 */}
+      <FlatList
+        data={feedData}
+        renderItem={renderItem}
+        keyExtractor={keyExtractor}
+        numColumns={NUM_COLUMNS}
         showsVerticalScrollIndicator={false}
-      >
-        <FeedList
-          feedData={{ result: dataForRender }}
-          onSelectPost={handleSelectPost}
-          isLoading={isLoading}
-          error={error ? "피드를 불러오지 못했습니다." : null}
-        />
-      </ScrollView>
+        onEndReached={handleEndReached}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={renderFooter}
+        contentContainerStyle={styles.listContainer}
+      />
     </SafeAreaView>
   );
 }
@@ -88,7 +172,34 @@ const styles = StyleSheet.create({
   headerButton: {
     paddingRight: 0,
   },
-  scrollView: {
+  listContainer: {
+    flexGrow: 1,
+  },
+  gridItem: {
+    width: ITEM_SIZE,
+    height: ITEM_SIZE,
+    backgroundColor: "#F3F4F6",
+  },
+  image: {
+    width: "100%",
+    height: "100%",
+  },
+  centerContainer: {
     flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 8,
+    fontSize: 14,
+    color: "#6B7280",
+  },
+  errorText: {
+    fontSize: 14,
+    color: "#EF4444",
+  },
+  footerLoader: {
+    paddingVertical: 16,
+    alignItems: "center",
   },
 });
