@@ -23,6 +23,9 @@ import Toast from "@/components/common/Toast";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
+const SunImg = require("@/assets/icons/water.png");
+const WaterImg = require("@/assets/icons/sun.png");
+
 const SunLightImg = require("@/assets/images/background/sunlight.png");
 const PlantImg = require("@/assets/images/plant.png");
 const NullImg = require("@/assets/images/null.webp");
@@ -36,35 +39,6 @@ const backgroundImages: Record<number, any> = {
 
 // SVG 아이콘 (Sun, Water)
 import Svg, { Circle, Path } from "react-native-svg";
-
-function SunIcon({ size = 64, opacity = 1 }: { size?: number; opacity?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 64 64" fill="none" opacity={opacity}>
-      <Circle cx="32" cy="32" r="16" fill="#FFD700" />
-      <Path d="M32 4V12" stroke="#FFD700" strokeWidth={3} strokeLinecap="round" />
-      <Path d="M32 52V60" stroke="#FFD700" strokeWidth={3} strokeLinecap="round" />
-      <Path d="M4 32H12" stroke="#FFD700" strokeWidth={3} strokeLinecap="round" />
-      <Path d="M52 32H60" stroke="#FFD700" strokeWidth={3} strokeLinecap="round" />
-      <Path d="M12.2 12.2L17.8 17.8" stroke="#FFD700" strokeWidth={3} strokeLinecap="round" />
-      <Path d="M46.2 46.2L51.8 51.8" stroke="#FFD700" strokeWidth={3} strokeLinecap="round" />
-      <Path d="M12.2 51.8L17.8 46.2" stroke="#FFD700" strokeWidth={3} strokeLinecap="round" />
-      <Path d="M46.2 17.8L51.8 12.2" stroke="#FFD700" strokeWidth={3} strokeLinecap="round" />
-    </Svg>
-  );
-}
-
-function WaterIcon({ size = 64, opacity = 1 }: { size?: number; opacity?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 64 64" fill="none" opacity={opacity}>
-      <Path
-        d="M32 8C32 8 12 30 12 42C12 53.05 20.95 62 32 62C43.05 62 52 53.05 52 42C52 30 32 8 32 8Z"
-        fill="#4FC3F7"
-        stroke="#29B6F6"
-        strokeWidth={2}
-      />
-    </Svg>
-  );
-}
 
 interface GardenSlotProps {
   garden: GardenSummary | null;
@@ -81,15 +55,16 @@ export default function GardenSlot({
   isModalOpen,
   setIsModalOpen,
 }: GardenSlotProps) {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const [isSunLight, setIsSunLight] = useState(false);
   const [isWater, setIsWater] = useState(false);
   const [isAbleSunLight, setIsAbleSunLight] = useState(
-    garden?.ownerSunlightAble || false
+    garden?.ownerSunlightAble || false,
   );
   const [isAbleWater, setIsAbleWater] = useState(
-    garden?.ownerWateringAble || false
+    garden?.ownerWateringAble || false,
   );
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [toastMsg, setToastMsg] = useState("");
@@ -114,7 +89,7 @@ export default function GardenSlot({
     }
     try {
       const res = await axios.post(
-        `/api/v1/gardens/${garden?.gardenId}/sunlight`
+        `/api/v1/gardens/${garden?.gardenId}/sunlight`,
       );
       if (res.status === 202) {
         setToastMsg("햇빛 주기는 오전 6시에 초기화 됩니다");
@@ -140,7 +115,7 @@ export default function GardenSlot({
     }
     try {
       const res = await axios.post(
-        `/api/v1/gardens/${garden?.gardenId}/mywater`
+        `/api/v1/gardens/${garden?.gardenId}/mywater`,
       );
       if (res.status === 202) {
         setToastMsg("물 주기는 오전 12시에 초기화 됩니다");
@@ -174,8 +149,15 @@ export default function GardenSlot({
   // 잠김 상태
   if (lockStatus !== "clear") {
     return (
-      <ImageBackground source={bgImage} style={styles.container} resizeMode="cover">
-        <LockView isUnlockable={lockStatus === "unlock"} onUnlock={handleUnlock} />
+      <ImageBackground
+        source={bgImage}
+        style={styles.container}
+        resizeMode="cover"
+      >
+        <LockView
+          isUnlockable={lockStatus === "unlock"}
+          onUnlock={handleUnlock}
+        />
       </ImageBackground>
     );
   }
@@ -183,19 +165,25 @@ export default function GardenSlot({
   // 해제됨 + 아바타 없음 → 식물 등록 유도
   if (!garden?.avatar?.avatarName) {
     return (
-      <ImageBackground source={bgImage} style={styles.container} resizeMode="cover">
+      <ImageBackground
+        source={bgImage}
+        style={styles.container}
+        resizeMode="cover"
+      >
         <TouchableOpacity
           style={styles.emptyContainer}
           onPress={() => navigation.navigate("RegistrationAvatar")}
           activeOpacity={0.8}
         >
           <View style={styles.emptyBalloon}>
-            <Text style={styles.emptyText}>
-              새로운 식물을{"\n"}심어볼까요?
-            </Text>
+            <Text style={styles.emptyText}>새로운 식물을{"\n"}심어볼까요?</Text>
             <Text style={styles.plusIcon}>+</Text>
           </View>
-          <Image source={NullImg} style={styles.nullImage} resizeMode="contain" />
+          <Image
+            source={NullImg}
+            style={styles.nullImage}
+            resizeMode="contain"
+          />
         </TouchableOpacity>
       </ImageBackground>
     );
@@ -203,7 +191,11 @@ export default function GardenSlot({
 
   // 해제됨 + 아바타 있음 → 메인 정원 뷰
   return (
-    <ImageBackground source={bgImage} style={styles.container} resizeMode="cover">
+    <ImageBackground
+      source={bgImage}
+      style={styles.container}
+      resizeMode="cover"
+    >
       {/* 햇빛 오버레이 */}
       {isSunLight && (
         <Image
@@ -217,26 +209,33 @@ export default function GardenSlot({
         {/* 헤더 */}
         <View style={styles.header}>
           <MapButton slotNumber={slotNumber} />
-          <Text style={styles.avatarName}>
-            {garden.avatar.avatarName}
-          </Text>
+          <Text style={styles.avatarName}>{garden.avatar.avatarName}</Text>
           <View style={{ width: 48 }} />
         </View>
 
         {/* 햇빛/물 버튼 */}
         <View style={styles.toolButtons}>
           <TouchableOpacity onPress={handleSunLight} disabled={isSunLight}>
-            <SunIcon opacity={isSunLight ? 0.5 : 1} />
+            <Image
+              source={SunImg}
+              style={{ opacity: isSunLight ? 0.5 : 1, width: 64, height: 64 }}
+            />
           </TouchableOpacity>
           <TouchableOpacity onPress={handleWater} disabled={isWater}>
-            <WaterIcon opacity={isWater ? 0.5 : 1} />
+            <Image
+              source={WaterImg}
+              style={{ opacity: isWater ? 0.5 : 1, width: 64, height: 64 }}
+            />
           </TouchableOpacity>
         </View>
 
         {/* 아바타 */}
         <HomeAvatar
           isWater={isWater}
-          avatarUri={garden.avatar.avatarImageUrl || Image.resolveAssetSource(PlantImg).uri}
+          avatarUri={
+            garden.avatar.avatarImageUrl ||
+            Image.resolveAssetSource(PlantImg).uri
+          }
           setIsModalOpen={setIsModalOpen}
           isModalOpen={isModalOpen}
         />

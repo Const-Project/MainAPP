@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import Lock from "@/assets/icons/home_icon";
 
 interface LockViewProps {
   isUnlockable: boolean;
@@ -11,7 +12,7 @@ export default function LockView({ isUnlockable, onUnlock }: LockViewProps) {
     <View style={styles.container}>
       <View style={styles.backdrop} />
       <View style={styles.content}>
-        <Text style={styles.icon}>{isUnlockable ? "🔓" : "🔒"}</Text>
+        <Lock locked={!isUnlockable} style={styles.icon} />
         <Text style={styles.title}>
           {isUnlockable ? "지금 열 수 있어요!" : "아직 잠겨 있어요"}
         </Text>
@@ -53,7 +54,8 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   icon: {
-    fontSize: 48,
+    width: 48,
+    height: 48,
   },
   title: {
     fontSize: 20,
