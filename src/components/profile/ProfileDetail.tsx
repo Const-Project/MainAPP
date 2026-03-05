@@ -17,7 +17,7 @@ import Toast from "@/components/common/Toast";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
-const BackgroundImg = require("@/assets/images/background/background2.png");
+const BackgroundImg = require("@/assets/images/background/background1.webp");
 const WateringImg = require("@/assets/images/background/watering.png");
 const CharacterImg = require("@/assets/images/char2.png");
 const PlantImg = require("@/assets/images/plant.png");

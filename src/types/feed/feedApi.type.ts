@@ -12,7 +12,7 @@ export interface FeedResponse {
 
 export type GetFeedResponse = FeedPost[];
 
-// Random Feed API types (infinite scroll)
+// Random Feed API types (session-based infinite scroll)
 export interface FeedAuthor {
   userId: number;
   username: string;
@@ -29,20 +29,40 @@ export interface RandomFeedItem {
   createdAt: string;
 }
 
-export interface RandomFeedRequest {
-  excludeDiaryIds: number[];
-  excludeAvatarPostIds: number[];
+// Session start request/response
+export interface RandomFeedSessionRequest {
   size: number;
 }
 
-export interface RandomFeedResult {
+export interface RandomFeedSessionResult {
+  sessionToken: string;
   items: RandomFeedItem[];
   hasMore: boolean;
+  remaining: number;
 }
 
-export interface RandomFeedResponse {
+export interface RandomFeedSessionResponse {
   isSuccess: boolean;
   code: string;
   message: string;
-  result: RandomFeedResult;
+  result: RandomFeedSessionResult;
+}
+
+// Next page request/response
+export interface RandomFeedNextRequest {
+  sessionToken: string;
+  size: number;
+}
+
+export interface RandomFeedNextResult {
+  items: RandomFeedItem[];
+  hasMore: boolean;
+  remaining: number;
+}
+
+export interface RandomFeedNextResponse {
+  isSuccess: boolean;
+  code: string;
+  message: string;
+  result: RandomFeedNextResult;
 }

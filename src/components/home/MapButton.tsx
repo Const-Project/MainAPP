@@ -25,7 +25,7 @@ export default function MapButton({ slotNumber }: MapButtonProps) {
   return (
     <>
       <TouchableOpacity onPress={() => setIsVisible(true)} style={styles.button}>
-        <Image source={require("@/assets/images/map.png")} style={styles.icon} />
+        <Image source={require("@/assets/images/map.webp")} style={styles.icon} />
       </TouchableOpacity>
 
       <Modal visible={isVisible} transparent animationType="fade">

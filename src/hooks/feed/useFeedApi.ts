@@ -2,11 +2,15 @@ import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 
 import type {
   GetFeedResponse,
-  RandomFeedResponse,
-  RandomFeedItem,
+  RandomFeedSessionResponse,
+  RandomFeedNextResponse,
 } from "@/types/feed/feedApi.type";
 
-import { getFeed, getRandomFeed } from "@/apis/feed/feedApi";
+import {
+  getFeed,
+  startRandomFeedSession,
+  getRandomFeedNext,
+} from "@/apis/feed/feedApi";
 
 export const useFeed = () =>
   useQuery<{ result: GetFeedResponse }, unknown, GetFeedResponse>({
@@ -16,43 +20,50 @@ export const useFeed = () =>
     refetchOnMount: "always",
   });
 
-interface ExcludeIds {
-  excludeDiaryIds: number[];
-  excludeAvatarPostIds: number[];
+interface SessionPageParam {
+  sessionToken?: string;
 }
+
+type FeedPageResponse = RandomFeedSessionResponse | RandomFeedNextResponse;
 
 export const useInfiniteFeed = (size: number = 21) =>
   useInfiniteQuery<
-    RandomFeedResponse,
+    FeedPageResponse,
     Error,
-    { pages: RandomFeedResponse[]; pageParams: ExcludeIds[] },
+    { pages: FeedPageResponse[]; pageParams: SessionPageParam[] },
     string[],
-    ExcludeIds
+    SessionPageParam
   >({
     queryKey: ["feed", "infinite"],
     queryFn: async ({ pageParam }) => {
-      return getRandomFeed({
-        excludeDiaryIds: pageParam.excludeDiaryIds,
-        excludeAvatarPostIds: pageParam.excludeAvatarPostIds,
+      // First page: start session
+      if (!pageParam.sessionToken) {
+        return startRandomFeedSession({ size });
+      }
+      // Subsequent pages: use session token
+      return getRandomFeedNext({
+        sessionToken: pageParam.sessionToken,
         size,
       });
     },
-    initialPageParam: { excludeDiaryIds: [], excludeAvatarPostIds: [] },
+    initialPageParam: {},
     getNextPageParam: (lastPage, allPages) => {
       if (!lastPage.result.hasMore) {
         return undefined;
       }
 
-      // Collect all IDs from all pages to exclude
-      const allItems = allPages.flatMap(page => page.result.items);
-      const excludeDiaryIds = allItems
-        .filter(item => item.postType === "DIARY")
-        .map(item => item.postId);
-      const excludeAvatarPostIds = allItems
-        .filter(item => item.postType === "AVATAR_POST")
-        .map(item => item.postId);
+      // Extract sessionToken from the first page (session start response)
+      const firstPage = allPages[0];
+      const sessionToken =
+        "sessionToken" in firstPage.result
+          ? firstPage.result.sessionToken
+          : undefined;
 
-      return { excludeDiaryIds, excludeAvatarPostIds };
+      if (!sessionToken) {
+        return undefined;
+      }
+
+      return { sessionToken };
     },
     refetchOnMount: "always",
   });

@@ -8,7 +8,7 @@ import {
   StyleSheet,
 } from "react-native";
 
-const BirdImg = require("@/assets/images/bird.png");
+const BirdImg = require("@/assets/images/bird.webp");
 
 interface BirdModalProps {
   onClose: () => void;

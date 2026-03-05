@@ -7,7 +7,7 @@ import HomeModal from "./HomeModal";
 import BirdModal from "./BirdModal";
 
 const WateringImg = require("@/assets/images/background/watering.png");
-const BirdImg = require("@/assets/images/bird.png");
+const BirdImg = require("@/assets/images/bird.webp");
 const Char2Img = require("@/assets/images/char2.png");
 
 interface HomeAvatarProps {

@@ -1,8 +1,10 @@
 import type { ApiResponse } from "@/types/common/apiResponse.type";
 import type {
   GetFeedResponse,
-  RandomFeedRequest,
-  RandomFeedResponse,
+  RandomFeedSessionRequest,
+  RandomFeedSessionResponse,
+  RandomFeedNextRequest,
+  RandomFeedNextResponse,
 } from "@/types/feed/feedApi.type";
 import api from "@/apis/instance";
 
@@ -11,9 +13,17 @@ export const getFeed = async (): ApiResponse<GetFeedResponse> => {
   return res.data;
 };
 
-export const getRandomFeed = async (
-  request: RandomFeedRequest
-): Promise<RandomFeedResponse> => {
-  const res = await api.post("/api/v1/feed/random", request);
+// Session-based random feed
+export const startRandomFeedSession = async (
+  request: RandomFeedSessionRequest
+): Promise<RandomFeedSessionResponse> => {
+  const res = await api.post("/api/v1/feed/random/session", request);
+  return res.data;
+};
+
+export const getRandomFeedNext = async (
+  request: RandomFeedNextRequest
+): Promise<RandomFeedNextResponse> => {
+  const res = await api.post("/api/v1/feed/random/next", request);
   return res.data;
 };

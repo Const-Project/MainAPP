@@ -23,18 +23,18 @@ import Toast from "@/components/common/Toast";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
-const SunImg = require("@/assets/icons/water.png");
-const WaterImg = require("@/assets/icons/sun.png");
+const SunImg = require("@/assets/icons/sun.webp");
+const WaterImg = require("@/assets/icons/water.webp");
 
 const SunLightImg = require("@/assets/images/background/sunlight.png");
 const PlantImg = require("@/assets/images/plant.png");
 const NullImg = require("@/assets/images/null.webp");
 
 const backgroundImages: Record<number, any> = {
-  1: require("@/assets/images/background/background1.png"),
-  2: require("@/assets/images/background/background2.png"),
+  1: require("@/assets/images/background/background1.webp"),
+  2: require("@/assets/images/background/background2.webp"),
   3: require("@/assets/images/background/background3.png"),
-  4: require("@/assets/images/background/background4.png"),
+  4: require("@/assets/images/background/background4.webp"),
 };
 
 // SVG 아이콘 (Sun, Water)
