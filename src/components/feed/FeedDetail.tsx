@@ -86,17 +86,21 @@ export default function FeedDetail({ result }: Props) {
 
       {/* 댓글 목록 */}
       <View style={styles.commentsContainer}>
-        {result.comments.map(c => (
-          <Comment
-            key={c.commentId}
-            comment={{
-              id: c.commentId,
-              profileImageUrl: c.profileImageUrl,
-              writer: c.writer,
-              content: c.content,
-            }}
-          />
-        ))}
+        {result.comments.length > 0 ? (
+          result.comments.map(c => (
+            <Comment
+              key={c.commentId}
+              comment={{
+                id: c.commentId,
+                profileImageUrl: c.profileImageUrl,
+                writer: c.writer,
+                content: c.content,
+              }}
+            />
+          ))
+        ) : (
+          <Text style={styles.emptyText}>아직 작성된 댓글이 없습니다.</Text>
+        )}
       </View>
     </View>
   );
@@ -190,5 +194,11 @@ const styles = StyleSheet.create({
   commentsContainer: {
     paddingVertical: 16,
     marginHorizontal: -20,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: "#9CA3AF",
+    textAlign: "center",
+    paddingVertical: 24,
   },
 });

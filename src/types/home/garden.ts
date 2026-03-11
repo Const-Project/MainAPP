@@ -4,12 +4,16 @@ export interface Avatar {
   avatarImageUrl: string;
 }
 
+export type HomeMissionType = "DIARY" | "QUIZ" | "CHECKING";
+
 export interface GardenSummary {
   gardenId: number;
   gardenSlotNumber: number;
   avatar?: Avatar | null;
-  locked: boolean;
-  unlockable: boolean;
+  isLocked?: boolean;
+  isUnlockable?: boolean;
+  locked?: boolean;
+  unlockable?: boolean;
   ownerWateringAble: boolean | null;
   ownerSunlightAble: boolean;
 }
@@ -17,8 +21,9 @@ export interface GardenSummary {
 export interface TodayMission {
   missionId: number;
   missionTitle: string;
-  missionType: string;
-  completed: boolean;
+  missionType: HomeMissionType | string;
+  isCompleted?: boolean;
+  completed?: boolean;
 }
 
 export interface UserInfo {
@@ -35,3 +40,27 @@ export interface HomeSummaryPayload {
   gardenSummaries: GardenSummary[];
   todayMissions: TodayMission[];
 }
+
+export const getGardenLocked = (garden: GardenSummary) =>
+  garden.isLocked ?? garden.locked ?? false;
+
+export const getGardenUnlockable = (garden: GardenSummary) =>
+  garden.isUnlockable ?? garden.unlockable ?? false;
+
+export const getMissionCompleted = (mission: TodayMission) =>
+  mission.isCompleted ?? mission.completed ?? false;
+
+export const normalizeHomeSummaryPayload = (
+  payload: HomeSummaryPayload
+): HomeSummaryPayload => ({
+  ...payload,
+  gardenSummaries: payload.gardenSummaries.map(garden => ({
+    ...garden,
+    isLocked: getGardenLocked(garden),
+    isUnlockable: getGardenUnlockable(garden),
+  })),
+  todayMissions: payload.todayMissions.map(mission => ({
+    ...mission,
+    isCompleted: getMissionCompleted(mission),
+  })),
+});

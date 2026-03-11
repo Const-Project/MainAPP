@@ -14,6 +14,8 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "@/navigation/types";
 import Splash from "@/components/common/Splash";
+import { useSupabaseOAuth } from "@/hooks/auth/useSupabaseOAuth";
+import useRegistrationStore from "@/stores/useRegistrationStore";
 
 const { width } = Dimensions.get("window");
 
@@ -51,6 +53,8 @@ export default function OnboardingScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
   const navigation = useNavigation<NavigationProp>();
+  const { performOAuth, isLoading } = useSupabaseOAuth();
+  const resetRegistration = useRegistrationStore(state => state.reset);
 
   const isLastSlide = currentIndex === onboardingData.length - 1;
 
@@ -69,6 +73,24 @@ export default function OnboardingScreen() {
 
   const handleStart = () => {
     navigation.navigate("Register");
+  };
+
+  // [UI 연동] 소셜 로그인 버튼 클릭 핸들러
+  // SupabaseOAuth 훅을 호출하고, 최종적으로 완료되면 전체 네비게이션을 Main 구조로 리셋합니다.
+  const handleOAuthLogin = async (provider: 'kakao' | 'google') => {
+    const result = await performOAuth(provider);
+    if (result?.success) {
+      if (result.isNewUser) {
+        resetRegistration();
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "RegistrationAvatar" }],
+        });
+        return;
+      }
+
+      navigation.reset({ index: 0, routes: [{ name: 'Main' as any }] }); // Main Tab navigator
+    }
   };
 
   if (isSplash) return <Splash />;
@@ -110,15 +132,46 @@ export default function OnboardingScreen() {
 
       {/* Button */}
       <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={[styles.button, !isLastSlide && styles.buttonDisabled]}
-          onPress={handleStart}
-          disabled={!isLastSlide}
-        >
-          <Text style={[styles.buttonText, !isLastSlide && styles.buttonTextDisabled]}>
-            나만의 화단 만들러 가기
-          </Text>
-        </TouchableOpacity>
+        {isLastSlide ? (
+          <View style={styles.socialAuthContainer}>
+            <TouchableOpacity
+              style={[styles.socialButton, styles.kakaoButton, isLoading && styles.buttonDisabled]}
+              onPress={() => handleOAuthLogin('kakao')}
+              disabled={isLoading}
+            >
+              <Text style={styles.kakaoButtonText}>
+                {isLoading ? "처리 중..." : "카카오로 시작하기"}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.socialButton, styles.googleButton, isLoading && styles.buttonDisabled]}
+              onPress={() => handleOAuthLogin('google')}
+              disabled={isLoading}
+            >
+              <Text style={styles.googleButtonText}>
+                {isLoading ? "처리 중..." : "구글로 시작하기"}
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={styles.guestButton}
+              onPress={handleStart}
+              disabled={isLoading}
+            >
+              <Text style={styles.guestButtonText}>비회원으로 화단 만들기</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity
+            style={[styles.button, styles.buttonDisabled]}
+            disabled={true}
+          >
+            <Text style={[styles.buttonText, styles.buttonTextDisabled]}>
+              나만의 화단 만들러 가기
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );
@@ -194,5 +247,41 @@ const styles = StyleSheet.create({
   },
   buttonTextDisabled: {
     color: "#9CA3AF",
+  },
+  socialAuthContainer: {
+    gap: 12,
+  },
+  socialButton: {
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  kakaoButton: {
+    backgroundColor: "#FEE500",
+  },
+  kakaoButtonText: {
+    color: "#000000",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  googleButton: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+  googleButtonText: {
+    color: "#000000",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  guestButton: {
+    paddingVertical: 16,
+    alignItems: "center",
+    marginTop: 4,
+  },
+  guestButtonText: {
+    color: "#6B7280",
+    fontSize: 14,
+    textDecorationLine: "underline",
   },
 });

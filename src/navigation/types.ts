@@ -30,8 +30,19 @@ export type RootStackParamList = {
   LogDetail: { id: number };
 
   // 배송
-  Delivery: undefined;
-  DeliveryComplete: undefined;
+  Delivery:
+    | {
+        seedType?: number;
+        seedName?: string;
+        gardenId?: number;
+      }
+    | undefined;
+  DeliveryComplete:
+    | {
+        seedName?: string;
+        gardenId?: number;
+      }
+    | undefined;
   UnlockGarden: undefined;
 
   // 식물 등록 플로우
@@ -44,6 +55,7 @@ export type RootStackParamList = {
   DailyMissionWriteDiary: undefined;
   DailyMissionQuizMultipleChoice: undefined;
   DailyMissionQuizOx: undefined;
+  DailyMissionChecking: undefined;
 };
 
 /**

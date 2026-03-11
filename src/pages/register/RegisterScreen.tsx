@@ -13,6 +13,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "@/navigation/types";
 import { LeftIcon, EditIcon } from "@/assets/icons/CommonIcons";
 import { useRegister } from "@/hooks/register/useRegister";
+import useRegistrationStore from "@/stores/useRegistrationStore";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -21,6 +22,7 @@ export default function RegisterScreen() {
   const [nickname, setNickname] = useState("");
   const navigation = useNavigation<NavigationProp>();
   const { register, isLoading } = useRegister();
+  const resetRegistration = useRegistrationStore(state => state.reset);
 
   const isValidNickname = nickname.length >= 2 && nickname.length <= 10;
 
@@ -33,10 +35,12 @@ export default function RegisterScreen() {
 
     try {
       await register(nickname);
+      resetRegistration();
       navigation.navigate("RegistrationAvatar");
     } catch (error) {
       console.error(error);
       // 에러가 발생해도 다음 화면으로 이동 (기존 웹과 동일한 동작)
+      resetRegistration();
       navigation.navigate("RegistrationAvatar");
     }
   };
@@ -82,7 +86,6 @@ export default function RegisterScreen() {
               placeholderTextColor="#9CA3AF"
               value={nickname}
               onChangeText={setNickname}
-              minLength={2}
               maxLength={10}
             />
             {nickname.length > 0 ? (

@@ -1,18 +1,15 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { RootStackScreenProps } from "@/navigation/types";
-
-import { LeftIcon, SendIcon } from "@/assets/icons/CommonIcons";
+import CommentComposer from "@/components/common/CommentComposer";
+import ScreenHeader from "@/components/common/ScreenHeader";
+import StatusView from "@/components/common/StatusView";
 import FeedDetail from "@/components/feed/FeedDetail";
 import usePostComment from "@/hooks/comments/useCommentApi";
 import { useAvatarPostDetail } from "@/hooks/feed/useAvatarPostDetailApi";
@@ -25,33 +22,82 @@ export default function FeedAvatarScreen({ navigation, route }: Props) {
 
   const id = Number(postId);
   const isValidId = Number.isFinite(id) && id > 0;
-  const { data, refetch } = useAvatarPostDetail(isValidId ? id : 0);
-
+  const {
+    data,
+    error,
+    isLoading,
+    refetch,
+  } = useAvatarPostDetail(isValidId ? id : 0);
   const [content, setContent] = useState("");
   const { mutateAsync, isPending } = usePostComment(() => refetch());
 
-  const handleBackClick = () => navigation.goBack();
+  const handleBackClick = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+
+    navigation.navigate("Main", { screen: "Feed" });
+  };
 
   const handleSend = async () => {
     if (!isValidId || !content.trim()) return;
-    await mutateAsync({ content, targetId: id, targetType: "AVATAR_POST" });
-    setContent("");
+
+    try {
+      await mutateAsync({ content, targetId: id, targetType: "AVATAR_POST" });
+      setContent("");
+    } catch (commentError) {
+      console.error("[FeedAvatarScreen] Failed to post comment:", commentError);
+    }
   };
 
   if (!isValidId) {
     return (
-      <SafeAreaView style={styles.container}>
-        <Text style={styles.errorText}>잘못된 게시글 ID입니다.</Text>
+      <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+        <ScreenHeader title="둘러보기" onBack={handleBackClick} />
+        <StatusView
+          title="잘못된 게시글입니다."
+          description="피드 목록에서 다시 선택해주세요."
+          actionLabel="목록으로"
+          onAction={handleBackClick}
+        />
+      </SafeAreaView>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+        <ScreenHeader title="둘러보기" onBack={handleBackClick} />
+        <StatusView title="게시글을 불러오는 중입니다." loading />
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+        <ScreenHeader title="둘러보기" onBack={handleBackClick} />
+        <StatusView
+          title="게시글을 불러오지 못했습니다."
+          description="현재 API 응답을 다시 확인해야 합니다."
+          actionLabel="다시 시도"
+          onAction={() => void refetch()}
+        />
       </SafeAreaView>
     );
   }
 
   if (!data) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>로딩 중...</Text>
-        </View>
+      <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+        <ScreenHeader title="둘러보기" onBack={handleBackClick} />
+        <StatusView
+          title="게시글 정보가 없습니다."
+          description="현재 API에서 반환된 상세 데이터가 비어 있습니다."
+          actionLabel="목록으로"
+          onAction={handleBackClick}
+        />
       </SafeAreaView>
     );
   }
@@ -77,47 +123,17 @@ export default function FeedAvatarScreen({ navigation, route }: Props) {
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={0}
       >
-        {/* 헤더 */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={handleBackClick} activeOpacity={0.7}>
-            <LeftIcon size={24} color="#171717" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>둘러보기</Text>
-          <View style={styles.headerSpacer} />
-        </View>
-
-        {/* 메인 콘텐츠 */}
-        <ScrollView
-          style={styles.scrollView}
-          showsVerticalScrollIndicator={false}
-        >
+        <ScreenHeader title="둘러보기" onBack={handleBackClick} />
+        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
           <FeedDetail result={result} />
         </ScrollView>
-
-        {/* 댓글 입력 */}
-        <View style={styles.commentInputContainer}>
-          <View style={styles.commentInputRow}>
-            <TextInput
-              style={styles.commentInput}
-              placeholder="댓글을 입력해주세요."
-              placeholderTextColor="#9CA3AF"
-              value={content}
-              onChangeText={setContent}
-              onSubmitEditing={handleSend}
-              returnKeyType="send"
-              editable={!isPending}
-            />
-            <TouchableOpacity
-              onPress={handleSend}
-              disabled={isPending}
-              activeOpacity={0.7}
-            >
-              <SendIcon size={32} />
-            </TouchableOpacity>
-          </View>
-        </View>
+        <CommentComposer
+          value={content}
+          onChangeText={setContent}
+          onSubmit={() => void handleSend()}
+          disabled={isPending}
+        />
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -131,61 +147,7 @@ const styles = StyleSheet.create({
   keyboardView: {
     flex: 1,
   },
-  header: {
-    height: 56,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#171717",
-  },
-  headerSpacer: {
-    width: 24,
-    height: 24,
-  },
   scrollView: {
     flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  loadingText: {
-    fontSize: 14,
-    color: "#6B7280",
-  },
-  errorText: {
-    fontSize: 14,
-    color: "#171717",
-    textAlign: "center",
-    marginTop: 20,
-  },
-  commentInputContainer: {
-    borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-  },
-  commentInputRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  commentInput: {
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: "#E5E7EB",
-    borderRadius: 20,
-    fontSize: 14,
-    color: "#171717",
   },
 });
