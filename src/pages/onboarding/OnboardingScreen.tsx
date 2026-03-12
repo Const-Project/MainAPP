@@ -114,9 +114,6 @@ export default function OnboardingScreen() {
         });
         return;
       }
-
-      debugLog("OnboardingScreen", "Reset -> Main for existing user");
-      navigation.reset({ index: 0, routes: [{ name: "Main" as any }] });
     }
   };
 

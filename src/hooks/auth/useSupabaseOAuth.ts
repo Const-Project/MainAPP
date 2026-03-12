@@ -199,56 +199,19 @@ export const useSupabaseOAuth = () => {
       debugLog("SupabaseOAuth", "Opening auth browser", { url: data.url });
 
       const redirectPromise = waitForRedirect(redirectUri);
-      const browserPromise = WebBrowser.openAuthSessionAsync(data.url, redirectUri);
 
-      const raceResult = await Promise.race([
-        redirectPromise.then(url => ({ type: "redirect" as const, url })),
-        browserPromise.then(result => ({ type: "browser" as const, result })),
-      ]);
-
-      if (raceResult.type === "redirect") {
-        debugLog("SupabaseOAuth", "Redirect event won race", { url: raceResult.url });
-        const result = await completeLogin(raceResult.url);
-        debugLog("SupabaseOAuth", "OAuth flow completed", result);
-        return result;
-      }
-
-      debugLog("SupabaseOAuth", "Browser result received", {
-        type: raceResult.result.type,
-        url: "url" in raceResult.result ? raceResult.result.url : undefined,
+      void WebBrowser.openBrowserAsync(data.url).then(result => {
+        debugLog("SupabaseOAuth", "Browser result received", {
+          type: result.type,
+          url: "url" in result ? result.url : undefined,
+        });
       });
 
-      if (raceResult.result.type === "success") {
-        const result = await completeLogin(raceResult.result.url);
-        debugLog("SupabaseOAuth", "OAuth flow completed", result);
-        return result;
-      }
-
-      if (raceResult.result.type === "dismiss") {
-        debugLog("SupabaseOAuth", "Browser dismissed before redirect, waiting for grace period", {
-          graceMs: DISMISS_REDIRECT_GRACE_MS,
-        });
-
-        const delayedRedirect = await Promise.race([
-          redirectPromise.then(url => ({ type: "redirect" as const, url })),
-          new Promise<{ type: "grace_timeout" }>(resolve => {
-            setTimeout(() => resolve({ type: "grace_timeout" }), DISMISS_REDIRECT_GRACE_MS);
-          }),
-        ]);
-
-        if (delayedRedirect.type === "redirect") {
-          debugLog("SupabaseOAuth", "Redirect received during dismiss grace period", {
-            url: delayedRedirect.url,
-          });
-          const result = await completeLogin(delayedRedirect.url);
-          debugLog("SupabaseOAuth", "OAuth flow completed", result);
-          return result;
-        }
-      }
-
-      console.warn(`[SupabaseOAuth] Browser closed or cancelled. Result type: ${raceResult.result.type}`);
-      debugLog("SupabaseOAuth", "OAuth flow cancelled", { type: raceResult.result.type });
-      return { success: false, cancelled: true };
+      const redirectedUrl = await redirectPromise;
+      debugLog("SupabaseOAuth", "Redirect event resolved", { url: redirectedUrl });
+      const result = await completeLogin(redirectedUrl);
+      debugLog("SupabaseOAuth", "OAuth flow completed", result);
+      return result;
     } catch (err) {
       console.error("[SupabaseOAuth] Exception during performOAuth:", err);
       debugLog("SupabaseOAuth", "OAuth flow failed", {
