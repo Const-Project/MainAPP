@@ -99,21 +99,27 @@ const styles = StyleSheet.create({
   },
   avatarCluster: {
     width: "100%",
-    minHeight: 390,
+    minHeight: 400,
     alignItems: "center",
     justifyContent: "center",
     position: "relative",
-    paddingBottom: 36,
+    paddingBottom: 18,
   },
   avatarImage: {
     width: 320,
     height: 320,
-    marginBottom: 34,
+
+    /*
+     * 한글 주석:
+     * 화분 밑단을 더 아래로 내리기 위해 하단 여백을 줄였다.
+     * 주변 오브젝트도 같은 기준선에서 함께 내려오도록 절대 위치 값도 맞춘다.
+     */
+    marginBottom: 8,
   },
   wateringImage: {
     position: "absolute",
     left: "36%",
-    bottom: 160,
+    bottom: 132,
     width: 118,
     height: 118,
   },
@@ -122,8 +128,8 @@ const styles = StyleSheet.create({
   },
   leftCompanion: {
     position: "absolute",
-    left: 22,
-    bottom: 18,
+    left: 26,
+    bottom: 4,
     alignItems: "center",
     width: 154,
   },
@@ -179,7 +185,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   mascotButton: {
-    marginTop: -4,
+    marginTop: -10,
   },
   characterImage: {
     width: 82,
@@ -187,8 +193,8 @@ const styles = StyleSheet.create({
   },
   birdButton: {
     position: "absolute",
-    right: 42,
-    bottom: 42,
+    right: 48,
+    bottom: 18,
   },
   birdImage: {
     width: 84,

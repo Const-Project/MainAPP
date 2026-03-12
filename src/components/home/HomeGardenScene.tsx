@@ -25,8 +25,8 @@ const mapIcon = require("@/assets/images/map.png");
 const emptyGardenImage = require("@/assets/images/null.webp");
 const sunlightOverlay = require("@/assets/images/background/sunlight.png");
 
-const SCENE_BOTTOM_OFFSET = 110;
-const ACTION_RAIL_BOTTOM_OFFSET = 180;
+const SCENE_BOTTOM_OFFSET = 64;
+const ACTION_RAIL_BOTTOM_OFFSET = 128;
 
 type Props = {
   background: any;
@@ -261,11 +261,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 24,
+
+    /*
+     * 한글 주석:
+     * 화분과 주변 오브젝트를 화면 하단 쪽으로 더 내리되,
+     * 접힌 패널에 가려지지 않도록 최소 여백을 남긴 위치로 고정한다.
+     */
     paddingBottom: SCENE_BOTTOM_OFFSET,
   },
   actionRail: {
     position: "absolute",
-    right: 10,
+    right: 12,
     bottom: ACTION_RAIL_BOTTOM_OFFSET,
     zIndex: 3,
     gap: 8,
