@@ -54,4 +54,4 @@
 - [ ] 실기기/에뮬레이터에서 홈 스와이프 확인
 - [ ] 안전영역/작은 화면 레이아웃 확인
 - [ ] Android 이미지 로딩/기본 이미지 fallback 확인
-- [ ] 남은 TODO를 `MAINAPP_MIGRATION_TODO.md`와 동기화
+- [x] 남은 TODO를 `MAINAPP_MIGRATION_TODO.md`와 동기화

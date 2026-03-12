@@ -20,7 +20,7 @@
 - 인증 기반은 완료 상태다.
 - 앱 시작 시 저장된 토큰 기준으로 `Main` 또는 `Onboarding`으로 초기 진입이 분기된다.
 - 서비스 API 인증 헤더 자동 부착과 refresh 재시도 기반이 있다.
-- 실제 사용자 기능 중 현재 의미 있게 연결된 영역은 `홈 요약 일부`, `피드`, `피드 상세`, `댓글 작성`, `로그 캘린더`, `월별 일기 목록`, `로그 상세`, `프로필`, `팔로우 목록`, `배송 신청`, `정원 해금`, `등록 플로우`, `데일리 미션(일기/퀴즈/오늘의 질문)`이다.
+- 실제 사용자 기능 중 현재 의미 있게 연결된 영역은 `홈`, `피드`, `피드 상세`, `댓글 작성`, `로그 캘린더`, `월별 일기 목록`, `로그 상세`, `프로필`, `팔로우 목록`, `배송 신청`, `정원 해금`, `등록 플로우`, `데일리 미션(일기/퀴즈/오늘의 질문)`이다.
 - `설정`은 로그아웃과 계정 상태 확인이 가능한 최소 운영 수준으로 정리되었다.
 
 ### 네비게이션 기준 상태
@@ -42,7 +42,7 @@
   - 오늘의 질문 미션
 - 부분구현
   - 비회원 등록
-  - 홈 메인
+  - 홈 메인 마감
   - 로그 화면 일부
   - 피드 상세 UX
   - 프로필
@@ -80,7 +80,7 @@
 | 기능명 | 현재 MainAPP 상태 | 보완 필요 사항 | 근거 파일 |
 |---|---|---|---|
 | 비회원 등록 | 닉네임 입력과 회원가입 API 호출은 있음 | 가입 실패 시에도 등록 플로우로 진입시키는 현재 정책이 운영 기준으로 확정된 것은 아님 | `src/pages/register/RegisterScreen.tsx`, `src/hooks/register/useRegister.ts`, `src/apis/register/registerApi.ts` |
-| 홈 메인 | 홈 summary API가 있으면 사용자/정원/미션 요약을 렌더링하고, missionType 기준으로 라우팅함 | `home/panel` 세부 API, 식물 상호작용은 아직 필요 | `src/pages/home/HomeScreen.tsx`, `src/hooks/home/useHomeApi.ts`, `src/apis/home/homeApi.ts` |
+| 홈 메인 | 홈 summary API, `panel` API, 물/햇빛 액션, 감정 체크 모달, 미션 시트, 잠금/빈 슬롯 분기와 missionType 라우팅이 연결됨 | 실기기 스와이프 검증, 안전영역 점검, 문구/간격 같은 UI 마감과 물/햇빛 API 계약 상세 확인이 남아 있음 | `src/pages/home/HomeScreen.tsx`, `src/hooks/home/useHomeApi.ts`, `src/apis/home/homeApi.ts`, `src/components/home/*`, `src/stores/useEmotionSurveyStore.ts` |
 | 로그 화면 일부 | 캘린더/일기 목록과 로그 상세까지 연결됨 | 미션 탭 날짜 선택 후 상세 액션은 아직 없음 | `src/pages/log/LogScreen.tsx`, `src/pages/log/LogDetailScreen.tsx`, `src/apis/log/diaryDetailApi.ts` |
 | 피드 상세 UX | 조회/댓글/상태 처리와 프로필 이동은 됨 | 공감/신고/댓글 수정·삭제는 아직 없음 | `src/components/feed/FeedDetail.tsx`, `src/pages/feed/FeedDiaryScreen.tsx`, `src/pages/feed/FeedAvatarScreen.tsx` |
 | 프로필 | 사용자 조회와 대표 정원/팔로우/물주기까지 연결됨 | 방명록, 다중 정원 상세, 추가 상호작용 API는 아직 필요 | `src/pages/profile/ProfileScreen.tsx`, `src/components/profile/ProfileDetail.tsx`, `src/apis/profile/profileApi.ts` |
@@ -112,8 +112,8 @@
 
 | 기능명 | 현재 MainAPP 상태 | 참조할 MainFE 파일 | 필요한 MainAPP 대상 파일 또는 신규 파일 | 선행조건 |
 |---|---|---|---|---|
-| 홈 메인 패널 | `/api/v1/home` 응답 기준 요약 UI는 구현됨. `missionType` 기반 라우팅과 today question 연결까지 반영됨 | `C:/MainFE/src/pages/home/Homepage.tsx`, `C:/MainFE/src/apis/home/homeApi.ts`, `C:/MainFE/src/apis/missions/panelApi.ts` | 기존 `src/pages/home/HomeScreen.tsx`, 기존 `src/apis/home/homeApi.ts`, 기존 `src/hooks/home/useHomeApi.ts`, 필요 시 신규 `src/components/home/*` | `panel` 및 상호작용 API 존재 확인 |
-| 식물 상호작용(물/햇빛) | 미구현 | `C:/MainFE/src/components/home/FirstPlant.tsx`, `C:/MainFE/src/components/home/SecondPlant.tsx`, `C:/MainFE/src/components/home/ThirdPlant.tsx`, `C:/MainFE/src/components/home/FourthPlant.tsx` | 신규 `src/components/home/*`, 기존 `src/pages/home/HomeScreen.tsx` | 홈 메인 데이터 구조 확정 |
+| 홈 메인 패널 | `/api/v1/home`와 `panel` 응답 기준 요약 UI, 접힘/펼침 미션 시트, 오늘의 질문 연결까지 구현됨 | `C:/MainFE/src/pages/home/Homepage.tsx`, `C:/MainFE/src/apis/home/homeApi.ts`, `C:/MainFE/src/apis/missions/panelApi.ts` | 기존 `src/pages/home/HomeScreen.tsx`, 기존 `src/apis/home/homeApi.ts`, 기존 `src/hooks/home/useHomeApi.ts`, `src/components/home/*` | 실기기 스와이프와 UI 마감 확인 |
+| 식물 상호작용(물/햇빛) | owner 기준 물/햇빛 액션, 버튼 상태, 토스트, 홈 배치까지 구현됨 | `C:/MainFE/src/components/home/FirstPlant.tsx`, `C:/MainFE/src/components/home/SecondPlant.tsx`, `C:/MainFE/src/components/home/ThirdPlant.tsx`, `C:/MainFE/src/components/home/FourthPlant.tsx` | 기존 `src/components/home/HomeGardenScene.tsx`, 기존 `src/hooks/home/useHomeApi.ts`, 기존 `src/pages/home/HomeScreen.tsx` | 액션 API 계약 상세와 실기기 동작 확인 |
 | 로그 상세 | diary detail API 기준 실제 화면 구현 완료. 수정 기능과 추가 소셜 액션만 미완성 | `C:/MainFE/src/pages/log/LogDetailPage.tsx` | 기존 `src/pages/log/LogDetailScreen.tsx`, 기존 `src/components/log/MyDiaryDetail.tsx` | 수정 API 여부 확인 |
 | 피드 상세 보완 | 상세 조회, 댓글, 상태 처리는 구현됨. 소셜 상호작용은 미완성 | `C:/MainFE/src/pages/feed/FeedDiaryPage.tsx`, `C:/MainFE/src/pages/feed/FeedAvatarPage.tsx`, `C:/MainFE/src/components/feed/*`, `C:/MainFE/src/components/common/Comment.tsx` | 기존 `src/pages/feed/FeedDiaryScreen.tsx`, 기존 `src/pages/feed/FeedAvatarScreen.tsx`, 기존 `src/components/feed/FeedDetail.tsx`, 기존 `src/components/common/Comment.tsx` | 프로필 화면, 댓글/좋아요 API 범위 확인 |
 | 프로필 조회/친구 물주기 | 사용자 조회, 대표 정원 렌더링, 친구 물주기, follow/unfollow까지 구현됨. 방명록 등 추가 기능은 미완성 | `C:/MainFE/src/pages/profile/ProfilePage.tsx`, `C:/MainFE/src/apis/profile/profileApi.ts`, `C:/MainFE/src/components/profile/*` | 기존 `src/pages/profile/ProfileScreen.tsx`, 기존 `src/apis/profile/profileApi.ts`, 기존 `src/hooks/profile/*`, 기존 `src/components/profile/*` | 방명록 및 추가 상호작용 API 확인 |
@@ -249,7 +249,7 @@
 ## 6. 이후 Codex 작업 순서
 
 ### Step 3. 홈/로그/피드 공백 메우기
-- `src/pages/home/HomeScreen.tsx` 요약 UI 이후, `panel`과 정원 상호작용 API가 확인되면 홈 상호작용을 확장한다.
+- `src/pages/home/HomeScreen.tsx` 기준 홈 상호작용 기본 연결은 끝났고, 남은 작업은 실기기 스와이프 확인, 안전영역/작은 화면 점검, 문구/간격 마감, 물/햇빛 API 계약 상세 확인이다.
 - `src/pages/log/LogDetailScreen.tsx` 이후, 수정 기능과 미션 탭 상세 연결을 보완한다.
 - 피드 상세의 좋아요/신고/프로필 실화면 연결 등 미완성 소셜 상호작용을 정리한다.
 - 필요한 홈/피드 보조 API와 훅을 추가한다.
@@ -278,13 +278,13 @@
 
 ### 완료된 범위
 - 인증, 온보딩, 로그인, 재실행 세션 복원, 로그아웃
-- 홈 주요 진입점, 피드/로그 상세, 프로필/팔로우
+- 홈 주요 진입점, `panel` 기반 미션 시트, 감정 체크, 물/햇빛 액션, 피드/로그 상세, 프로필/팔로우
 - 정원 해금, 배송 신청/완료
 - 등록 플로우 기본 구조와 생성형 업로드
 - 데일리 미션 진입, 퀴즈 응답, 오늘의 질문 응답
 
 ### 부분구현 범위
-- 홈 패널 세부 상호작용
+- 홈 UI 마감과 실기기 검증
 - 피드 소셜 액션(좋아요/신고/댓글 수정 삭제)
 - 프로필 방명록/다중 정원
 - 배송 주소 검색과 배송 조회
@@ -298,7 +298,7 @@
 - 오늘의 질문 완료 후 보상/안내 문구를 앱에서 어느 수준까지 노출할지 여부
 
 ### 백엔드 계약 확인 필요 범위
-- 홈 패널/식물 상호작용 세부 API
+- 물/햇빛 액션 API 계약 상세
 - 팔로워 목록의 follow-back 판단용 관계 상태
 - 배송 상태 조회와 주소 검색 대체 정책
 - 데일리 미션 일기 작성의 최종 저장 UX 정책
@@ -312,7 +312,7 @@
 
 - 데일리 미션 일기 작성은 이미지 업로드-일기 저장 최종 연결이 아직 완결되지 않았다.
 - 비회원 등록 실패 시에도 등록 플로우로 진입시키는 현재 동작은 운영 정책 확정이 필요하다.
-- 홈 패널/식물 상호작용 API가 없어 메인 홈 상호작용은 아직 제한적이다.
+- 홈 화면은 기본 상호작용이 구현됐지만, 물/햇빛 API 계약 상세와 실기기 레이아웃 검증 전까지는 운영 리스크가 남아 있다.
 - 배송 주소 검색과 배송 상태 조회는 아직 앱에서 직접 지원하지 않는다.
 - MainFE 종료 이후 기준 문서는 이 파일과 현재 `MainAPP` 코드이며, 남은 보완은 정책/운영 확정 후 `MainAPP`에서 계속 갱신한다.
 
