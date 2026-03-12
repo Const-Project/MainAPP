@@ -4,7 +4,7 @@ import axios, {
   AxiosRequestHeaders,
   InternalAxiosRequestConfig,
 } from "axios";
-import { refreshAuthApi } from "@/apis/register/registerApi";
+import { refreshAuthApi } from "@/apis/register/refreshApi";
 import useTokenStore from "@/stores/useTokenStore";
 import { logout } from "@/utils/auth";
 

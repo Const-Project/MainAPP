@@ -16,15 +16,3 @@ export const loginWithSupabaseApi = async (
 ): ApiResponse<PostRegisterResponse> => {
   return axios.post("/api/v1/auth/supabase", { accessToken }).then(res => res.data);
 };
-
-export const refreshAuthApi = async (
-  refreshToken: string
-): ApiResponse<PostRegisterResponse> => {
-  return axios
-    .post(
-      "/api/v1/auth/refresh",
-      { refreshToken },
-      { _skipAuth: true } as const
-    )
-    .then(res => res.data);
-};
