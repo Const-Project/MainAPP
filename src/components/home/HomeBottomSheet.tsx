@@ -11,7 +11,7 @@ import { RightIcon } from "@/assets/icons/CommonIcons";
 import { getMissionCompleted, type TodayMission } from "@/types/home/garden";
 import type { HomePanelPayload } from "@/types/home/panel";
 
-const COLLAPSED_HEIGHT = 196;
+const COLLAPSED_HEIGHT = 104;
 const EXPANDED_HEIGHT = 430;
 const DRAG_RANGE = EXPANDED_HEIGHT - COLLAPSED_HEIGHT;
 
@@ -117,11 +117,10 @@ export default function HomeBottomSheet({
     <View pointerEvents="box-none" style={styles.sheetOuter}>
       <Animated.View style={[styles.sheetWrap, { transform: [{ translateY }] }]}>
         <View style={styles.sheet}>
-          <View {...panResponder.panHandlers} style={styles.sheetHandleButton}>
-            <View style={styles.sheetHandle} />
-          </View>
-
-          <View style={styles.sheetContent}>
+          <View {...panResponder.panHandlers} style={styles.sheetDragArea}>
+            <View style={styles.sheetHandleButton}>
+              <View style={styles.sheetHandle} />
+            </View>
             <View style={styles.sheetHeaderRow}>
               <Text style={styles.sheetTitle}>오늘의 미션</Text>
               <View style={styles.sheetChecks}>
@@ -130,7 +129,14 @@ export default function HomeBottomSheet({
                 ))}
               </View>
             </View>
+          </View>
 
+          <View style={styles.sheetContent}>
+            {/*
+             * 한글 주석:
+             * 접힌 상태에서는 오늘의 미션 제목과 진행도만 위로 남기고,
+             * 실제 미션 카드와 하단 정보는 패널 안쪽으로 더 들어가 보이도록 간격을 분리한다.
+             */}
             <View style={styles.sheetMissionList}>
               {missionCards.map(card => (
                 <TouchableOpacity
@@ -228,7 +234,7 @@ const styles = StyleSheet.create({
     borderTopColor: "#E5E7EB",
     backgroundColor: "#FFFFFF",
     paddingHorizontal: 16,
-    paddingTop: 8,
+    paddingTop: 6,
     paddingBottom: 30,
     shadowColor: "#000000",
     shadowOpacity: 0.12,
@@ -236,10 +242,15 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: -4 },
     elevation: 12,
   },
+  sheetDragArea: {
+    paddingTop: 2,
+    paddingBottom: 18,
+    paddingHorizontal: 4,
+  },
   sheetHandleButton: {
     alignItems: "center",
-    paddingBottom: 8,
-    paddingTop: 4,
+    paddingBottom: 12,
+    paddingTop: 8,
   },
   sheetHandle: {
     width: 40,
@@ -283,7 +294,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   sheetMissionList: {
-    marginTop: 20,
+    marginTop: 8,
     gap: 10,
   },
   sheetMissionCard: {

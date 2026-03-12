@@ -25,6 +25,9 @@ const mapIcon = require("@/assets/images/map.png");
 const emptyGardenImage = require("@/assets/images/null.webp");
 const sunlightOverlay = require("@/assets/images/background/sunlight.png");
 
+const SCENE_BOTTOM_OFFSET = 110;
+const ACTION_RAIL_BOTTOM_OFFSET = 180;
+
 type Props = {
   background: any;
   slotNumber: number;
@@ -254,12 +257,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 24,
-    paddingBottom: 168,
+    paddingBottom: SCENE_BOTTOM_OFFSET,
   },
   actionRail: {
     position: "absolute",
     right: 10,
-    bottom: 238,
+    bottom: ACTION_RAIL_BOTTOM_OFFSET,
     zIndex: 3,
     gap: 8,
   },
@@ -272,7 +275,7 @@ const styles = StyleSheet.create({
   lockedOverlay: {
     flex: 1,
     marginHorizontal: 24,
-    marginBottom: 168,
+    marginBottom: SCENE_BOTTOM_OFFSET,
     borderRadius: 28,
     backgroundColor: "rgba(255,255,255,0.68)",
     justifyContent: "center",
@@ -314,7 +317,7 @@ const styles = StyleSheet.create({
     width: "100%",
     alignItems: "center",
     justifyContent: "center",
-    paddingBottom: 30,
+    paddingBottom: 12,
   },
   emptyBubble: {
     marginBottom: 12,
