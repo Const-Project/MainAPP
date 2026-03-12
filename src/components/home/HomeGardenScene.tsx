@@ -116,12 +116,15 @@ export default function HomeGardenScene({
 
   return (
     <ImageBackground source={background} resizeMode="cover" style={styles.sceneBackground}>
+      {isLocked ? <Image source={background} resizeMode="cover" blurRadius={18} style={styles.lockedBackgroundBlur} /> : null}
+
       <Image
         source={sunlightOverlay}
         resizeMode="cover"
         style={[styles.sunlightOverlay, !isSunlightVisible && styles.sunlightOverlayHidden]}
       />
       <View style={styles.sceneShade} />
+      {isLocked ? <View style={styles.lockedScreenFog} /> : null}
 
       <View style={styles.sceneContent}>
         <View style={styles.sceneHeader}>
@@ -133,22 +136,29 @@ export default function HomeGardenScene({
         </View>
 
         {isLocked ? (
-          <View style={styles.lockedOverlay}>
-            <Text style={[styles.lockedHeading, isUnlockable && styles.unlockHeading]}>
-              {isUnlockable ? "지금 열 수 있어요!" : "아직 해금되지 않았습니다!"}
-            </Text>
-            <Text style={styles.lockedBody}>
-              {isUnlockable
-                ? "아래 버튼을 눌러 씨앗을 배송받고,\n새로운 곳에서 식물을 키워보세요."
-                : "소망 나무가 충분히 자라면\n새로운 식물을 키울 수 있어요."}
-            </Text>
+          <View style={styles.lockedSceneBody}>
+            <View style={styles.lockedOverlay}>
+              <Text style={[styles.lockedHeading, isUnlockable && styles.unlockHeading]}>
+                해금되지 않았습니다
+              </Text>
+              <Text style={styles.lockedBody}>
+                {isUnlockable
+                  ? "지금은 씨앗을 받아 새로운 텃밭을 열 수 있어요."
+                  : "소망 나무가 충분히 자라면 새로운 텃밭을 열 수 있어요."}
+              </Text>
+            </View>
+
             <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={onPressUnlock}
-              style={[styles.unlockButton, !isUnlockable && styles.unlockButtonDisabled]}
+              activeOpacity={isUnlockable ? 0.9 : 1}
+              onPress={isUnlockable ? onPressUnlock : undefined}
+              disabled={!isUnlockable}
+              style={[
+                styles.lockedFooterButton,
+                isUnlockable ? styles.lockedFooterButtonActive : styles.lockedFooterButtonDisabled,
+              ]}
             >
-              <Text style={styles.unlockButtonText}>
-                {isUnlockable ? "씨앗 받고 해금하기!" : "충분하지 않아요"}
+              <Text style={styles.lockedFooterButtonText}>
+                {isUnlockable ? "씨앗 받고 해금하기" : "아직 감자가 충분히 모이지 않았어요"}
               </Text>
             </TouchableOpacity>
           </View>
@@ -210,6 +220,9 @@ const styles = StyleSheet.create({
   sceneBackground: {
     flex: 1,
   },
+  lockedBackgroundBlur: {
+    ...StyleSheet.absoluteFillObject,
+  },
   sunlightOverlay: {
     ...StyleSheet.absoluteFillObject,
     opacity: 1,
@@ -221,6 +234,10 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(8, 20, 10, 0.08)",
   },
+  lockedScreenFog: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(242, 246, 241, 0.58)",
+  },
   sceneContent: {
     flex: 1,
     justifyContent: "space-between",
@@ -231,6 +248,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingTop: 56,
+    zIndex: 2,
   },
   mapButton: {
     width: 48,
@@ -269,6 +287,13 @@ const styles = StyleSheet.create({
      */
     paddingBottom: SCENE_BOTTOM_OFFSET,
   },
+  lockedSceneBody: {
+    flex: 1,
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingBottom: 28,
+    zIndex: 2,
+  },
   actionRail: {
     position: "absolute",
     right: 12,
@@ -290,10 +315,6 @@ const styles = StyleSheet.create({
   },
   lockedOverlay: {
     flex: 1,
-    marginHorizontal: 24,
-    marginBottom: SCENE_BOTTOM_OFFSET,
-    borderRadius: 28,
-    backgroundColor: "rgba(255,255,255,0.68)",
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 28,
@@ -314,20 +335,25 @@ const styles = StyleSheet.create({
     color: "#171717",
     textAlign: "center",
   },
-  unlockButton: {
-    marginTop: 6,
-    borderRadius: 14,
-    backgroundColor: "#7DC960",
-    paddingHorizontal: 18,
-    paddingVertical: 12,
+  lockedFooterButton: {
+    width: "100%",
+    minHeight: 58,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 20,
   },
-  unlockButtonDisabled: {
-    backgroundColor: "#9CA3AF",
+  lockedFooterButtonActive: {
+    backgroundColor: "#59A647",
   },
-  unlockButtonText: {
-    fontSize: 15,
+  lockedFooterButtonDisabled: {
+    backgroundColor: "#BFC6BC",
+  },
+  lockedFooterButtonText: {
+    fontSize: 16,
     fontWeight: "700",
     color: "#FFFFFF",
+    textAlign: "center",
   },
   emptySlotWrap: {
     width: "100%",

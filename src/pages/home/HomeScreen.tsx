@@ -14,6 +14,7 @@ import type { MainTabScreenProps } from "@/navigation/types";
 import { useEmotionSurveyStore, getEmotionSurveyCooldownActive } from "@/stores/useEmotionSurveyStore";
 import { useHomeSummaryStore } from "@/stores/useHomeSummaryStore";
 import {
+  getGardenLocked,
   type GardenSummary,
   type HomeMissionType,
   type TodayMission,
@@ -87,15 +88,6 @@ export default function HomeScreen({ navigation }: Props) {
   const todayMissions = data?.todayMissions ?? missions;
   const isEmotionCooldownActive = getEmotionSurveyCooldownActive(lastAnsweredAt);
 
-  /*
-   * 한글 주석:
-   * 홈 말풍선은 서버 응답과 별개로, 홈에서 방금 답한 직후 상태도 바로 반영해야 한다.
-   * 로컬 24시간 완료 상태를 함께 보아야 버튼이 다시 나타나는 깜빡임을 막을 수 있다.
-   */
-  const isEmotionAnswered = (surveyQuery.data?.isAnswered ?? false) || isEmotionCooldownActive;
-  const answeredKind = emotionAnswerKind ?? lastAnswerKind;
-  const initialPage = Math.max(0, Math.min(3, (userInfo?.lastAccessedSlotNumber ?? 1) - 1));
-
   const scenes = useMemo<SceneItem[]>(
     () =>
       backgrounds.map((background, index) => ({
@@ -107,6 +99,28 @@ export default function HomeScreen({ navigation }: Props) {
       })),
     [gardenSummaries]
   );
+
+  const currentScene = scenes[currentPage] ?? scenes[0] ?? null;
+  const isCurrentGardenLocked = currentScene?.garden ? getGardenLocked(currentScene.garden) : false;
+
+  useEffect(() => {
+    if (isCurrentGardenLocked && isSheetExpanded) {
+      setIsSheetExpanded(false);
+    }
+  }, [isCurrentGardenLocked, isSheetExpanded]);
+
+  /*
+   * 한글 주석:
+   * 홈 말풍선은 서버 응답과 별개로, 홈에서 방금 답한 직후 상태도 바로 반영해야 한다.
+   * 로컬 24시간 완료 상태를 함께 보아야 버튼이 다시 나타나는 깜빡임을 막을 수 있다.
+   */
+  const isEmotionAnswered = (surveyQuery.data?.isAnswered ?? false) || isEmotionCooldownActive;
+  const answeredKind = emotionAnswerKind ?? lastAnswerKind;
+  const initialPage = Math.max(0, Math.min(3, (userInfo?.lastAccessedSlotNumber ?? 1) - 1));
+
+  useEffect(() => {
+    setCurrentPage(initialPage);
+  }, [initialPage]);
 
   if (isLoading && gardenSummaries.length === 0) {
     return (
@@ -171,23 +185,25 @@ export default function HomeScreen({ navigation }: Props) {
         </View>
       </SafeAreaView>
 
-      <HomeBottomSheet
-        expanded={isSheetExpanded}
-        onExpandedChange={setIsSheetExpanded}
-        missions={todayMissions}
-        panel={panel}
-        currentLevel={userInfo?.level ?? 0}
-        onPressLog={() => navigation.navigate("Log")}
-        onPressFeed={() => navigation.navigate("Feed")}
-        onPressUnlockGarden={() => navigation.navigate("UnlockGarden")}
-        onPressMission={mission => {
-          const routeName = getMissionRouteName(mission);
-          if (routeName) {
-            navigation.navigate(routeName);
-          }
-        }}
-        onPressEmotionCheck={() => setIsEmotionModalOpen(true)}
-      />
+      {!isCurrentGardenLocked ? (
+        <HomeBottomSheet
+          expanded={isSheetExpanded}
+          onExpandedChange={setIsSheetExpanded}
+          missions={todayMissions}
+          panel={panel}
+          currentLevel={userInfo?.level ?? 0}
+          onPressLog={() => navigation.navigate("Log")}
+          onPressFeed={() => navigation.navigate("Feed")}
+          onPressUnlockGarden={() => navigation.navigate("UnlockGarden")}
+          onPressMission={mission => {
+            const routeName = getMissionRouteName(mission);
+            if (routeName) {
+              navigation.navigate(routeName);
+            }
+          }}
+          onPressEmotionCheck={() => setIsEmotionModalOpen(true)}
+        />
+      ) : null}
 
       <HomeEmotionModal
         visible={isEmotionModalOpen}
