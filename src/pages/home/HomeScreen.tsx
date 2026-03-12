@@ -19,6 +19,7 @@ import {
   type HomeMissionType,
   type TodayMission,
 } from "@/types/home/garden";
+import { debugLog, debugScreenMounted } from "@/utils/debug";
 
 type Props = MainTabScreenProps<"Home">;
 type MissionRouteName =
@@ -32,7 +33,23 @@ export default function HomeScreen({ navigation }: Props) {
   const { user, gardens, missions, hydrate } = useHomeSummaryStore();
 
   useEffect(() => {
+    debugScreenMounted("HomeScreen");
+  }, []);
+
+  useEffect(() => {
+    debugLog("HomeScreen", "query state changed", {
+      isLoading,
+      hasData: Boolean(data),
+      hasError: Boolean(error),
+    });
+  }, [data, error, isLoading]);
+
+  useEffect(() => {
     if (data) {
+      debugLog("HomeScreen", "hydrate store from home api", {
+        missionCount: data.todayMissions?.length ?? 0,
+        gardenCount: data.gardenSummaries?.length ?? 0,
+      });
       hydrate(data);
     }
   }, [data, hydrate]);
@@ -92,6 +109,11 @@ export default function HomeScreen({ navigation }: Props) {
               mission={mission}
               onPress={() => {
                 const routeName = getMissionRouteName(mission);
+                debugLog("HomeScreen", "Mission card pressed", {
+                  missionId: mission.missionId,
+                  missionType: mission.missionType,
+                  routeName,
+                });
                 if (routeName) {
                   navigation.navigate(routeName);
                 }
@@ -110,9 +132,7 @@ export default function HomeScreen({ navigation }: Props) {
           subtitle="홈 API에서 내려온 정원 슬롯만 표시합니다."
         />
         {gardenSummaries.length > 0 ? (
-          gardenSummaries.map(garden => (
-            <GardenCard key={garden.gardenId} garden={garden} />
-          ))
+          gardenSummaries.map(garden => <GardenCard key={garden.gardenId} garden={garden} />)
         ) : (
           <InfoCard
             title="표시할 정원 정보가 없습니다."
@@ -128,32 +148,50 @@ export default function HomeScreen({ navigation }: Props) {
           <QuickAction
             title="키움일지"
             description="캘린더와 월별 일기 목록으로 이동"
-            onPress={() => navigation.navigate("Log")}
+            onPress={() => {
+              debugLog("HomeScreen", "Quick action -> Log");
+              navigation.navigate("Log");
+            }}
           />
           <QuickAction
             title="둘러보기"
             description="피드 목록과 상세 화면으로 이동"
-            onPress={() => navigation.navigate("Feed")}
+            onPress={() => {
+              debugLog("HomeScreen", "Quick action -> Feed");
+              navigation.navigate("Feed");
+            }}
           />
           <QuickAction
             title="텃밭 해금하기"
             description="정원 해금과 배송 입력 화면으로 이동"
-            onPress={() => navigation.navigate("UnlockGarden")}
+            onPress={() => {
+              debugLog("HomeScreen", "Quick action -> UnlockGarden");
+              navigation.navigate("UnlockGarden");
+            }}
           />
           <QuickAction
             title="일기 쓰기"
             description="데일리 미션 일기 작성으로 이동"
-            onPress={() => navigation.navigate("DailyMissionWriteDiary")}
+            onPress={() => {
+              debugLog("HomeScreen", "Quick action -> DailyMissionWriteDiary");
+              navigation.navigate("DailyMissionWriteDiary");
+            }}
           />
           <QuickAction
             title="퀴즈 풀기"
             description="오늘의 퀴즈 화면으로 이동"
-            onPress={() => navigation.navigate("DailyMissionQuizMultipleChoice")}
+            onPress={() => {
+              debugLog("HomeScreen", "Quick action -> DailyMissionQuizMultipleChoice");
+              navigation.navigate("DailyMissionQuizMultipleChoice");
+            }}
           />
           <QuickAction
             title="오늘의 질문"
             description="체크인형 질문 미션으로 이동"
-            onPress={() => navigation.navigate("DailyMissionChecking")}
+            onPress={() => {
+              debugLog("HomeScreen", "Quick action -> DailyMissionChecking");
+              navigation.navigate("DailyMissionChecking");
+            }}
           />
         </View>
 
@@ -274,11 +312,7 @@ function QuickAction({
   onPress: () => void;
 }) {
   return (
-    <TouchableOpacity
-      style={styles.quickAction}
-      onPress={onPress}
-      activeOpacity={0.85}
-    >
+    <TouchableOpacity style={styles.quickAction} onPress={onPress} activeOpacity={0.85}>
       <Text style={styles.quickActionTitle}>{title}</Text>
       <Text style={styles.quickActionDescription}>{description}</Text>
     </TouchableOpacity>

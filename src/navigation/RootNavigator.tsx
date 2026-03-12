@@ -2,11 +2,10 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "./types";
 import useTokenStore from "@/stores/useTokenStore";
 import Splash from "@/components/common/Splash";
+import { debugLog } from "@/utils/debug";
 
-// 메인 탭
 import MainTabNavigator from "./MainTabNavigator";
 
-// 실제 스크린
 import OnboardingScreen from "@/pages/onboarding/OnboardingScreen";
 import RegisterScreen from "@/pages/register/RegisterScreen";
 import FeedDiaryScreen from "@/pages/feed/FeedDiaryScreen";
@@ -32,7 +31,14 @@ export default function RootNavigator() {
   const { accessToken, hasHydrated } = useTokenStore();
   const isAuthenticated = Boolean(accessToken);
 
+  debugLog("RootNavigator", "render", {
+    hasHydrated,
+    isAuthenticated,
+    hasAccessToken: Boolean(accessToken),
+  });
+
   if (!hasHydrated) {
+    debugLog("RootNavigator", "waiting for token hydration");
     return <Splash />;
   }
 
@@ -63,51 +69,15 @@ export default function RootNavigator() {
         </>
       )}
 
-      <Stack.Screen
-        name="Profile"
-        component={ProfileScreen}
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen
-        name="Follow"
-        component={FollowScreen}
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen
-        name="FeedDiary"
-        component={FeedDiaryScreen}
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen
-        name="FeedAvatar"
-        component={FeedAvatarScreen}
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen
-        name="LogDetail"
-        component={LogDetailScreen}
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen
-        name="Delivery"
-        component={DeliveryScreen}
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen
-        name="DeliveryComplete"
-        component={DeliveryCompleteScreen}
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen
-        name="UnlockGarden"
-        component={UnlockGardenScreen}
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen
-        name="RegistrationAvatar"
-        component={RegistrationAvatarScreen}
-        options={{ headerShown: false }}
-      />
+      <Stack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Follow" component={FollowScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="FeedDiary" component={FeedDiaryScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="FeedAvatar" component={FeedAvatarScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="LogDetail" component={LogDetailScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Delivery" component={DeliveryScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="DeliveryComplete" component={DeliveryCompleteScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="UnlockGarden" component={UnlockGardenScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="RegistrationAvatar" component={RegistrationAvatarScreen} options={{ headerShown: false }} />
       <Stack.Screen
         name="RegistrationCreationDetail"
         component={RegistrationCreationDetailScreen}
@@ -133,11 +103,7 @@ export default function RootNavigator() {
         component={DailyMissionQuizMultipleChoiceScreen}
         options={{ headerShown: false }}
       />
-      <Stack.Screen
-        name="DailyMissionQuizOx"
-        component={DailyMissionQuizOxScreen}
-        options={{ headerShown: false }}
-      />
+      <Stack.Screen name="DailyMissionQuizOx" component={DailyMissionQuizOxScreen} options={{ headerShown: false }} />
       <Stack.Screen
         name="DailyMissionChecking"
         component={DailyMissionCheckingScreen}

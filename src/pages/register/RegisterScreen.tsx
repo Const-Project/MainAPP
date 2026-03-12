@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import type { RootStackParamList } from "@/navigation/types";
 import { LeftIcon, EditIcon } from "@/assets/icons/CommonIcons";
 import { useRegister } from "@/hooks/register/useRegister";
 import useRegistrationStore from "@/stores/useRegistrationStore";
+import { debugLog, debugScreenMounted } from "@/utils/debug";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -26,6 +27,10 @@ export default function RegisterScreen() {
 
   const isValidNickname = nickname.length >= 2 && nickname.length <= 10;
 
+  useEffect(() => {
+    debugScreenMounted("RegisterScreen");
+  }, []);
+
   const handleWrapperPress = () => {
     inputRef.current?.focus();
   };
@@ -33,19 +38,27 @@ export default function RegisterScreen() {
   const handleRegister = async () => {
     if (!isValidNickname) return;
 
+    debugLog("RegisterScreen", "Guest register submit", {
+      nicknameLength: nickname.length,
+    });
+
     try {
       await register(nickname);
       resetRegistration();
+      debugLog("RegisterScreen", "Navigate -> RegistrationAvatar after register success");
       navigation.navigate("RegistrationAvatar");
     } catch (error) {
       console.error(error);
-      // 에러가 발생해도 다음 화면으로 이동 (기존 웹과 동일한 동작)
+      debugLog("RegisterScreen", "Register failed, continuing to RegistrationAvatar", {
+        error,
+      });
       resetRegistration();
       navigation.navigate("RegistrationAvatar");
     }
   };
 
   const handleBackPress = () => {
+    debugLog("RegisterScreen", "Navigate -> Onboarding");
     navigation.navigate("Onboarding");
   };
 
@@ -54,7 +67,6 @@ export default function RegisterScreen() {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
           <LeftIcon size={24} />
@@ -63,7 +75,6 @@ export default function RegisterScreen() {
         <View style={styles.headerSpacer} />
       </View>
 
-      {/* Content */}
       <View style={styles.content}>
         <View style={styles.topSection}>
           <View style={styles.titleContainer}>
@@ -88,15 +99,10 @@ export default function RegisterScreen() {
               onChangeText={setNickname}
               maxLength={10}
             />
-            {nickname.length > 0 ? (
-              <EditIcon size={24} />
-            ) : (
-              <Text style={styles.hintText}>2~10자</Text>
-            )}
+            {nickname.length > 0 ? <EditIcon size={24} /> : <Text style={styles.hintText}>2~10자</Text>}
           </TouchableOpacity>
         </View>
 
-        {/* Button */}
         <TouchableOpacity
           style={[styles.button, !isValidNickname && styles.buttonDisabled]}
           onPress={handleRegister}

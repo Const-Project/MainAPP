@@ -9,6 +9,7 @@ import {
   FlatList,
   NativeSyntheticEvent,
   NativeScrollEvent,
+  Alert,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -16,6 +17,7 @@ import type { RootStackParamList } from "@/navigation/types";
 import Splash from "@/components/common/Splash";
 import { useSupabaseOAuth } from "@/hooks/auth/useSupabaseOAuth";
 import useRegistrationStore from "@/stores/useRegistrationStore";
+import { debugLog, debugScreenMounted } from "@/utils/debug";
 
 const { width } = Dimensions.get("window");
 
@@ -53,17 +55,23 @@ export default function OnboardingScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
   const navigation = useNavigation<NavigationProp>();
-  const { performOAuth, isLoading } = useSupabaseOAuth();
+  const { performOAuth, isLoading, isExpoGo } = useSupabaseOAuth();
   const resetRegistration = useRegistrationStore(state => state.reset);
 
   const isLastSlide = currentIndex === onboardingData.length - 1;
 
   useEffect(() => {
+    debugScreenMounted("OnboardingScreen");
     const timer = setTimeout(() => {
+      debugLog("OnboardingScreen", "Splash timer finished");
       setIsSplash(false);
     }, 2000);
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    debugLog("OnboardingScreen", "Slide changed", { currentIndex });
+  }, [currentIndex]);
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const contentOffsetX = event.nativeEvent.contentOffset.x;
@@ -72,16 +80,34 @@ export default function OnboardingScreen() {
   };
 
   const handleStart = () => {
+    debugLog("OnboardingScreen", "Navigate -> Register");
     navigation.navigate("Register");
   };
 
-  // [UI 연동] 소셜 로그인 버튼 클릭 핸들러
-  // SupabaseOAuth 훅을 호출하고, 최종적으로 완료되면 전체 네비게이션을 Main 구조로 리셋합니다.
-  const handleOAuthLogin = async (provider: 'kakao' | 'google') => {
+  const handleOAuthLogin = async (provider: "kakao" | "google") => {
+    debugLog("OnboardingScreen", "OAuth button pressed", { provider });
+
+    if (provider === "kakao" && isExpoGo) {
+      debugLog("OnboardingScreen", "Blocked Kakao login in Expo Go");
+      Alert.alert(
+        "카카오 로그인은 Expo Go에서 지원하지 않아요",
+        "카카오톡 앱 전환 때문에 인증이 초기화될 수 있어요. 카카오 로그인은 development build에서 테스트해주세요."
+      );
+      return;
+    }
+
     const result = await performOAuth(provider);
+    debugLog("OnboardingScreen", "OAuth result received", {
+      provider,
+      success: result?.success,
+      isNewUser: result?.isNewUser,
+      cancelled: result?.cancelled,
+    });
+
     if (result?.success) {
       if (result.isNewUser) {
         resetRegistration();
+        debugLog("OnboardingScreen", "Reset -> RegistrationAvatar for new user");
         navigation.reset({
           index: 0,
           routes: [{ name: "RegistrationAvatar" }],
@@ -89,7 +115,8 @@ export default function OnboardingScreen() {
         return;
       }
 
-      navigation.reset({ index: 0, routes: [{ name: 'Main' as any }] }); // Main Tab navigator
+      debugLog("OnboardingScreen", "Reset -> Main for existing user");
+      navigation.reset({ index: 0, routes: [{ name: "Main" as any }] });
     }
   };
 
@@ -105,7 +132,7 @@ export default function OnboardingScreen() {
         showsHorizontalScrollIndicator={false}
         onScroll={handleScroll}
         scrollEventThrottle={16}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={item => item.id.toString()}
         renderItem={({ item }) => (
           <View style={styles.slide}>
             <Image source={item.image} style={styles.image} resizeMode="contain" />
@@ -117,7 +144,6 @@ export default function OnboardingScreen() {
         )}
       />
 
-      {/* Pagination Dots */}
       <View style={styles.pagination}>
         {onboardingData.map((_, index) => (
           <View
@@ -130,43 +156,45 @@ export default function OnboardingScreen() {
         ))}
       </View>
 
-      {/* Button */}
       <View style={styles.buttonContainer}>
         {isLastSlide ? (
           <View style={styles.socialAuthContainer}>
             <TouchableOpacity
-              style={[styles.socialButton, styles.kakaoButton, isLoading && styles.buttonDisabled]}
-              onPress={() => handleOAuthLogin('kakao')}
-              disabled={isLoading}
+              style={[
+                styles.socialButton,
+                styles.kakaoButton,
+                (isLoading || isExpoGo) && styles.buttonDisabled,
+              ]}
+              onPress={() => handleOAuthLogin("kakao")}
+              disabled={isLoading || isExpoGo}
             >
               <Text style={styles.kakaoButtonText}>
                 {isLoading ? "처리 중..." : "카카오로 시작하기"}
               </Text>
             </TouchableOpacity>
 
+            {isExpoGo ? (
+              <Text style={styles.helperText}>
+                Expo Go에서는 카카오 로그인 대신 구글 로그인 또는 development build를 사용해주세요.
+              </Text>
+            ) : null}
+
             <TouchableOpacity
               style={[styles.socialButton, styles.googleButton, isLoading && styles.buttonDisabled]}
-              onPress={() => handleOAuthLogin('google')}
+              onPress={() => handleOAuthLogin("google")}
               disabled={isLoading}
             >
               <Text style={styles.googleButtonText}>
                 {isLoading ? "처리 중..." : "구글로 시작하기"}
               </Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity
-              style={styles.guestButton}
-              onPress={handleStart}
-              disabled={isLoading}
-            >
+
+            <TouchableOpacity style={styles.guestButton} onPress={handleStart} disabled={isLoading}>
               <Text style={styles.guestButtonText}>비회원으로 화단 만들기</Text>
             </TouchableOpacity>
           </View>
         ) : (
-          <TouchableOpacity
-            style={[styles.button, styles.buttonDisabled]}
-            disabled={true}
-          >
+          <TouchableOpacity style={[styles.button, styles.buttonDisabled]} disabled>
             <Text style={[styles.buttonText, styles.buttonTextDisabled]}>
               나만의 화단 만들러 가기
             </Text>
@@ -283,5 +311,12 @@ const styles = StyleSheet.create({
     color: "#6B7280",
     fontSize: 14,
     textDecorationLine: "underline",
+  },
+  helperText: {
+    color: "#6B7280",
+    fontSize: 12,
+    lineHeight: 18,
+    textAlign: "center",
+    marginTop: -4,
   },
 });
