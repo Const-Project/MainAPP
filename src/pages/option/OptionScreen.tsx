@@ -1,32 +1,22 @@
-import { useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { useState, type ReactNode } from "react";
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import ScreenHeader from "@/components/common/ScreenHeader";
-import { logout } from "@/utils/auth";
-import useTokenStore from "@/stores/useTokenStore";
 import type { MainTabScreenProps } from "@/navigation/types";
+import {
+  RightIcon,
+  ToggleOffIcon,
+  ToggleOnIcon,
+} from "@/assets/icons/CommonIcons";
+import ScreenHeader from "@/components/common/ScreenHeader";
+import useTokenStore from "@/stores/useTokenStore";
+import { logout } from "@/utils/auth";
 
 type Props = MainTabScreenProps<"Option">;
 
 export default function OptionScreen(_: Props) {
+  const [pushNotification, setPushNotification] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { accessToken, userId, hasHydrated } = useTokenStore();
-
-  let loginStatus = "로그인 상태";
-
-  if (!hasHydrated) {
-    loginStatus = "세션 확인 중";
-  } else if (!accessToken) {
-    loginStatus = "로그아웃 상태";
-  }
 
   const handleLogout = () => {
     if (isLoggingOut || !accessToken) {
@@ -46,143 +36,122 @@ export default function OptionScreen(_: Props) {
     ]);
   };
 
+  const loginStatus = !hasHydrated ? "세션 확인 중" : accessToken ? "로그인 상태" : "로그아웃 상태";
+
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top"]}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <ScreenHeader title="설정" />
-      <ScrollView
-        contentContainerStyle={styles.contentContainer}
-        style={styles.scrollView}
-      >
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>계정</Text>
-          <View style={styles.card}>
-            <View style={styles.row}>
-              <Text style={styles.label}>인증 상태</Text>
-              <Text style={styles.value}>{loginStatus}</Text>
-            </View>
-            <View style={styles.divider} />
-            <View style={styles.row}>
-              <Text style={styles.label}>사용자 ID</Text>
-              <Text style={styles.value}>{userId ?? "확인되지 않음"}</Text>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>운영 안내</Text>
-          <View style={styles.card}>
-            <Text style={styles.infoTitle}>MainAPP 단독 운영 기준</Text>
-            <Text style={styles.infoText}>
-              MainFE 종료 이후에는 현재 앱 레포와 MainBE 계약이 기준입니다.
-            </Text>
-            <Text style={styles.infoText}>
-              버전 표기, 약관, 고객 문의 연결은 운영 정책 확정 후 추가합니다.
-            </Text>
-          </View>
-        </View>
-
-        <TouchableOpacity
-          activeOpacity={0.8}
-          disabled={isLoggingOut || !accessToken}
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
+        {/* Settings are rendered as a simple list so FE-style rows can expand without changing layout structure. */}
+        <OptionRow
+          label="푸시 알림"
+          rightSlot={
+            <TouchableOpacity
+              onPress={() => setPushNotification(prev => !prev)}
+              activeOpacity={0.7}
+              accessibilityRole="switch"
+              accessibilityState={{ checked: pushNotification }}
+            >
+              {pushNotification ? <ToggleOnIcon /> : <ToggleOffIcon />}
+            </TouchableOpacity>
+          }
+        />
+        <OptionRow label="유저 닉네임 변경" />
+        <OptionRow label="아바타 닉네임 변경" />
+        <OptionRow label="이용 약관" />
+        <OptionRow label="서비스 안내" />
+        <OptionRow
+          label={isLoggingOut ? "로그아웃 중..." : "로그아웃"}
+          danger
+          disabled={!hasHydrated || !accessToken || isLoggingOut}
           onPress={handleLogout}
-          style={[
-            styles.logoutButton,
-            (isLoggingOut || !accessToken) && styles.logoutButtonDisabled,
-          ]}
-        >
-          {isLoggingOut ? (
-            <View style={styles.logoutLoading}>
-              <ActivityIndicator size="small" color="#FFFFFF" />
-              <Text style={styles.logoutButtonText}>로그아웃 중...</Text>
-            </View>
-          ) : (
-            <Text style={styles.logoutButtonText}>로그아웃</Text>
-          )}
-        </TouchableOpacity>
+        />
+
+        <View style={styles.metaBlock}>
+          <Text style={styles.metaText}>{loginStatus}</Text>
+          <Text style={styles.metaText}>{userId ? `사용자 ID ${userId}` : "사용자 ID 없음"}</Text>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
+function OptionRow({
+  label,
+  rightSlot,
+  danger = false,
+  disabled = false,
+  onPress,
+}: {
+  label: string;
+  rightSlot?: ReactNode;
+  danger?: boolean;
+  disabled?: boolean;
+  onPress?: () => void;
+}) {
+  const content = (
+    // A shared row component keeps label-only, toggle, and action rows visually consistent.
+    <View style={styles.row}>
+      <Text
+        style={[
+          styles.label,
+          danger && styles.labelDanger,
+          disabled && styles.labelDisabled,
+        ]}
+      >
+        {label}
+      </Text>
+      {rightSlot ?? <RightIcon size={24} color="#171717" />}
+    </View>
+  );
+
+  if (!onPress && !rightSlot) {
+    return content;
+  }
+
+  return (
+    <TouchableOpacity onPress={onPress} disabled={disabled} activeOpacity={0.7}>
+      {content}
+    </TouchableOpacity>
+  );
+}
+
 const styles = StyleSheet.create({
-  safeArea: {
+  container: {
     flex: 1,
     backgroundColor: "#FFFFFF",
   },
   scrollView: {
     flex: 1,
-    backgroundColor: "#F9FAFB",
-  },
-  contentContainer: {
-    padding: 20,
-    gap: 20,
-  },
-  section: {
-    gap: 10,
-  },
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#111827",
-  },
-  card: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    padding: 16,
-    gap: 12,
+  },
+  content: {
+    paddingHorizontal: 20,
+    paddingTop: 4,
+    paddingBottom: 24,
   },
   row: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: 16,
+    paddingVertical: 16,
   },
   label: {
     fontSize: 14,
-    color: "#6B7280",
+    color: "#171717",
   },
-  value: {
-    flex: 1,
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#111827",
-    textAlign: "right",
+  labelDanger: {
+    color: "#EF4444",
   },
-  divider: {
-    height: 1,
-    backgroundColor: "#F3F4F6",
+  labelDisabled: {
+    color: "#D1D5DB",
   },
-  infoTitle: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#111827",
+  metaBlock: {
+    marginTop: 20,
+    gap: 6,
   },
-  infoText: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#4B5563",
-  },
-  logoutButton: {
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 14,
-    backgroundColor: "#DC2626",
-    paddingVertical: 16,
-    marginTop: 8,
-  },
-  logoutButtonDisabled: {
-    backgroundColor: "#D1D5DB",
-  },
-  logoutLoading: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  logoutButtonText: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#FFFFFF",
+  metaText: {
+    fontSize: 12,
+    color: "#9CA3AF",
   },
 });

@@ -62,6 +62,50 @@ export function RightIcon({ size = 24, color = "#171717" }: IconProps) {
   );
 }
 
+// FE settings and follow designs use simple stroke-based utility icons not covered by the old set.
+export function XmarkIcon({ size = 24, color = "#9CA3AF" }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M18 6L6 18"
+        stroke={color}
+        strokeWidth={1.5}
+        strokeLinecap="round"
+      />
+      <Path
+        d="M6 6L18 18"
+        stroke={color}
+        strokeWidth={1.5}
+        strokeLinecap="round"
+      />
+    </Svg>
+  );
+}
+
+export function ToggleOnIcon({ size = 36 }: IconProps) {
+  return (
+    <Svg width={size} height={(size * 20) / 36} viewBox="0 0 36 20" fill="none">
+      <Path
+        d="M10 1H26C30.9706 1 35 5.02944 35 10C35 14.9706 30.9706 19 26 19H10C5.02944 19 1 14.9706 1 10C1 5.02944 5.02944 1 10 1Z"
+        fill="#7DC960"
+      />
+      <Circle cx={26} cy={10} r={7} fill="#FFFFFF" />
+    </Svg>
+  );
+}
+
+export function ToggleOffIcon({ size = 36 }: IconProps) {
+  return (
+    <Svg width={size} height={(size * 20) / 36} viewBox="0 0 36 20" fill="none">
+      <Path
+        d="M10 1H26C30.9706 1 35 5.02944 35 10C35 14.9706 30.9706 19 26 19H10C5.02944 19 1 14.9706 1 10C1 5.02944 5.02944 1 10 1Z"
+        fill="#D1D5DB"
+      />
+      <Circle cx={10} cy={10} r={7} fill="#FFFFFF" />
+    </Svg>
+  );
+}
+
 // 하트 아이콘 (좋아요)
 export function HeartIcon({
   size = 24,

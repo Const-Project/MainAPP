@@ -9,13 +9,18 @@ type Props = {
 export default function ScreenHeader({ title, onBack }: Props) {
   return (
     <View style={styles.header}>
-      <TouchableOpacity
-        onPress={onBack}
-        activeOpacity={0.7}
-        style={styles.sideButton}
-      >
-        <LeftIcon size={24} color="#171717" />
-      </TouchableOpacity>
+      {/* Preserve title centering even on screens that do not expose a back action. */}
+      {onBack ? (
+        <TouchableOpacity
+          onPress={onBack}
+          activeOpacity={0.7}
+          style={styles.sideButton}
+        >
+          <LeftIcon size={24} color="#171717" />
+        </TouchableOpacity>
+      ) : (
+        <View style={styles.sideButton} />
+      )}
       <Text style={styles.title}>{title}</Text>
       <View style={styles.sideButton} />
     </View>

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -8,9 +9,9 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { RootStackScreenProps } from "@/navigation/types";
+import { XmarkIcon } from "@/assets/icons/CommonIcons";
 import ScreenHeader from "@/components/common/ScreenHeader";
 import StatusView from "@/components/common/StatusView";
-import UserCard from "@/components/follow/UserCard";
 import {
   useFollowers,
   useFollowing,
@@ -19,20 +20,19 @@ import {
 import useTokenStore from "@/stores/useTokenStore";
 
 type Props = RootStackScreenProps<"Follow">;
-type Tab = "following" | "followers";
+type Tab = "added" | "followed";
 
 export default function FollowScreen({ navigation }: Props) {
-  const [activeTab, setActiveTab] = useState<Tab>("following");
+  const [activeTab, setActiveTab] = useState<Tab>("added");
   const userId = useTokenStore(state => state.userId);
   const followingQuery = useFollowing(userId);
   const followersQuery = useFollowers(userId);
   const unfollowMutation = useUnfollowUser(userId);
 
-  const isLoading =
-    activeTab === "following" ? followingQuery.isLoading : followersQuery.isLoading;
-  const error = activeTab === "following" ? followingQuery.error : followersQuery.error;
+  const isLoading = activeTab === "added" ? followingQuery.isLoading : followersQuery.isLoading;
+  const error = activeTab === "added" ? followingQuery.error : followersQuery.error;
   const users =
-    activeTab === "following"
+    activeTab === "added"
       ? followingQuery.data ?? []
       : followersQuery.data ?? [];
 
@@ -46,7 +46,7 @@ export default function FollowScreen({ navigation }: Props) {
   };
 
   const handleRetry = () => {
-    if (activeTab === "following") {
+    if (activeTab === "added") {
       void followingQuery.refetch();
       return;
     }
@@ -58,24 +58,21 @@ export default function FollowScreen({ navigation }: Props) {
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
       <ScreenHeader title="내 친구" onBack={handleBack} />
 
+      {/* Tabs are renamed to match the app copy while still mapping to following/follower queries. */}
       <View style={styles.tabRow}>
         <TouchableOpacity
-          style={[styles.tabButton, activeTab === "following" && styles.tabButtonActive]}
-          onPress={() => setActiveTab("following")}
+          style={[styles.tabButton, activeTab === "added" && styles.tabButtonActive]}
+          onPress={() => setActiveTab("added")}
         >
-          <Text
-            style={[styles.tabText, activeTab === "following" && styles.tabTextActive]}
-          >
+          <Text style={[styles.tabText, activeTab === "added" && styles.tabTextActive]}>
             내가 추가한
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.tabButton, activeTab === "followers" && styles.tabButtonActive]}
-          onPress={() => setActiveTab("followers")}
+          style={[styles.tabButton, activeTab === "followed" && styles.tabButtonActive]}
+          onPress={() => setActiveTab("followed")}
         >
-          <Text
-            style={[styles.tabText, activeTab === "followers" && styles.tabTextActive]}
-          >
+          <Text style={[styles.tabText, activeTab === "followed" && styles.tabTextActive]}>
             나를 추가한
           </Text>
         </TouchableOpacity>
@@ -97,24 +94,39 @@ export default function FollowScreen({ navigation }: Props) {
         />
       ) : users.length === 0 ? (
         <StatusView
-          title={activeTab === "following" ? "추가한 친구가 없습니다." : "나를 추가한 친구가 없습니다."}
+          title={activeTab === "added" ? "추가한 친구가 없습니다." : "나를 추가한 친구가 없습니다."}
           description="팔로우 데이터가 준비되면 이 화면에서 바로 목록을 볼 수 있습니다."
         />
       ) : (
         <ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
           {users.map(user => (
-            <UserCard
-              key={user.userId}
-              user={user}
-              onPress={() => navigation.navigate("Profile", { userId: user.userId })}
-              actionLabel={activeTab === "following" ? "삭제" : undefined}
-              actionDisabled={unfollowMutation.isPending}
-              onActionPress={
-                activeTab === "following"
-                  ? () => void unfollowMutation.mutateAsync(user.userId)
-                  : undefined
-              }
-            />
+            // The custom row matches the FE design more closely than the previous generic card.
+            <View key={user.userId} style={styles.userRow}>
+              <TouchableOpacity
+                style={styles.userInfo}
+                activeOpacity={0.7}
+                onPress={() => navigation.navigate("Profile", { userId: user.userId })}
+              >
+                <View style={styles.avatarWrap}>
+                  {user.userImageUrl ? (
+                    <Image source={{ uri: user.userImageUrl }} style={styles.avatar} />
+                  ) : null}
+                </View>
+                <Text style={styles.username}>{user.username}</Text>
+              </TouchableOpacity>
+              {activeTab === "added" ? (
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  disabled={unfollowMutation.isPending}
+                  onPress={() => void unfollowMutation.mutateAsync(user.userId)}
+                  style={styles.removeButton}
+                >
+                  <XmarkIcon color={unfollowMutation.isPending ? "#D1D5DB" : "#9CA3AF"} />
+                </TouchableOpacity>
+              ) : (
+                <View style={styles.removeButton} />
+              )}
+            </View>
           ))}
         </ScrollView>
       )}
@@ -129,7 +141,7 @@ const styles = StyleSheet.create({
   },
   tabRow: {
     flexDirection: "row",
-    marginBottom: 4,
+    marginBottom: 24,
   },
   tabButton: {
     flex: 1,
@@ -139,7 +151,7 @@ const styles = StyleSheet.create({
     borderBottomColor: "transparent",
   },
   tabButtonActive: {
-    borderBottomColor: "#4CAF50",
+    borderBottomColor: "#7DC960",
   },
   tabText: {
     fontSize: 15,
@@ -147,9 +159,44 @@ const styles = StyleSheet.create({
   },
   tabTextActive: {
     color: "#171717",
-    fontWeight: "700",
+    fontWeight: "400",
   },
   list: {
     flex: 1,
+  },
+  userRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    backgroundColor: "#FFFFFF",
+  },
+  userInfo: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  avatarWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    overflow: "hidden",
+    backgroundColor: "#E5E7EB",
+  },
+  avatar: {
+    width: "100%",
+    height: "100%",
+  },
+  username: {
+    fontSize: 15,
+    color: "#171717",
+  },
+  removeButton: {
+    width: 24,
+    height: 24,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

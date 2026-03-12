@@ -35,7 +35,7 @@ export default function FeedScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      {/* 헤더 */}
+      {/* Header spacing is tuned to match the centered title layout from the FE design. */}
       <View style={styles.header}>
         <View style={styles.headerSpacer} />
         <Text style={styles.headerTitle}>둘러보기</Text>
@@ -48,7 +48,7 @@ export default function FeedScreen({ navigation }: Props) {
         </TouchableOpacity>
       </View>
 
-      {/* 둘러보기 사진 블록 */}
+      {/* Feed content remains unchanged; only the surrounding layout was tightened. */}
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
@@ -73,12 +73,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 12,
-    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingRight: 20,
+    paddingBottom: 12,
+    paddingLeft: 20,
+    marginBottom: 12,
   },
   headerSpacer: {
     width: 24,
-    marginLeft: 20,
   },
   headerTitle: {
     fontSize: 18,
@@ -86,7 +88,8 @@ const styles = StyleSheet.create({
     color: "#171717",
   },
   headerButton: {
-    paddingRight: 0,
+    width: 24,
+    alignItems: "center",
   },
   scrollView: {
     flex: 1,

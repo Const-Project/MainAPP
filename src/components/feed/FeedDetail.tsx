@@ -138,7 +138,8 @@ const styles = StyleSheet.create({
   },
   writerName: {
     fontSize: 14,
-    fontWeight: "500",
+    // Match the lighter author text weight from the current FE detail layout.
+    fontWeight: "400",
     color: "#171717",
   },
   createdAt: {
@@ -160,7 +161,8 @@ const styles = StyleSheet.create({
   content: {
     fontSize: 14,
     color: "#171717",
-    lineHeight: 22,
+    // Slightly tighter line height keeps multi-line posts closer to the FE proportions.
+    lineHeight: 20,
     marginBottom: 24,
   },
   actionBar: {
