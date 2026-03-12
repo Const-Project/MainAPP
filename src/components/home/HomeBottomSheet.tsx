@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import {
   Animated,
   PanResponder,
+  Pressable,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -65,13 +66,22 @@ export default function HomeBottomSheet({
       onPanResponderRelease: (_, gestureState) => {
         const movedUpEnough = gestureState.dy < -40;
         const movedDownEnough = gestureState.dy > 40;
-        const nextExpanded = movedUpEnough ? true : movedDownEnough ? false : !expanded ? false : true;
+        const flingUp = gestureState.vy < -0.45;
+        const flingDown = gestureState.vy > 0.45;
+        const nextExpanded =
+          movedUpEnough || flingUp
+            ? true
+            : movedDownEnough || flingDown
+              ? false
+              : expanded;
+
         if (!movedUpEnough && !movedDownEnough) {
           translateY.stopAnimation(value => {
-            onExpandedChange(value < DRAG_RANGE / 2);
+            onExpandedChange(flingUp ? true : flingDown ? false : value < DRAG_RANGE / 2);
           });
           return;
         }
+
         onExpandedChange(nextExpanded);
       },
       onPanResponderTerminate: () => {
@@ -115,13 +125,19 @@ export default function HomeBottomSheet({
 
   return (
     <View pointerEvents="box-none" style={styles.sheetOuter}>
+      {expanded ? <Pressable style={styles.sheetBackdrop} onPress={() => onExpandedChange(false)} /> : null}
+
       <Animated.View style={[styles.sheetWrap, { transform: [{ translateY }] }]}>
         <View style={styles.sheet}>
-          <View {...panResponder.panHandlers} style={styles.sheetDragArea}>
-            <View style={styles.sheetHandleButton}>
+          <Pressable
+            {...panResponder.panHandlers}
+            onPress={() => onExpandedChange(!expanded)}
+            style={styles.sheetDragArea}
+          >
+            <View pointerEvents="none" style={styles.sheetHandleButton}>
               <View style={styles.sheetHandle} />
             </View>
-            <View style={styles.sheetHeaderRow}>
+            <View pointerEvents="none" style={styles.sheetHeaderRow}>
               <Text style={styles.sheetTitle}>오늘의 미션</Text>
               <View style={styles.sheetChecks}>
                 {missionCards.map(card => (
@@ -129,7 +145,7 @@ export default function HomeBottomSheet({
                 ))}
               </View>
             </View>
-          </View>
+          </Pressable>
 
           <View style={styles.sheetContent}>
             {/*
@@ -209,6 +225,10 @@ const styles = StyleSheet.create({
   sheetOuter: {
     ...StyleSheet.absoluteFillObject,
     justifyContent: "flex-end",
+  },
+  sheetBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(12, 18, 14, 0.10)",
   },
   quickLink: {
     flex: 1,
