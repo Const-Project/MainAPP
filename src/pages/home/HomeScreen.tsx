@@ -112,7 +112,6 @@ export default function HomeScreen({ navigation }: Props) {
 
   return (
     <View style={styles.container}>
-      {/* Full-screen garden scenes follow the MainFE slide-per-plot structure. */}
       <PagerView
         key={`home-pager-${initialPage}`}
         style={styles.pager}
@@ -155,7 +154,7 @@ export default function HomeScreen({ navigation }: Props) {
 
       <HomeBottomSheet
         expanded={isSheetExpanded}
-        onToggle={() => setIsSheetExpanded(prev => !prev)}
+        onExpandedChange={setIsSheetExpanded}
         missions={todayMissions}
         panel={panel}
         currentLevel={userInfo?.level ?? 0}
@@ -174,7 +173,10 @@ export default function HomeScreen({ navigation }: Props) {
       <HomeEmotionModal
         visible={isEmotionModalOpen}
         onClose={() => setIsEmotionModalOpen(false)}
-        onAnswered={answer => setEmotionAnswerKind(answer)}
+        onAnswered={answer => {
+          setEmotionAnswerKind(answer);
+          setIsEmotionModalOpen(false);
+        }}
       />
       <HomeTrackingModal
         visible={isTrackingModalOpen}

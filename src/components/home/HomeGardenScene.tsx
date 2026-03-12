@@ -121,7 +121,6 @@ export default function HomeGardenScene({
       <View style={styles.sceneShade} />
 
       <View style={styles.sceneContent}>
-        {/* Slot header follows the FE layout: map affordance, centered slot title, empty spacer. */}
         <View style={styles.sceneHeader}>
           <TouchableOpacity activeOpacity={0.8} onPress={onPressMap} style={styles.mapButton}>
             <Image source={mapIcon} style={styles.mapIcon} resizeMode="contain" />
@@ -255,12 +254,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 24,
-    paddingBottom: 120,
+    paddingBottom: 168,
   },
   actionRail: {
     position: "absolute",
     right: 10,
-    bottom: 180,
+    bottom: 238,
     zIndex: 3,
     gap: 8,
   },
@@ -273,7 +272,7 @@ const styles = StyleSheet.create({
   lockedOverlay: {
     flex: 1,
     marginHorizontal: 24,
-    marginBottom: 120,
+    marginBottom: 168,
     borderRadius: 28,
     backgroundColor: "rgba(255,255,255,0.68)",
     justifyContent: "center",
@@ -315,6 +314,7 @@ const styles = StyleSheet.create({
     width: "100%",
     alignItems: "center",
     justifyContent: "center",
+    paddingBottom: 30,
   },
   emptyBubble: {
     marginBottom: 12,

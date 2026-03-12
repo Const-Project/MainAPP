@@ -1,11 +1,23 @@
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useEffect, useRef } from "react";
+import {
+  Animated,
+  PanResponder,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { RightIcon } from "@/assets/icons/CommonIcons";
 import { getMissionCompleted, type TodayMission } from "@/types/home/garden";
 import type { HomePanelPayload } from "@/types/home/panel";
 
+const COLLAPSED_HEIGHT = 196;
+const EXPANDED_HEIGHT = 430;
+const DRAG_RANGE = EXPANDED_HEIGHT - COLLAPSED_HEIGHT;
+
 export default function HomeBottomSheet({
   expanded,
-  onToggle,
+  onExpandedChange,
   missions,
   panel,
   currentLevel,
@@ -16,7 +28,7 @@ export default function HomeBottomSheet({
   onPressEmotionCheck,
 }: {
   expanded: boolean;
-  onToggle: () => void;
+  onExpandedChange: (next: boolean) => void;
   missions: TodayMission[];
   panel?: HomePanelPayload;
   currentLevel: number;
@@ -26,6 +38,48 @@ export default function HomeBottomSheet({
   onPressMission: (mission: TodayMission) => void;
   onPressEmotionCheck: () => void;
 }) {
+  const translateY = useRef(new Animated.Value(expanded ? 0 : DRAG_RANGE)).current;
+  const dragStart = useRef(DRAG_RANGE);
+
+  useEffect(() => {
+    Animated.spring(translateY, {
+      toValue: expanded ? 0 : DRAG_RANGE,
+      useNativeDriver: true,
+      tension: 90,
+      friction: 12,
+    }).start();
+  }, [expanded, translateY]);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dy) > 4,
+      onPanResponderGrant: () => {
+        translateY.stopAnimation(value => {
+          dragStart.current = value;
+        });
+      },
+      onPanResponderMove: (_, gestureState) => {
+        const next = Math.max(0, Math.min(DRAG_RANGE, dragStart.current + gestureState.dy));
+        translateY.setValue(next);
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        const movedUpEnough = gestureState.dy < -40;
+        const movedDownEnough = gestureState.dy > 40;
+        const nextExpanded = movedUpEnough ? true : movedDownEnough ? false : !expanded ? false : true;
+        if (!movedUpEnough && !movedDownEnough) {
+          translateY.stopAnimation(value => {
+            onExpandedChange(value < DRAG_RANGE / 2);
+          });
+          return;
+        }
+        onExpandedChange(nextExpanded);
+      },
+      onPanResponderTerminate: () => {
+        onExpandedChange(expanded);
+      },
+    })
+  ).current;
+
   const checkingMission = missions.find(mission => mission.missionType === "CHECKING");
   const diaryMission = missions.find(mission => mission.missionType === "DIARY");
   const quizMission = missions.find(mission => mission.missionType === "QUIZ");
@@ -36,99 +90,95 @@ export default function HomeBottomSheet({
   const missionCards: Array<{
     key: string;
     label: string;
-    mission?: TodayMission;
     checked: boolean;
     onPress: () => void;
   }> = [
     {
       key: "checking",
       label: "마음 건강 체크",
-      mission: checkingMission,
       checked: panel?.isCheckingCompleted ?? (checkingMission ? getMissionCompleted(checkingMission) : false),
       onPress: onPressEmotionCheck,
     },
     {
       key: "diary",
       label: "일기 쓰기",
-      mission: diaryMission,
       checked: panel?.isDairyCompleted ?? (diaryMission ? getMissionCompleted(diaryMission) : false),
       onPress: () => diaryMission && onPressMission(diaryMission),
     },
     {
       key: "quiz",
       label: "퀴즈 풀기",
-      mission: quizMission,
       checked: panel?.isQuizCompleted ?? (quizMission ? getMissionCompleted(quizMission) : false),
       onPress: () => quizMission && onPressMission(quizMission),
     },
   ];
 
   return (
-    <View style={[styles.sheetWrap, expanded ? styles.sheetWrapExpanded : styles.sheetWrapCollapsed]}>
-      <View style={styles.sheet}>
-        <TouchableOpacity activeOpacity={0.8} onPress={onToggle} style={styles.sheetHandleButton}>
-          <View style={styles.sheetHandle} />
-        </TouchableOpacity>
+    <View pointerEvents="box-none" style={styles.sheetOuter}>
+      <Animated.View style={[styles.sheetWrap, { transform: [{ translateY }] }]}>
+        <View style={styles.sheet}>
+          <View {...panResponder.panHandlers} style={styles.sheetHandleButton}>
+            <View style={styles.sheetHandle} />
+          </View>
 
-        <View style={styles.sheetContent}>
-          <View style={styles.sheetHeaderRow}>
-            <Text style={styles.sheetTitle}>오늘의 미션</Text>
-            <View style={styles.sheetChecks}>
+          <View style={styles.sheetContent}>
+            <View style={styles.sheetHeaderRow}>
+              <Text style={styles.sheetTitle}>오늘의 미션</Text>
+              <View style={styles.sheetChecks}>
+                {missionCards.map(card => (
+                  <MissionStatusDot key={card.key} checked={card.checked} />
+                ))}
+              </View>
+            </View>
+
+            <View style={styles.sheetMissionList}>
               {missionCards.map(card => (
-                <MissionStatusDot key={card.key} checked={card.checked} />
+                <TouchableOpacity
+                  key={card.key}
+                  activeOpacity={0.8}
+                  onPress={card.onPress}
+                  style={[styles.sheetMissionCard, card.checked && styles.sheetMissionCardDone]}
+                >
+                  <Text style={[styles.sheetMissionLabel, card.checked && styles.sheetMissionLabelDone]}>
+                    {card.label}
+                  </Text>
+                  {card.checked ? <MissionStatusDot checked /> : <RightIcon size={22} color="#9CA3AF" />}
+                </TouchableOpacity>
               ))}
             </View>
-          </View>
 
-          <View style={styles.sheetMissionList}>
-            {missionCards.map(card => (
-              <TouchableOpacity
-                key={card.key}
-                activeOpacity={0.8}
-                onPress={card.onPress}
-                style={[styles.sheetMissionCard, card.checked && styles.sheetMissionCardDone]}
-              >
-                <Text style={[styles.sheetMissionLabel, card.checked && styles.sheetMissionLabelDone]}>
-                  {card.label}
-                </Text>
-                {card.checked ? <MissionStatusDot checked /> : <RightIcon size={22} color="#9CA3AF" />}
-              </TouchableOpacity>
-            ))}
-          </View>
+            <View style={styles.sheetDivider} />
 
-          {expanded ? (
-            <>
-              <View style={styles.sheetDivider} />
-
-              <View style={styles.wishHeader}>
-                <View style={styles.wishTitleRow}>
-                  <Text style={styles.wishTreeIcon}>T</Text>
-                  <Text style={styles.wishTitle}>소망 나무</Text>
+            <View style={styles.wishHeader}>
+              <View style={styles.wishTitleRow}>
+                <View style={styles.wishTreeBadge}>
+                  <Text style={styles.wishTreeBadgeText}>T</Text>
                 </View>
-                <Text style={styles.wishBody}>
-                  {progressPercent >= 100
-                    ? "지금 바로 새로운 텃밭을 열 수 있어요!"
-                    : `소망 나무 다음 성장까지 ${100 - progressPercent}%가 남았어요!`}
-                </Text>
+                <Text style={styles.wishTitle}>소망 나무</Text>
               </View>
+              <Text style={styles.wishBody}>
+                {progressPercent >= 100
+                  ? "지금 바로 새로운 텃밭을 열 수 있어요!"
+                  : `소망 나무 다음 성장까지 ${100 - progressPercent}%가 남았어요!`}
+              </Text>
+            </View>
 
-              <View style={styles.wishStageRow}>
-                <Text style={styles.wishCurrent}>{currentStage}</Text>
-                <Text style={styles.wishNext}>{nextStage}</Text>
-              </View>
-              <View style={styles.progressTrack}>
-                <View style={[styles.progressFill, { width: `${progressPercent}%` }]} />
-              </View>
+            <View style={styles.wishStageRow}>
+              <Text style={styles.wishCurrent}>{currentStage}</Text>
+              <Text style={styles.wishNext}>{nextStage}</Text>
+            </View>
+            <View style={styles.progressTrack}>
+              <View style={[styles.progressFill, { width: `${progressPercent}%` }]} />
+            </View>
 
-              <View style={styles.quickLinksRow}>
-                <QuickLink label="키움일지" onPress={onPressLog} />
-                <QuickLink label="둘러보기" onPress={onPressFeed} />
-                <QuickLink label="텃밭 해금" onPress={onPressUnlockGarden} />
-              </View>
-            </>
-          ) : null}
+            <View style={styles.quickLinksRow}>
+              <QuickLink label="키움일지" onPress={onPressLog} />
+              <QuickLink label="둘러보기" onPress={onPressFeed} />
+              <QuickLink label="텃밭 해금" onPress={onPressUnlockGarden} />
+            </View>
+          </View>
         </View>
-      </View>
+      </Animated.View>
     </View>
   );
 }
@@ -150,6 +200,10 @@ function MissionStatusDot({ checked }: { checked: boolean }) {
 }
 
 const styles = StyleSheet.create({
+  sheetOuter: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: "flex-end",
+  },
   quickLink: {
     flex: 1,
     borderRadius: 14,
@@ -163,20 +217,11 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   sheetWrap: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    alignItems: "center",
-  },
-  sheetWrapCollapsed: {
-    height: 196,
-  },
-  sheetWrapExpanded: {
-    height: 430,
+    height: EXPANDED_HEIGHT,
   },
   sheet: {
     width: "100%",
+    height: EXPANDED_HEIGHT,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     borderTopWidth: 1,
@@ -194,6 +239,7 @@ const styles = StyleSheet.create({
   sheetHandleButton: {
     alignItems: "center",
     paddingBottom: 8,
+    paddingTop: 4,
   },
   sheetHandle: {
     width: 40,
@@ -276,8 +322,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
   },
-  wishTreeIcon: {
-    fontSize: 24,
+  wishTreeBadge: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: "#EEF7E8",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  wishTreeBadgeText: {
+    color: "#59A647",
+    fontSize: 13,
+    fontWeight: "700",
   },
   wishTitle: {
     fontSize: 18,
