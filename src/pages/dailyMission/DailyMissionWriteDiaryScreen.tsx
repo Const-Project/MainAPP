@@ -1,50 +1,134 @@
 import { useState } from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import * as ImagePicker from "expo-image-picker";
+import {
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useQueryClient } from "@tanstack/react-query";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ScreenHeader from "@/components/common/ScreenHeader";
-import StatusView from "@/components/common/StatusView";
 import ImageAttachmentCard from "@/components/dailyMission/ImageAttachmentCard";
 import RegistrationFooter from "@/components/registration/RegistrationFooter";
 import RegistrationTextField from "@/components/registration/RegistrationTextField";
-import { useWriteDiarySubmit } from "@/hooks/mission/useMissionApi";
+import {
+  useWriteDiaryImageUpload,
+  useWriteDiarySubmit,
+} from "@/hooks/mission/useMissionApi";
 import type { RootStackScreenProps } from "@/navigation/types";
 
 type Props = RootStackScreenProps<"DailyMissionWriteDiary">;
 
 export default function DailyMissionWriteDiaryScreen({ navigation }: Props) {
+  const queryClient = useQueryClient();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [isPublic, setIsPublic] = useState(false);
-  const [imageNoticeVisible, setImageNoticeVisible] = useState(false);
+  const [permissionRequested, setPermissionRequested] = useState(false);
+  const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
+  const [uploadedImage, setUploadedImage] = useState<{
+    imageId: number;
+    imageUrl: string;
+  } | null>(null);
+  const uploadDiaryImage = useWriteDiaryImageUpload();
   const submitDiary = useWriteDiarySubmit();
+
+  const goHome = () =>
+    navigation.reset({
+      index: 0,
+      routes: [{ name: "Main", params: { screen: "Home" } }],
+    });
+
+  const handlePickImage = async () => {
+    if (!permissionRequested) {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      setPermissionRequested(true);
+
+      if (!permission.granted) {
+        Alert.alert("권한 필요", "일기 이미지를 선택하려면 사진 접근 권한이 필요합니다.");
+        return;
+      }
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      quality: 0.9,
+    });
+
+    if (result.canceled || !result.assets[0]) {
+      return;
+    }
+
+    const asset = result.assets[0];
+    const fileName = asset.fileName ?? `diary-${Date.now()}.jpg`;
+    const fileType = asset.mimeType ?? "image/jpeg";
+    const formData = new FormData();
+
+    formData.append("file", {
+      uri: asset.uri,
+      name: fileName,
+      type: fileType,
+    } as never);
+
+    setSelectedImageUri(asset.uri);
+    setUploadedImage(null);
+
+    try {
+      const response = await uploadDiaryImage.mutateAsync(formData);
+      setUploadedImage(response.result);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "이미지 업로드에 실패했습니다.";
+      Alert.alert("업로드 실패", message);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!title.trim() || !content.trim()) {
       return;
     }
 
-    // Image picker dependency is not available in the current app.
-    // Keep the API interface wired but block the actual submit until an image upload path exists.
-    setImageNoticeVisible(true);
+    if (!uploadedImage) {
+      Alert.alert("이미지 필요", "먼저 이미지를 업로드해주세요.");
+      return;
+    }
+
+    try {
+      await submitDiary.mutateAsync({
+        title: title.trim(),
+        content: content.trim(),
+        isPublic,
+        imageId: uploadedImage.imageId,
+        imageUrl: uploadedImage.imageUrl,
+      });
+
+      /*
+       * 한글 주석:
+       * 일기 작성 완료 후 홈과 로그에서 최신 상태를 바로 보이게 하려면
+       * 관련 쿼리를 함께 갱신하고 홈으로 복귀시키는 흐름이 필요하다.
+       */
+      await queryClient.invalidateQueries({ queryKey: ["home-summary"] });
+      await queryClient.invalidateQueries({ queryKey: ["calendar"] });
+      await queryClient.invalidateQueries({ queryKey: ["diaries"] });
+      goHome();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "일기 저장에 실패했습니다.";
+      Alert.alert("일기 저장 실패", message);
+    }
   };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
-      <ScreenHeader
-        title="일기 쓰기"
-        onBack={() =>
-          navigation.reset({
-            index: 0,
-            routes: [{ name: "Main", params: { screen: "Home" } }],
-          })
-        }
-      />
+      <ScreenHeader title="일기 쓰기" onBack={goHome} />
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.headerBlock}>
           <Text style={styles.title}>오늘의 식물 이야기를 적어주세요.</Text>
           <Text style={styles.subtitle}>
-            텍스트 입력과 공개 여부 구조는 구현했고, 이미지 선택은 라이브러리 확정 후 연결합니다.
+            제목과 내용을 적고 이미지를 첨부한 뒤 공개 여부를 선택해 제출할 수 있습니다.
           </Text>
         </View>
 
@@ -63,8 +147,15 @@ export default function DailyMissionWriteDiaryScreen({ navigation }: Props) {
         />
 
         <ImageAttachmentCard
-          onPress={() => setImageNoticeVisible(true)}
-          helperText="`POST /api/v1/diaries/images` 인터페이스는 추가했지만, 현재 프로젝트에는 이미지 선택 라이브러리가 없습니다."
+          imageUrl={selectedImageUri}
+          onPress={() => void handlePickImage()}
+          helperText={
+            uploadDiaryImage.isPending
+              ? "이미지를 업로드하는 중입니다. 잠시만 기다려주세요."
+              : uploadedImage
+                ? "이미지 업로드가 완료되었습니다."
+                : undefined
+          }
         />
 
         <View style={styles.visibilityCard}>
@@ -104,35 +195,16 @@ export default function DailyMissionWriteDiaryScreen({ navigation }: Props) {
             </TouchableOpacity>
           </View>
         </View>
-
-        {imageNoticeVisible ? (
-          <StatusView
-            title="이미지 선택 경로가 아직 없습니다."
-            description="RN 이미지 선택 라이브러리 또는 카메라 연동이 추가되면 `/api/v1/diaries/images` 업로드와 `/api/v1/diaries` 제출을 바로 연결할 수 있습니다."
-          />
-        ) : null}
-
-        {submitDiary.isError ? (
-          <View style={styles.errorCard}>
-            <Text style={styles.errorTitle}>일기 저장에 실패했습니다.</Text>
-            <Text style={styles.errorDescription}>
-              현재는 이미지 업로드 경로가 없어 실제 제출까지 이어지지 않습니다.
-            </Text>
-          </View>
-        ) : null}
       </ScrollView>
 
       <RegistrationFooter
         secondaryLabel="홈으로"
-        onSecondaryPress={() =>
-          navigation.reset({
-            index: 0,
-            routes: [{ name: "Main", params: { screen: "Home" } }],
-          })
-        }
+        onSecondaryPress={goHome}
         primaryLabel="제출하기"
         onPrimaryPress={() => void handleSubmit()}
-        primaryDisabled={!title.trim() || !content.trim() || submitDiary.isPending}
+        primaryDisabled={
+          !title.trim() || !content.trim() || !uploadedImage || uploadDiaryImage.isPending || submitDiary.isPending
+        }
         primaryLoading={submitDiary.isPending}
       />
     </SafeAreaView>
@@ -198,21 +270,5 @@ const styles = StyleSheet.create({
   },
   visibilityButtonTextActive: {
     color: "#1F5C27",
-  },
-  errorCard: {
-    borderRadius: 16,
-    padding: 16,
-    backgroundColor: "#FEF2F2",
-    gap: 6,
-  },
-  errorTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#B91C1C",
-  },
-  errorDescription: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#7F1D1D",
   },
 });
