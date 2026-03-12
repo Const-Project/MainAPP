@@ -33,6 +33,7 @@ export interface UserInfo {
   currentExp: number;
   requiredExpForNextLevel: number;
   unreadNotificationCount: number;
+  lastAccessedSlotNumber?: number;
 }
 
 export interface HomeSummaryPayload {

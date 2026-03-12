@@ -5,9 +5,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import HomeBottomSheet from "@/components/home/HomeBottomSheet";
 import HomeEmotionModal from "@/components/home/HomeEmotionModal";
 import HomeGardenScene from "@/components/home/HomeGardenScene";
+import HomeMapModal from "@/components/home/HomeMapModal";
 import HomeTrackingModal from "@/components/home/HomeTrackingModal";
 import StatusView from "@/components/common/StatusView";
-import useHomeApi from "@/hooks/home/useHomeApi";
+import useHomeApi, { useHomePanelApi } from "@/hooks/home/useHomeApi";
 import { useDailySurvey } from "@/hooks/mission/useMissionApi";
 import type { MainTabScreenProps } from "@/navigation/types";
 import { useHomeSummaryStore } from "@/stores/useHomeSummaryStore";
@@ -37,12 +38,14 @@ type SceneItem = {
 
 export default function HomeScreen({ navigation }: Props) {
   const { data, error, isLoading, refetch } = useHomeApi();
+  const { data: panel } = useHomePanelApi();
   const surveyQuery = useDailySurvey();
   const { user, gardens, missions, hydrate } = useHomeSummaryStore();
   const [currentPage, setCurrentPage] = useState(0);
   const [isSheetExpanded, setIsSheetExpanded] = useState(false);
   const [isEmotionModalOpen, setIsEmotionModalOpen] = useState(false);
   const [isTrackingModalOpen, setIsTrackingModalOpen] = useState(false);
+  const [isMapModalOpen, setIsMapModalOpen] = useState(false);
   const [emotionAnswerKind, setEmotionAnswerKind] = useState<SurveyAnswerKind | null>(null);
 
   useEffect(() => {
@@ -54,8 +57,9 @@ export default function HomeScreen({ navigation }: Props) {
       isLoading,
       hasData: Boolean(data),
       hasError: Boolean(error),
+      hasPanel: Boolean(panel),
     });
-  }, [data, error, isLoading]);
+  }, [data, error, isLoading, panel]);
 
   useEffect(() => {
     if (data) {
@@ -71,8 +75,8 @@ export default function HomeScreen({ navigation }: Props) {
   const gardenSummaries = data?.gardenSummaries ?? gardens;
   const todayMissions = data?.todayMissions ?? missions;
   const isEmotionAnswered = surveyQuery.data?.isAnswered ?? false;
+  const initialPage = Math.max(0, Math.min(3, (userInfo?.lastAccessedSlotNumber ?? 1) - 1));
 
-  // Home summary payload is normalized into four fixed garden scenes for the pager UI.
   const scenes = useMemo<SceneItem[]>(
     () =>
       backgrounds.map((background, index) => ({
@@ -110,8 +114,9 @@ export default function HomeScreen({ navigation }: Props) {
     <View style={styles.container}>
       {/* Full-screen garden scenes follow the MainFE slide-per-plot structure. */}
       <PagerView
+        key={`home-pager-${initialPage}`}
         style={styles.pager}
-        initialPage={0}
+        initialPage={initialPage}
         onPageSelected={event => {
           const position = event.nativeEvent.position;
           setCurrentPage(position);
@@ -127,6 +132,7 @@ export default function HomeScreen({ navigation }: Props) {
               garden={scene.garden}
               isEmotionAnswered={isEmotionAnswered}
               answeredKind={emotionAnswerKind}
+              onPressMap={() => setIsMapModalOpen(true)}
               onPressTracking={() => setIsTrackingModalOpen(true)}
               onPressEmotion={() => setIsEmotionModalOpen(true)}
               onPressUnlock={() => navigation.navigate("UnlockGarden")}
@@ -136,7 +142,6 @@ export default function HomeScreen({ navigation }: Props) {
         ))}
       </PagerView>
 
-      {/* Pagination stays above the scene while the bottom sheet overlays from below. */}
       <SafeAreaView pointerEvents="box-none" style={styles.overlaySafeArea} edges={["top"]}>
         <View style={styles.pagination}>
           {scenes.map((scene, index) => (
@@ -148,13 +153,11 @@ export default function HomeScreen({ navigation }: Props) {
         </View>
       </SafeAreaView>
 
-      {/* Mission and wish-tree summary are grouped into a single collapsible bottom sheet. */}
       <HomeBottomSheet
         expanded={isSheetExpanded}
         onToggle={() => setIsSheetExpanded(prev => !prev)}
         missions={todayMissions}
-        currentExp={userInfo?.currentExp ?? 0}
-        requiredExp={userInfo?.requiredExpForNextLevel ?? 100}
+        panel={panel}
         currentLevel={userInfo?.level ?? 0}
         onPressLog={() => navigation.navigate("Log")}
         onPressFeed={() => navigation.navigate("Feed")}
@@ -176,6 +179,11 @@ export default function HomeScreen({ navigation }: Props) {
       <HomeTrackingModal
         visible={isTrackingModalOpen}
         onClose={() => setIsTrackingModalOpen(false)}
+      />
+      <HomeMapModal
+        visible={isMapModalOpen}
+        slotNumber={currentPage + 1}
+        onClose={() => setIsMapModalOpen(false)}
       />
     </View>
   );

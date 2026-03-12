@@ -1,14 +1,13 @@
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { RightIcon } from "@/assets/icons/CommonIcons";
-import { getLevelIcon } from "@/assets/icons/LevelIcons";
 import { getMissionCompleted, type TodayMission } from "@/types/home/garden";
+import type { HomePanelPayload } from "@/types/home/panel";
 
 export default function HomeBottomSheet({
   expanded,
   onToggle,
   missions,
-  currentExp,
-  requiredExp,
+  panel,
   currentLevel,
   onPressLog,
   onPressFeed,
@@ -19,8 +18,7 @@ export default function HomeBottomSheet({
   expanded: boolean;
   onToggle: () => void;
   missions: TodayMission[];
-  currentExp: number;
-  requiredExp: number;
+  panel?: HomePanelPayload;
   currentLevel: number;
   onPressLog: () => void;
   onPressFeed: () => void;
@@ -28,35 +26,39 @@ export default function HomeBottomSheet({
   onPressMission: (mission: TodayMission) => void;
   onPressEmotionCheck: () => void;
 }) {
-  const progressPercent =
-    requiredExp > 0 ? Math.min(100, Math.round((currentExp / requiredExp) * 100)) : 0;
-  const LevelIcon = getLevelIcon(Math.max(0, Math.min(3, currentLevel)));
   const checkingMission = missions.find(mission => mission.missionType === "CHECKING");
   const diaryMission = missions.find(mission => mission.missionType === "DIARY");
   const quizMission = missions.find(mission => mission.missionType === "QUIZ");
+  const progressPercent = panel?.wishTree.progressPercent ?? 0;
+  const currentStage = panel?.wishTree.currentStage ?? `LV.${currentLevel}`;
+  const nextStage = panel?.wishTree.nextStage ?? `LV.${currentLevel + 1}`;
 
   const missionCards: Array<{
     key: string;
     label: string;
     mission?: TodayMission;
+    checked: boolean;
     onPress: () => void;
   }> = [
     {
       key: "checking",
       label: "마음 건강 체크",
       mission: checkingMission,
+      checked: panel?.isCheckingCompleted ?? (checkingMission ? getMissionCompleted(checkingMission) : false),
       onPress: onPressEmotionCheck,
     },
     {
       key: "diary",
       label: "일기 쓰기",
       mission: diaryMission,
+      checked: panel?.isDairyCompleted ?? (diaryMission ? getMissionCompleted(diaryMission) : false),
       onPress: () => diaryMission && onPressMission(diaryMission),
     },
     {
       key: "quiz",
       label: "퀴즈 풀기",
       mission: quizMission,
+      checked: panel?.isQuizCompleted ?? (quizMission ? getMissionCompleted(quizMission) : false),
       onPress: () => quizMission && onPressMission(quizMission),
     },
   ];
@@ -73,31 +75,25 @@ export default function HomeBottomSheet({
             <Text style={styles.sheetTitle}>오늘의 미션</Text>
             <View style={styles.sheetChecks}>
               {missionCards.map(card => (
-                <MissionStatusDot
-                  key={card.key}
-                  checked={card.mission ? getMissionCompleted(card.mission) : false}
-                />
+                <MissionStatusDot key={card.key} checked={card.checked} />
               ))}
             </View>
           </View>
 
           <View style={styles.sheetMissionList}>
-            {missionCards.map(card => {
-              const checked = card.mission ? getMissionCompleted(card.mission) : false;
-              return (
-                <TouchableOpacity
-                  key={card.key}
-                  activeOpacity={0.8}
-                  onPress={card.onPress}
-                  style={[styles.sheetMissionCard, checked && styles.sheetMissionCardDone]}
-                >
-                  <Text style={[styles.sheetMissionLabel, checked && styles.sheetMissionLabelDone]}>
-                    {card.label}
-                  </Text>
-                  {checked ? <MissionStatusDot checked /> : <RightIcon size={22} color="#9CA3AF" />}
-                </TouchableOpacity>
-              );
-            })}
+            {missionCards.map(card => (
+              <TouchableOpacity
+                key={card.key}
+                activeOpacity={0.8}
+                onPress={card.onPress}
+                style={[styles.sheetMissionCard, card.checked && styles.sheetMissionCardDone]}
+              >
+                <Text style={[styles.sheetMissionLabel, card.checked && styles.sheetMissionLabelDone]}>
+                  {card.label}
+                </Text>
+                {card.checked ? <MissionStatusDot checked /> : <RightIcon size={22} color="#9CA3AF" />}
+              </TouchableOpacity>
+            ))}
           </View>
 
           {expanded ? (
@@ -106,7 +102,7 @@ export default function HomeBottomSheet({
 
               <View style={styles.wishHeader}>
                 <View style={styles.wishTitleRow}>
-                  <LevelIcon size={30} />
+                  <Text style={styles.wishTreeIcon}>T</Text>
                   <Text style={styles.wishTitle}>소망 나무</Text>
                 </View>
                 <Text style={styles.wishBody}>
@@ -117,8 +113,8 @@ export default function HomeBottomSheet({
               </View>
 
               <View style={styles.wishStageRow}>
-                <Text style={styles.wishCurrent}>LV.{currentLevel}</Text>
-                <Text style={styles.wishNext}>LV.{currentLevel + 1}</Text>
+                <Text style={styles.wishCurrent}>{currentStage}</Text>
+                <Text style={styles.wishNext}>{nextStage}</Text>
               </View>
               <View style={styles.progressTrack}>
                 <View style={[styles.progressFill, { width: `${progressPercent}%` }]} />
@@ -278,7 +274,10 @@ const styles = StyleSheet.create({
   wishTitleRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: 6,
+  },
+  wishTreeIcon: {
+    fontSize: 24,
   },
   wishTitle: {
     fontSize: 18,

@@ -32,6 +32,7 @@ type Props = {
   garden: GardenSummary | null;
   isEmotionAnswered: boolean;
   answeredKind: SurveyAnswerKind | null;
+  onPressMap: () => void;
   onPressTracking: () => void;
   onPressEmotion: () => void;
   onPressUnlock: () => void;
@@ -45,6 +46,7 @@ export default function HomeGardenScene({
   garden,
   isEmotionAnswered,
   answeredKind,
+  onPressMap,
   onPressTracking,
   onPressEmotion,
   onPressUnlock,
@@ -121,7 +123,7 @@ export default function HomeGardenScene({
       <View style={styles.sceneContent}>
         {/* Slot header follows the FE layout: map affordance, centered slot title, empty spacer. */}
         <View style={styles.sceneHeader}>
-          <TouchableOpacity activeOpacity={0.8} onPress={onPressTracking} style={styles.mapButton}>
+          <TouchableOpacity activeOpacity={0.8} onPress={onPressMap} style={styles.mapButton}>
             <Image source={mapIcon} style={styles.mapIcon} resizeMode="contain" />
           </TouchableOpacity>
           <Text style={styles.sceneTitle}>{title ?? `${userName ?? "나풀나풀"}의 정원`}</Text>
