@@ -11,6 +11,7 @@ import StatusView from "@/components/common/StatusView";
 import useHomeApi, { useHomePanelApi } from "@/hooks/home/useHomeApi";
 import { useDailySurvey } from "@/hooks/mission/useMissionApi";
 import type { MainTabScreenProps } from "@/navigation/types";
+import { useEmotionSurveyStore, getEmotionSurveyCooldownActive } from "@/stores/useEmotionSurveyStore";
 import { useHomeSummaryStore } from "@/stores/useHomeSummaryStore";
 import {
   type GardenSummary,
@@ -41,6 +42,12 @@ export default function HomeScreen({ navigation }: Props) {
   const { data: panel } = useHomePanelApi();
   const surveyQuery = useDailySurvey();
   const { user, gardens, missions, hydrate } = useHomeSummaryStore();
+  const {
+    lastAnsweredAt,
+    lastAnswerKind,
+    markAnswered,
+    resetIfExpired,
+  } = useEmotionSurveyStore();
   const [currentPage, setCurrentPage] = useState(0);
   const [isSheetExpanded, setIsSheetExpanded] = useState(false);
   const [isEmotionModalOpen, setIsEmotionModalOpen] = useState(false);
@@ -51,6 +58,10 @@ export default function HomeScreen({ navigation }: Props) {
   useEffect(() => {
     debugScreenMounted("HomeScreen");
   }, []);
+
+  useEffect(() => {
+    resetIfExpired();
+  }, [lastAnsweredAt, resetIfExpired]);
 
   useEffect(() => {
     debugLog("HomeScreen", "query state changed", {
@@ -74,7 +85,15 @@ export default function HomeScreen({ navigation }: Props) {
   const userInfo = data?.userInfo ?? user;
   const gardenSummaries = data?.gardenSummaries ?? gardens;
   const todayMissions = data?.todayMissions ?? missions;
-  const isEmotionAnswered = surveyQuery.data?.isAnswered ?? false;
+  const isEmotionCooldownActive = getEmotionSurveyCooldownActive(lastAnsweredAt);
+
+  /*
+   * 한글 주석:
+   * 홈 말풍선은 서버 응답과 별개로, 홈에서 방금 답한 직후 상태도 바로 반영해야 한다.
+   * 로컬 24시간 완료 상태를 함께 보아야 버튼이 다시 나타나는 깜빡임을 막을 수 있다.
+   */
+  const isEmotionAnswered = (surveyQuery.data?.isAnswered ?? false) || isEmotionCooldownActive;
+  const answeredKind = emotionAnswerKind ?? lastAnswerKind;
   const initialPage = Math.max(0, Math.min(3, (userInfo?.lastAccessedSlotNumber ?? 1) - 1));
 
   const scenes = useMemo<SceneItem[]>(
@@ -130,7 +149,7 @@ export default function HomeScreen({ navigation }: Props) {
               userName={userInfo?.username}
               garden={scene.garden}
               isEmotionAnswered={isEmotionAnswered}
-              answeredKind={emotionAnswerKind}
+              answeredKind={answeredKind}
               onPressMap={() => setIsMapModalOpen(true)}
               onPressTracking={() => setIsTrackingModalOpen(true)}
               onPressEmotion={() => setIsEmotionModalOpen(true)}
@@ -175,6 +194,7 @@ export default function HomeScreen({ navigation }: Props) {
         onClose={() => setIsEmotionModalOpen(false)}
         onAnswered={answer => {
           setEmotionAnswerKind(answer);
+          markAnswered(answer);
           setIsEmotionModalOpen(false);
         }}
       />

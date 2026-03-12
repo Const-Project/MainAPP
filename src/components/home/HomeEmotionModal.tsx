@@ -1,4 +1,5 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import type { AxiosError } from "axios";
 import {
   Image,
   Modal,
@@ -9,6 +10,7 @@ import {
   View,
 } from "react-native";
 import { useAnswerDailySurvey, useDailySurvey } from "@/hooks/mission/useMissionApi";
+import type { ErrorResponse } from "@/types/common/apiResponse.type";
 import {
   SURVEY_ANSWER_VALUE_MAP,
   type SurveyAnswerKind,
@@ -33,6 +35,7 @@ export default function HomeEmotionModal({
 }) {
   const { data, isLoading } = useDailySurvey();
   const answerMutation = useAnswerDailySurvey();
+  const [submitErrorMessage, setSubmitErrorMessage] = useState<string | null>(null);
 
   const answerOptions = useMemo(
     () =>
@@ -45,18 +48,44 @@ export default function HomeEmotionModal({
   );
 
   const handleAnswer = async (answer: SurveyAnswerKind) => {
-    if (!data?.id || data.isAnswered || answerMutation.isPending) {
+    if (!data?.id || answerMutation.isPending) {
+      return;
+    }
+
+    if (data.isAnswered) {
       onAnswered(answer);
       onClose();
       return;
     }
 
-    await answerMutation.mutateAsync({
-      questionId: data.id,
-      answer: SURVEY_ANSWER_VALUE_MAP[answer],
-    });
-    onAnswered(answer);
-    onClose();
+    setSubmitErrorMessage(null);
+
+    try {
+      await answerMutation.mutateAsync({
+        questionId: data.id,
+        answer: SURVEY_ANSWER_VALUE_MAP[answer],
+      });
+
+      /*
+       * 한글 주석:
+       * 홈 팝업은 제출 직후 닫히고 말풍선 상태도 즉시 바뀌어야 한다.
+       * 서버 재조회 완료를 기다리지 않고 성공 시점을 홈 화면에 바로 전달한다.
+       */
+      onAnswered(answer);
+      onClose();
+    } catch (error) {
+      const axiosError = error as AxiosError<ErrorResponse>;
+      const status = axiosError.response?.status;
+      const serverMessage = axiosError.response?.data?.message;
+
+      if (status === 409) {
+        onAnswered(answer);
+        onClose();
+        return;
+      }
+
+      setSubmitErrorMessage(serverMessage ?? "답변 저장에 실패했습니다. 잠시 후 다시 시도해주세요.");
+    }
   };
 
   const isAnswered = data?.isAnswered ?? false;
@@ -96,6 +125,10 @@ export default function HomeEmotionModal({
               ))}
             </View>
           )}
+
+          {submitErrorMessage ? (
+            <Text style={styles.errorText}>{submitErrorMessage}</Text>
+          ) : null}
         </View>
       </View>
     </Modal>
@@ -170,4 +203,12 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "700",
   },
+  errorText: {
+    width: "100%",
+    fontSize: 13,
+    lineHeight: 18,
+    color: "#B91C1C",
+    textAlign: "center",
+  },
 });
+
