@@ -13,3 +13,13 @@ export const getHomeSummary = async (): ApiResponse<HomeSummaryPayload> => {
     result: normalizeHomeSummaryPayload(res.data.result),
   };
 };
+
+export const postGardenSunlight = async (gardenId: number) => {
+  const res = await api.post(`/api/v1/gardens/${gardenId}/sunlight`);
+  return res.data;
+};
+
+export const postGardenMyWater = async (gardenId: number) => {
+  const res = await api.post(`/api/v1/gardens/${gardenId}/mywater`);
+  return res.data;
+};
