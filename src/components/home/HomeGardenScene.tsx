@@ -162,7 +162,9 @@ export default function HomeGardenScene({
                   style={styles.actionButton}
                   disabled={sunlightMutation.isPending}
                 >
-                  <SunIcon width={64} height={64} opacity={sunlightMutation.isPending ? 0.55 : 1} />
+                  <View style={styles.actionIconWrap}>
+                    <SunIcon width={56} height={56} opacity={sunlightMutation.isPending ? 0.55 : 1} />
+                  </View>
                 </TouchableOpacity>
                 <TouchableOpacity
                   activeOpacity={0.85}
@@ -170,7 +172,9 @@ export default function HomeGardenScene({
                   style={styles.actionButton}
                   disabled={waterMutation.isPending}
                 >
-                  <WaterIcon width={64} height={64} opacity={waterMutation.isPending ? 0.55 : 1} />
+                  <View style={styles.actionIconWrap}>
+                    <WaterIcon width={56} height={56} opacity={waterMutation.isPending ? 0.55 : 1} />
+                  </View>
                 </TouchableOpacity>
               </View>
             ) : null}
@@ -267,6 +271,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   actionButton: {
+    width: 64,
+    height: 64,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  actionIconWrap: {
     width: 64,
     height: 64,
     alignItems: "center",
