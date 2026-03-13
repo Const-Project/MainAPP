@@ -61,6 +61,7 @@ export default function DailyMissionCheckingScreen({ navigation }: Props) {
 
       await queryClient.refetchQueries({ queryKey: ["daily-survey"], type: "all" });
       await queryClient.refetchQueries({ queryKey: ["home-summary"], type: "all" });
+      await queryClient.refetchQueries({ queryKey: ["home-panel"], type: "all" });
       setAnsweredLocally(true);
     } catch (error) {
       const axiosError = error as AxiosError<ErrorResponse>;
@@ -72,6 +73,7 @@ export default function DailyMissionCheckingScreen({ navigation }: Props) {
         setSubmitErrorMessage("이미 오늘의 질문에 답변했습니다. 홈으로 돌아가 완료 상태를 확인해주세요.");
         await queryClient.refetchQueries({ queryKey: ["daily-survey"], type: "all" });
         await queryClient.refetchQueries({ queryKey: ["home-summary"], type: "all" });
+        await queryClient.refetchQueries({ queryKey: ["home-panel"], type: "all" });
         return;
       }
 
