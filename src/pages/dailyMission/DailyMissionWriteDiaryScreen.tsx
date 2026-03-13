@@ -1,5 +1,5 @@
-import { useState } from "react";
 import * as ImagePicker from "expo-image-picker";
+
 import {
   Alert,
   ScrollView,
@@ -8,17 +8,19 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useQueryClient } from "@tanstack/react-query";
-import { SafeAreaView } from "react-native-safe-area-context";
-import ScreenHeader from "@/components/common/ScreenHeader";
-import ImageAttachmentCard from "@/components/dailyMission/ImageAttachmentCard";
-import RegistrationFooter from "@/components/registration/RegistrationFooter";
-import RegistrationTextField from "@/components/registration/RegistrationTextField";
 import {
   useWriteDiaryImageUpload,
   useWriteDiarySubmit,
 } from "@/hooks/mission/useMissionApi";
+
+import ImageAttachmentCard from "@/components/dailyMission/ImageAttachmentCard";
+import RegistrationFooter from "@/components/registration/RegistrationFooter";
+import RegistrationTextField from "@/components/registration/RegistrationTextField";
 import type { RootStackScreenProps } from "@/navigation/types";
+import { SafeAreaView } from "react-native-safe-area-context";
+import ScreenHeader from "@/components/common/ScreenHeader";
+import { useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 
 type Props = RootStackScreenProps<"DailyMissionWriteDiary">;
 
@@ -44,11 +46,15 @@ export default function DailyMissionWriteDiaryScreen({ navigation }: Props) {
 
   const handlePickImage = async () => {
     if (!permissionRequested) {
-      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      const permission =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
       setPermissionRequested(true);
 
       if (!permission.granted) {
-        Alert.alert("권한 필요", "일기 이미지를 선택하려면 사진 접근 권한이 필요합니다.");
+        Alert.alert(
+          "권한 필요",
+          "일기 이미지를 선택하려면 사진 접근 권한이 필요합니다."
+        );
         return;
       }
     }
@@ -81,7 +87,8 @@ export default function DailyMissionWriteDiaryScreen({ navigation }: Props) {
       const response = await uploadDiaryImage.mutateAsync(formData);
       setUploadedImage(response.result);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "이미지 업로드에 실패했습니다.";
+      const message =
+        error instanceof Error ? error.message : "이미지 업로드에 실패했습니다.";
       Alert.alert("업로드 실패", message);
     }
   };
@@ -115,37 +122,38 @@ export default function DailyMissionWriteDiaryScreen({ navigation }: Props) {
       await queryClient.invalidateQueries({ queryKey: ["diaries"] });
       goHome();
     } catch (error) {
-      const message = error instanceof Error ? error.message : "일기 저장에 실패했습니다.";
+      const message =
+        error instanceof Error ? error.message : "일기 저장에 실패했습니다.";
       Alert.alert("일기 저장 실패", message);
     }
   };
+
+  const today = new Date().toLocaleDateString("ko-KR", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <ScreenHeader title="일기 쓰기" onBack={goHome} />
 
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.headerBlock}>
-          <Text style={styles.title}>오늘의 식물 이야기를 적어주세요.</Text>
-          <Text style={styles.subtitle}>
-            제목과 내용을 적고 이미지를 첨부한 뒤 공개 여부를 선택해 제출할 수 있습니다.
-          </Text>
-        </View>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* 날짜 */}
+        <Text style={styles.dateText}>{today}</Text>
 
+        {/* 제목 입력 (라벨 없이 큰 플레이스홀더) */}
         <RegistrationTextField
-          label="제목"
+          label=""
           value={title}
           onChangeText={setTitle}
           placeholder="제목을 입력하세요"
         />
-        <RegistrationTextField
-          label="내용"
-          value={content}
-          onChangeText={setContent}
-          placeholder="오늘 식물에게 있었던 일을 적어주세요"
-          multiline
-        />
 
+        {/* 이미지 첨부 */}
         <ImageAttachmentCard
           imageUrl={selectedImageUri}
           onPress={() => void handlePickImage()}
@@ -158,52 +166,74 @@ export default function DailyMissionWriteDiaryScreen({ navigation }: Props) {
           }
         />
 
-        <View style={styles.visibilityCard}>
-          <Text style={styles.visibilityTitle}>공개 설정</Text>
-          <View style={styles.visibilityButtons}>
-            <TouchableOpacity
+        {/* 내용 입력 */}
+        <RegistrationTextField
+          label=""
+          value={content}
+          onChangeText={setContent}
+          placeholder="오늘 식물에게 있었던 일을 적어주세요"
+          multiline
+        />
+
+        {/* 공개 설정 — 라디오 버튼 스타일 */}
+        <View style={styles.visibilityRow}>
+          <TouchableOpacity
+            style={styles.visibilityOption}
+            onPress={() => setIsPublic(false)}
+            activeOpacity={0.7}
+          >
+            <View
               style={[
-                styles.visibilityButton,
-                !isPublic ? styles.visibilityButtonActive : null,
+                styles.radioCircle,
+                !isPublic ? styles.radioCircleSelected : null,
               ]}
-              onPress={() => setIsPublic(false)}
             >
-              <Text
-                style={[
-                  styles.visibilityButtonText,
-                  !isPublic ? styles.visibilityButtonTextActive : null,
-                ]}
-              >
-                비공개
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
+              {!isPublic && <Text style={styles.radioCheck}>✓</Text>}
+            </View>
+            <Text
               style={[
-                styles.visibilityButton,
-                isPublic ? styles.visibilityButtonActive : null,
+                styles.visibilityLabel,
+                !isPublic ? styles.visibilityLabelSelected : null,
               ]}
-              onPress={() => setIsPublic(true)}
             >
-              <Text
-                style={[
-                  styles.visibilityButtonText,
-                  isPublic ? styles.visibilityButtonTextActive : null,
-                ]}
-              >
-                공개
-              </Text>
-            </TouchableOpacity>
-          </View>
+              나만 보기
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.visibilityOption}
+            onPress={() => setIsPublic(true)}
+            activeOpacity={0.7}
+          >
+            <View
+              style={[
+                styles.radioCircle,
+                isPublic ? styles.radioCircleSelected : null,
+              ]}
+            >
+              {isPublic && <Text style={styles.radioCheck}>✓</Text>}
+            </View>
+            <Text
+              style={[
+                styles.visibilityLabel,
+                isPublic ? styles.visibilityLabelSelected : null,
+              ]}
+            >
+              공개하기
+            </Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
 
       <RegistrationFooter
-        secondaryLabel="홈으로"
-        onSecondaryPress={goHome}
-        primaryLabel="제출하기"
+        primaryLabel="등록하기"
         onPrimaryPress={() => void handleSubmit()}
         primaryDisabled={
-          !title.trim() || !content.trim() || !uploadedImage || uploadDiaryImage.isPending || submitDiary.isPending
+          !title.trim() ||
+          !content.trim() ||
+          !uploadedImage ||
+          uploadDiaryImage.isPending ||
+          submitDiary.isPending
         }
         primaryLoading={submitDiary.isPending}
       />
@@ -217,58 +247,60 @@ const styles = StyleSheet.create({
     backgroundColor: "#F7F8F4",
   },
   content: {
-    padding: 20,
-    gap: 18,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 32,
+    gap: 20,
   },
-  headerBlock: {
+  dateText: {
+    fontSize: 13,
+    color: "#9CA3AF",
+    fontWeight: "400",
+    letterSpacing: 0.2,
+  },
+
+  // 공개 설정 — 라디오 버튼
+  visibilityRow: {
+    flexDirection: "row",
+    gap: 24,
+    paddingTop: 4,
+    paddingBottom: 8,
+  },
+  visibilityOption: {
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
-  title: {
-    fontSize: 24,
-    lineHeight: 32,
-    fontWeight: "700",
-    color: "#171717",
-  },
-  subtitle: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#6B7280",
-  },
-  visibilityCard: {
-    borderRadius: 16,
-    padding: 16,
-    backgroundColor: "#FFFFFF",
-    gap: 12,
-  },
-  visibilityTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#171717",
-  },
-  visibilityButtons: {
-    flexDirection: "row",
-    gap: 10,
-  },
-  visibilityButton: {
-    flex: 1,
-    minHeight: 44,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#D1D5DB",
+  radioCircle: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 1.5,
+    borderColor: "#C4C9C0",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "transparent",
   },
-  visibilityButtonActive: {
+  radioCircleSelected: {
     borderColor: "#2F7D32",
-    backgroundColor: "#EDF7ED",
+    backgroundColor: "#2F7D32",
   },
-  visibilityButtonText: {
-    fontSize: 14,
+  radioCheck: {
+    fontSize: 12,
+    color: "#FFFFFF",
     fontWeight: "700",
-    color: "#4B5563",
+    lineHeight: 14,
   },
-  visibilityButtonTextActive: {
-    color: "#1F5C27",
+  visibilityLabel: {
+    fontSize: 14,
+    color: "#9CA3AF",
+    fontWeight: "400",
+  },
+  visibilityLabelSelected: {
+    color: "#171717",
+    fontWeight: "500",
   },
 });
+
+
+
