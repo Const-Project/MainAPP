@@ -3,6 +3,7 @@ import {
   Animated,
   PanResponder,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -13,7 +14,7 @@ import { getMissionCompleted, type TodayMission } from "@/types/home/garden";
 import type { HomePanelPayload } from "@/types/home/panel";
 
 const COLLAPSED_HEIGHT = 104;
-const EXPANDED_HEIGHT = 430;
+const EXPANDED_HEIGHT = 580;
 const DRAG_RANGE = EXPANDED_HEIGHT - COLLAPSED_HEIGHT;
 
 export default function HomeBottomSheet({
@@ -152,7 +153,12 @@ export default function HomeBottomSheet({
             </View>
           </Pressable>
 
-          <View style={styles.sheetContent}>
+          <ScrollView
+            style={styles.sheetContent}
+            showsVerticalScrollIndicator={false}
+            scrollEnabled={expanded}
+            keyboardShouldPersistTaps="handled"
+          >
             {/*
              * 한글 주석:
              * 접힌 상태에서는 오늘의 미션 제목과 진행도만 위로 남기고,
@@ -220,7 +226,7 @@ export default function HomeBottomSheet({
               <QuickLink label="둘러보기" onPress={onPressFeed} />
               <QuickLink label="텃밭 해금" onPress={onPressUnlockGarden} />
             </View>
-          </View>
+          </ScrollView>
         </View>
       </Animated.View>
     </View>
@@ -278,6 +284,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 6,
     paddingBottom: 30,
+    overflow: "hidden",
     shadowColor: "#000000",
     shadowOpacity: 0.12,
     shadowRadius: 10,
