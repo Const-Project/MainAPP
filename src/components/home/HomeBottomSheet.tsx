@@ -101,12 +101,14 @@ export default function HomeBottomSheet({
     key: string;
     label: string;
     checked: boolean;
+    disabled?: boolean;
     onPress: () => void;
   }> = [
     {
       key: "checking",
       label: "마음 건강 체크",
       checked: panel?.isCheckingCompleted ?? (checkingMission ? getMissionCompleted(checkingMission) : false),
+      disabled: panel?.isCheckingCompleted ?? (checkingMission ? getMissionCompleted(checkingMission) : false),
       onPress: onPressEmotionCheck,
     },
     {
@@ -157,8 +159,9 @@ export default function HomeBottomSheet({
               {missionCards.map(card => (
                 <TouchableOpacity
                   key={card.key}
-                  activeOpacity={0.8}
+                  activeOpacity={card.disabled ? 1 : 0.8}
                   onPress={card.onPress}
+                  disabled={card.disabled}
                   style={[styles.sheetMissionCard, card.checked && styles.sheetMissionCardDone]}
                 >
                   <Text style={[styles.sheetMissionLabel, card.checked && styles.sheetMissionLabelDone]}>
