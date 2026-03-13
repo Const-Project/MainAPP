@@ -96,6 +96,9 @@ export default function HomeBottomSheet({
   const progressPercent = panel?.wishTree.progressPercent ?? 0;
   const currentStage = panel?.wishTree.currentStage ?? `LV.${currentLevel}`;
   const nextStage = panel?.wishTree.nextStage ?? `LV.${currentLevel + 1}`;
+  const currentGrowthPoints = panel?.wishTree.currentPoints ?? 0;
+  const requiredGrowthPoints = panel?.wishTree.requiredPointsForNextStage ?? 0;
+  const remainingGrowthPoints = Math.max(requiredGrowthPoints - currentGrowthPoints, 0);
 
   const missionCards: Array<{
     key: string;
@@ -194,6 +197,22 @@ export default function HomeBottomSheet({
             </View>
             <View style={styles.progressTrack}>
               <View style={[styles.progressFill, { width: `${progressPercent}%` }]} />
+            </View>
+            <View style={styles.progressMetaRow}>
+              <View style={styles.progressMetaCard}>
+                <Text style={styles.progressMetaLabel}>현재 성장</Text>
+                <Text style={styles.progressMetaValue}>
+                  {currentGrowthPoints}
+                  <Text style={styles.progressMetaUnit}> / {requiredGrowthPoints}</Text>
+                </Text>
+              </View>
+              <View style={styles.progressMetaCard}>
+                <Text style={styles.progressMetaLabel}>다음 성장까지</Text>
+                <Text style={styles.progressMetaValue}>
+                  {remainingGrowthPoints}
+                  <Text style={styles.progressMetaUnit}> 남음</Text>
+                </Text>
+              </View>
             </View>
 
             <View style={styles.quickLinksRow}>
@@ -397,15 +416,45 @@ const styles = StyleSheet.create({
   },
   progressTrack: {
     marginTop: 10,
-    height: 8,
+    height: 12,
     borderRadius: 999,
-    backgroundColor: "#E5E7EB",
+    backgroundColor: "#E7EEE1",
     overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#D6E4CD",
   },
   progressFill: {
     height: "100%",
     borderRadius: 999,
-    backgroundColor: "#7DC960",
+    backgroundColor: "#6FBE57",
+  },
+  progressMetaRow: {
+    marginTop: 12,
+    flexDirection: "row",
+    gap: 8,
+  },
+  progressMetaCard: {
+    flex: 1,
+    borderRadius: 12,
+    backgroundColor: "#F5F9F0",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 4,
+  },
+  progressMetaLabel: {
+    fontSize: 12,
+    color: "#6B7280",
+    fontWeight: "600",
+  },
+  progressMetaValue: {
+    fontSize: 16,
+    color: "#2E5134",
+    fontWeight: "700",
+  },
+  progressMetaUnit: {
+    fontSize: 13,
+    color: "#6B7280",
+    fontWeight: "600",
   },
   quickLinksRow: {
     marginTop: 18,
