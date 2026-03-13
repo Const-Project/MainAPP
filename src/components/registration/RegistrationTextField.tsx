@@ -19,14 +19,18 @@ export default function RegistrationTextField({
 }: Props) {
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>{label}</Text>
+      {label ? <Text style={styles.label}>{label}</Text> : null}
       <TextInput
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor="#9CA3AF"
+        placeholderTextColor="#CCCCCC"
         multiline={multiline}
-        style={[styles.input, multiline ? styles.multiline : null]}
+        style={[
+          styles.input,
+          multiline ? styles.multiline : styles.singleLine,
+          label ? null : styles.titleInput,
+        ]}
         textAlignVertical={multiline ? "top" : "center"}
       />
       {helperText ? <Text style={styles.helperText}>{helperText}</Text> : null}
@@ -36,27 +40,37 @@ export default function RegistrationTextField({
 
 const styles = StyleSheet.create({
   container: {
-    gap: 8,
+    gap: 2,
   },
   label: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#374151",
+    fontSize: 12,
+    fontWeight: "500",
+    color: "#9CA3AF",
+    letterSpacing: 0.2,
+    marginBottom: 2,
   },
   input: {
-    minHeight: 52,
-    borderWidth: 1,
-    borderColor: "#D1D5DB",
-    borderRadius: 14,
-    paddingHorizontal: 14,
     fontSize: 15,
     color: "#171717",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "transparent",
+    paddingHorizontal: 0,
+    paddingVertical: 10,
+  },
+  titleInput: {
+    fontSize: 26,
+    fontWeight: "400",
+    letterSpacing: -0.3,
+    paddingVertical: 6,
+  },
+  singleLine: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "#E0E0E0",
   },
   multiline: {
-    minHeight: 110,
-    paddingTop: 14,
-    paddingBottom: 14,
+    minHeight: 80,
+    lineHeight: 24,
+    fontSize: 15,
+    color: "#374151",
   },
   helperText: {
     fontSize: 12,

@@ -15,28 +15,27 @@ export default function ImageAttachmentCard({
 }: Props) {
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>이미지 첨부</Text>
       <TouchableOpacity
-        style={[styles.card, disabled ? styles.cardDisabled : null]}
-        activeOpacity={0.85}
+        style={[styles.imageArea, disabled ? styles.imageAreaDisabled : null]}
+        activeOpacity={0.9}
         disabled={disabled}
         onPress={onPress}
       >
         {imageUrl ? (
-          <Image source={{ uri: imageUrl }} style={styles.previewImage} resizeMode="cover" />
+          <Image
+            source={{ uri: imageUrl }}
+            style={styles.previewImage}
+            resizeMode="cover"
+          />
         ) : (
           <View style={styles.placeholderBox}>
-            <Text style={styles.placeholderPlus}>+</Text>
+            <Text style={styles.cameraIcon}>📷</Text>
+            <Text style={styles.placeholderText}>화분을 예쁘게 가꾸고</Text>
+            <Text style={styles.placeholderText}>
+              친구들에게 멋진 식물을 자랑해보아요!
+            </Text>
           </View>
         )}
-        <View style={styles.textBlock}>
-          <Text style={styles.title}>{imageUrl ? "선택한 이미지" : "이미지를 선택해주세요"}</Text>
-          <Text style={styles.description}>
-            {imageUrl
-              ? "다시 누르면 다른 이미지로 바꿀 수 있습니다."
-              : "사진첩에서 일기에 첨부할 이미지를 고를 수 있습니다."}
-          </Text>
-        </View>
       </TouchableOpacity>
       {helperText ? <Text style={styles.helperText}>{helperText}</Text> : null}
     </View>
@@ -47,61 +46,40 @@ const styles = StyleSheet.create({
   container: {
     gap: 8,
   },
-  label: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#374151",
+  imageArea: {
+    width: "100%",
+    borderRadius: 16,
+    overflow: "hidden",
+    backgroundColor: "#EDEDED",
   },
-  card: {
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "#D1D5DB",
-    padding: 16,
-    gap: 14,
-    backgroundColor: "#FFFFFF",
-  },
-  cardDisabled: {
-    backgroundColor: "#F9FAFB",
+  imageAreaDisabled: {
+    opacity: 0.6,
   },
   previewImage: {
     width: "100%",
-    height: 180,
-    borderRadius: 16,
-    backgroundColor: "#E5E7EB",
+    height: 260,
   },
   placeholderBox: {
-    width: "100%",
-    height: 180,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderStyle: "dashed",
-    borderColor: "#D1D5DB",
-    backgroundColor: "#F9FAFB",
+    height: 260,
     alignItems: "center",
     justifyContent: "center",
+    gap: 8,
   },
-  placeholderPlus: {
-    fontSize: 34,
-    lineHeight: 36,
-    color: "#9CA3AF",
-    fontWeight: "400",
+  cameraIcon: {
+    fontSize: 32,
+    marginBottom: 4,
+    opacity: 0.45,
   },
-  textBlock: {
-    gap: 6,
-  },
-  title: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#171717",
-  },
-  description: {
+  placeholderText: {
     fontSize: 13,
-    lineHeight: 18,
-    color: "#6B7280",
+    color: "#9CA3AF",
+    lineHeight: 20,
+    textAlign: "center",
   },
   helperText: {
     fontSize: 12,
     lineHeight: 18,
     color: "#92400E",
+    paddingHorizontal: 4,
   },
 });
