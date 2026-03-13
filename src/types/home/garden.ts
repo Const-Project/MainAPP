@@ -40,6 +40,7 @@ export interface HomeSummaryPayload {
   userInfo: UserInfo;
   gardenSummaries: GardenSummary[];
   todayMissions: TodayMission[];
+  todayDiaryId?: number | null;
 }
 
 export const getGardenLocked = (garden: GardenSummary) =>

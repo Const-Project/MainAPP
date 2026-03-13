@@ -42,7 +42,7 @@ export default function HomeScreen({ navigation }: Props) {
   const { data, error, isLoading, refetch } = useHomeApi();
   const { data: panel } = useHomePanelApi();
   const surveyQuery = useDailySurvey();
-  const { user, gardens, missions, hydrate } = useHomeSummaryStore();
+  const { user, gardens, missions, todayDiaryId, hydrate } = useHomeSummaryStore();
   const {
     lastAnsweredAt,
     lastAnswerKind,
@@ -86,6 +86,7 @@ export default function HomeScreen({ navigation }: Props) {
   const userInfo = data?.userInfo ?? user;
   const gardenSummaries = data?.gardenSummaries ?? gardens;
   const todayMissions = data?.todayMissions ?? missions;
+  const latestTodayDiaryId = data?.todayDiaryId ?? todayDiaryId;
   const isEmotionCooldownActive = getEmotionSurveyCooldownActive(lastAnsweredAt);
 
   const scenes = useMemo<SceneItem[]>(
@@ -196,9 +197,19 @@ export default function HomeScreen({ navigation }: Props) {
           onPressFeed={() => navigation.navigate("Feed")}
           onPressUnlockGarden={() => navigation.navigate("UnlockGarden")}
           onPressMission={mission => {
+            /*
+             * 한글 주석:
+             * 완료된 일기 미션은 다시 작성 화면으로 보내지 않고,
+             * 오늘 방금 작성한 일기 상세로 연결해야 결과 확인 흐름이 자연스럽다.
+             */
+            if (mission.missionType === "DIARY" && mission.isCompleted && latestTodayDiaryId) {
+              navigation.navigate("LogDetail", { id: latestTodayDiaryId });
+              return;
+            }
+
             const routeName = getMissionRouteName(mission);
             if (routeName) {
-              navigation.navigate(routeName);
+              navigation.navigate(routeName as never);
             }
           }}
           onPressEmotionCheck={() => setIsEmotionModalOpen(true)}
@@ -283,3 +294,4 @@ const styles = StyleSheet.create({
     backgroundColor: "#F4F7F0",
   },
 });
+
