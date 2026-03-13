@@ -13,6 +13,7 @@ export default function HomeAvatarStage({
   isWatering,
   isEmotionAnswered,
   answeredKind,
+  unreadNotificationCount = 0,
   onPressEmotion,
   onPressBird,
 }: {
@@ -20,6 +21,7 @@ export default function HomeAvatarStage({
   isWatering: boolean;
   isEmotionAnswered: boolean;
   answeredKind: SurveyAnswerKind | null;
+  unreadNotificationCount?: number;
   onPressEmotion: () => void;
   onPressBird: () => void;
 }) {
@@ -84,6 +86,13 @@ export default function HomeAvatarStage({
         </View>
 
         <Pressable onPress={onPressBird} style={styles.birdButton}>
+          {unreadNotificationCount > 0 ? (
+            <View style={styles.notificationBadge}>
+              <Text style={styles.notificationBadgeText}>
+                {unreadNotificationCount > 99 ? "99+" : unreadNotificationCount}
+              </Text>
+            </View>
+          ) : null}
           <Image source={birdImage} style={styles.birdImage} resizeMode="contain" />
         </Pressable>
       </View>
@@ -201,6 +210,24 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 48,
     bottom: 18,
+  },
+  notificationBadge: {
+    position: "absolute",
+    right: 2,
+    top: -4,
+    minWidth: 22,
+    height: 22,
+    borderRadius: 999,
+    paddingHorizontal: 6,
+    backgroundColor: "#EF4444",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 2,
+  },
+  notificationBadgeText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#FFFFFF",
   },
   birdImage: {
     width: 84,
