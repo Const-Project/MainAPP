@@ -5,6 +5,7 @@ import {
   type HomeSummaryPayload,
 } from "@/types/home/garden";
 import type { HomePanelPayload } from "@/types/home/panel";
+import type { TrackingReportPayload } from "@/types/home/tracking";
 
 export const getHomeSummary = async (): ApiResponse<HomeSummaryPayload> => {
   const res = await api.get("/api/v1/home");
@@ -17,6 +18,11 @@ export const getHomeSummary = async (): ApiResponse<HomeSummaryPayload> => {
 
 export const getHomePanel = async (): ApiResponse<HomePanelPayload> => {
   const res = await api.get("/api/v1/home/panel");
+  return res.data;
+};
+
+export const getTrackingReport = async (): ApiResponse<TrackingReportPayload> => {
+  const res = await api.get("/api/v1/tracking/report");
   return res.data;
 };
 

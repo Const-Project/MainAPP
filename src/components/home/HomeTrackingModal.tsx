@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Image,
   Modal,
@@ -8,18 +8,31 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import type { TrackingReportPayload } from "@/types/home/tracking";
 
 const trackingImage = require("@/assets/images/tracking.webp");
 const characterImage = require("@/assets/images/char.webp");
 
 export default function HomeTrackingModal({
   visible,
+  report,
   onClose,
 }: {
   visible: boolean;
+  report: TrackingReportPayload | null;
   onClose: () => void;
 }) {
   const [liked, setLiked] = useState(true);
+
+  useEffect(() => {
+    if (visible) {
+      setLiked(true);
+    }
+  }, [visible]);
+
+  if (!report) {
+    return null;
+  }
 
   return (
     <Modal transparent animationType="fade" visible={visible} onRequestClose={onClose}>
@@ -31,7 +44,9 @@ export default function HomeTrackingModal({
             <>
               <Image source={trackingImage} style={styles.trackingImage} resizeMode="contain" />
               <Text style={styles.body}>
-                2주동안 12일 식물을 키우셨습니다!{"\n"}열심히 노력하셨군요{"\n"}앞으로도 같이 열심히 키워봐요!
+                2주동안 {report.praiseDayCount}일 물과 햇빛을 모두 챙기셨어요!{"\n"}
+                열심히 돌봐주셨군요{"\n"}
+                앞으로도 같이 잘 키워봐요!
               </Text>
               <TouchableOpacity style={styles.secondaryButton} onPress={() => setLiked(false)}>
                 <Text style={styles.secondaryButtonText}>좋아요</Text>
@@ -40,9 +55,7 @@ export default function HomeTrackingModal({
           ) : (
             <>
               <Image source={characterImage} style={styles.characterImage} resizeMode="contain" />
-              <Text style={styles.body}>
-                힘든 순간도 결국 지나갑니다.{"\n"}마음도 한결 가벼워질 날이 올 거에요!{"\n"}그때까지 제가 함께하겠습니다.
-              </Text>
+              <Text style={styles.body}>{report.message}</Text>
               <TouchableOpacity style={styles.primaryButton} onPress={onClose}>
                 <Text style={styles.primaryButtonText}>고마워요</Text>
               </TouchableOpacity>

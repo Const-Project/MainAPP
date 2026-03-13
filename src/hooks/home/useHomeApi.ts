@@ -3,12 +3,14 @@ import type { AxiosError } from "axios";
 import {
   getHomePanel,
   getHomeSummary,
+  getTrackingReport,
   postGardenMyWater,
   postGardenSunlight,
 } from "@/apis/home/homeApi";
 import type { GlobalResponse } from "@/types/common/apiResponse.type";
 import type { HomeSummaryPayload } from "@/types/home/garden";
 import type { HomePanelPayload } from "@/types/home/panel";
+import type { TrackingReportPayload } from "@/types/home/tracking";
 
 export const useHomeApi = () =>
   useQuery<
@@ -28,6 +30,11 @@ export const useHomePanelApi = () =>
     queryFn: getHomePanel,
     select: data => data.result,
     refetchOnMount: "always",
+  });
+
+export const useTrackingReport = () =>
+  useMutation<GlobalResponse<TrackingReportPayload>, AxiosError>({
+    mutationFn: getTrackingReport,
   });
 
 export const useGardenSunlightAction = () => {

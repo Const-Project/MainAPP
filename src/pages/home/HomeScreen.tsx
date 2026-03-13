@@ -8,7 +8,7 @@ import HomeGardenScene from "@/components/home/HomeGardenScene";
 import HomeMapModal from "@/components/home/HomeMapModal";
 import HomeTrackingModal from "@/components/home/HomeTrackingModal";
 import StatusView from "@/components/common/StatusView";
-import useHomeApi, { useHomePanelApi } from "@/hooks/home/useHomeApi";
+import useHomeApi, { useHomePanelApi, useTrackingReport } from "@/hooks/home/useHomeApi";
 import { useDailySurvey } from "@/hooks/mission/useMissionApi";
 import type { MainTabScreenProps } from "@/navigation/types";
 import { useEmotionSurveyStore, getEmotionSurveyCooldownActive } from "@/stores/useEmotionSurveyStore";
@@ -19,6 +19,7 @@ import {
   type HomeMissionType,
   type TodayMission,
 } from "@/types/home/garden";
+import type { TrackingReportPayload } from "@/types/home/tracking";
 import type { SurveyAnswerKind } from "@/types/missions";
 import { debugLog, debugScreenMounted } from "@/utils/debug";
 
@@ -42,6 +43,7 @@ export default function HomeScreen({ navigation }: Props) {
   const { data, error, isLoading, refetch } = useHomeApi();
   const { data: panel } = useHomePanelApi();
   const surveyQuery = useDailySurvey();
+  const trackingReport = useTrackingReport();
   const { user, gardens, missions, todayDiaryId, hydrate } = useHomeSummaryStore();
   const {
     lastAnsweredAt,
@@ -55,6 +57,7 @@ export default function HomeScreen({ navigation }: Props) {
   const [isTrackingModalOpen, setIsTrackingModalOpen] = useState(false);
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
   const [emotionAnswerKind, setEmotionAnswerKind] = useState<SurveyAnswerKind | null>(null);
+  const [trackingReportData, setTrackingReportData] = useState<TrackingReportPayload | null>(null);
 
   useEffect(() => {
     debugScreenMounted("HomeScreen");
@@ -123,6 +126,22 @@ export default function HomeScreen({ navigation }: Props) {
     setCurrentPage(initialPage);
   }, [initialPage]);
 
+  const handlePressTracking = async () => {
+    const response = await trackingReport.mutateAsync();
+
+    /*
+     * 한글 주석:
+     * 1차 조건은 백엔드가 계산한 14일 완수 일수(praiseDayCount)를 그대로 사용한다.
+     * 최근 14일 동안 물과 햇빛을 모두 준 날이 14일일 때만 비둘기 리포트를 연다.
+     */
+    if (response.result.praiseDayCount < 14) {
+      return;
+    }
+
+    setTrackingReportData(response.result);
+    setIsTrackingModalOpen(true);
+  };
+
   if (isLoading && gardenSummaries.length === 0) {
     return (
       <SafeAreaView style={styles.loadingContainer} edges={["top"]}>
@@ -166,7 +185,7 @@ export default function HomeScreen({ navigation }: Props) {
               isEmotionAnswered={isEmotionAnswered}
               answeredKind={answeredKind}
               onPressMap={() => setIsMapModalOpen(true)}
-              onPressTracking={() => setIsTrackingModalOpen(true)}
+              onPressTracking={() => void handlePressTracking()}
               onPressEmotion={() => setIsEmotionModalOpen(true)}
               onPressUnlock={() => navigation.navigate("UnlockGarden")}
               onPressEmpty={() => navigation.navigate("RegistrationAvatar")}
@@ -224,6 +243,7 @@ export default function HomeScreen({ navigation }: Props) {
       />
       <HomeTrackingModal
         visible={isTrackingModalOpen}
+        report={trackingReportData}
         onClose={() => setIsTrackingModalOpen(false)}
       />
       <HomeMapModal
@@ -291,4 +311,3 @@ const styles = StyleSheet.create({
     backgroundColor: "#F4F7F0",
   },
 });
-
