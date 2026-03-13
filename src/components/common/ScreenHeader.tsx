@@ -1,5 +1,4 @@
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { LeftIcon } from "@/assets/icons/CommonIcons";
 
 type Props = {
   title: string;
@@ -9,44 +8,59 @@ type Props = {
 export default function ScreenHeader({ title, onBack }: Props) {
   return (
     <View style={styles.header}>
-      {/* Preserve title centering even on screens that do not expose a back action. */}
       {onBack ? (
         <TouchableOpacity
           onPress={onBack}
           activeOpacity={0.7}
           style={styles.sideButton}
         >
-          <LeftIcon size={24} color="#171717" />
+          <Text style={styles.closeText}>✕</Text>
         </TouchableOpacity>
       ) : (
         <View style={styles.sideButton} />
       )}
       <Text style={styles.title}>{title}</Text>
-      <View style={styles.sideButton} />
+      <TouchableOpacity
+        onPress={onBack}
+        activeOpacity={0.7}
+        style={styles.sideButton}
+      >
+        <Text style={styles.completeText}>완료</Text>
+      </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   header: {
-    height: 56,
+    height: 52,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
+    paddingHorizontal: 16,
     backgroundColor: "#FFFFFF",
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "#E5E7EB",
   },
   sideButton: {
-    width: 24,
-    height: 24,
+    width: 48,
+    height: 44,
     justifyContent: "center",
     alignItems: "center",
   },
-  title: {
+  closeText: {
     fontSize: 18,
-    fontWeight: "700",
+    color: "#374151",
+  },
+  completeText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#374151",
+    textAlign: "right",
+  },
+  title: {
+    fontSize: 17,
+    fontWeight: "600",
     color: "#171717",
   },
 });
