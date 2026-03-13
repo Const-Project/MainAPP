@@ -4,6 +4,7 @@ import {
   normalizeHomeSummaryPayload,
   type HomeSummaryPayload,
 } from "@/types/home/garden";
+import type { GuestbookEntry, NotificationItem } from "@/types/home/alerts";
 import type { HomePanelPayload } from "@/types/home/panel";
 import type { TrackingReportPayload } from "@/types/home/tracking";
 
@@ -23,6 +24,18 @@ export const getHomePanel = async (): ApiResponse<HomePanelPayload> => {
 
 export const getTrackingReport = async (): ApiResponse<TrackingReportPayload> => {
   const res = await api.get("/api/v1/tracking/report");
+  return res.data;
+};
+
+export const getNotifications = async (): ApiResponse<NotificationItem[]> => {
+  const res = await api.get("/api/v1/notifications");
+  return res.data;
+};
+
+export const getGuestbookList = async (
+  userId: number
+): ApiResponse<GuestbookEntry[]> => {
+  const res = await api.get(`/api/v1/users/guestbook/${userId}/list`);
   return res.data;
 };
 

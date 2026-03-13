@@ -36,7 +36,7 @@ type Props = {
   isEmotionAnswered: boolean;
   answeredKind: SurveyAnswerKind | null;
   onPressMap: () => void;
-  onPressTracking: () => void;
+  onPressBird: () => void;
   onPressEmotion: () => void;
   onPressUnlock: () => void;
   onPressEmpty: () => void;
@@ -50,7 +50,7 @@ export default function HomeGardenScene({
   isEmotionAnswered,
   answeredKind,
   onPressMap,
-  onPressTracking,
+  onPressBird,
   onPressEmotion,
   onPressUnlock,
   onPressEmpty,
@@ -172,7 +172,7 @@ export default function HomeGardenScene({
                   style={styles.actionButton}
                   disabled={sunlightMutation.isPending}
                 >
-                  <SunIcon width={40} height={40} opacity={sunlightMutation.isPending ? 0.55 : 1} />
+                  <SunIcon width={60} height={60} opacity={sunlightMutation.isPending ? 0.55 : 1} style={{ marginTop: 2, marginLeft: 1 }} />
                 </TouchableOpacity>
                 <TouchableOpacity
                   activeOpacity={0.85}
@@ -180,7 +180,7 @@ export default function HomeGardenScene({
                   style={styles.actionButton}
                   disabled={waterMutation.isPending}
                 >
-                  <WaterIcon width={40} height={40} opacity={waterMutation.isPending ? 0.55 : 1} />
+                  <WaterIcon width={60} height={60} opacity={waterMutation.isPending ? 0.55 : 1} />
                 </TouchableOpacity>
               </View>
             ) : null}
@@ -200,7 +200,7 @@ export default function HomeGardenScene({
                 isEmotionAnswered={isEmotionAnswered}
                 answeredKind={answeredKind}
                 onPressEmotion={onPressEmotion}
-                onPressBird={isEmotionAnswered ? onPressTracking : onPressEmotion}
+                onPressBird={onPressBird}
               />
             )}
           </View>
