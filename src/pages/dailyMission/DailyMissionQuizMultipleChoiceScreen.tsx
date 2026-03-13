@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ScreenHeader from "@/components/common/ScreenHeader";
@@ -8,6 +8,7 @@ import QuizResultCard from "@/components/dailyMission/QuizResultCard";
 import RegistrationFooter from "@/components/registration/RegistrationFooter";
 import { useAnswerQuiz, useMissionQuiz } from "@/hooks/mission/useMissionApi";
 import type { RootStackScreenProps } from "@/navigation/types";
+import type { AnswerQuizResult } from "@/types/missions";
 
 type Props = RootStackScreenProps<"DailyMissionQuizMultipleChoice">;
 
@@ -20,8 +21,43 @@ export default function DailyMissionQuizMultipleChoiceScreen({
   });
   const submitAnswer = useAnswerQuiz();
 
+  useEffect(() => {
+    if (data?.selectedOptionNumber != null) {
+      setSelected(data.selectedOptionNumber);
+    }
+  }, [data?.selectedOptionNumber]);
+
+  /*
+   * 한글 주석:
+   * 이미 푼 퀴즈에 다시 진입했을 때도 선택한 선지와 해설을 복원해야 하므로
+   * 조회 응답에 포함된 완료 상태를 제출 응답과 같은 형태로 맞춰서 사용한다.
+   */
+  const persistedAnswerResult = useMemo<AnswerQuizResult | null>(() => {
+    if (
+      !data?.isCompleted ||
+      data.selectedOptionNumber == null ||
+      data.answerNumber == null ||
+      data.isCorrect == null ||
+      data.answerDescription == null
+    ) {
+      return null;
+    }
+
+    return {
+      isCorrect: data.isCorrect,
+      answerDescription: data.answerDescription,
+      answerNumber: data.answerNumber,
+      isCompleted: true,
+      selectedOptionNumber: data.selectedOptionNumber,
+      quizQuestion: data.quizQuestion,
+      quizType: data.quizType,
+    };
+  }, [data]);
+
+  const answerResult = submitAnswer.data?.result ?? persistedAnswerResult;
+
   const handleSubmit = async () => {
-    if (!data?.quizId || selected === null || submitAnswer.isPending) {
+    if (!data?.quizId || selected === null || submitAnswer.isPending || answerResult) {
       return;
     }
 
@@ -30,6 +66,12 @@ export default function DailyMissionQuizMultipleChoiceScreen({
       selectedOptionOrder: selected,
     });
   };
+
+  const goHome = () =>
+    navigation.reset({
+      index: 0,
+      routes: [{ name: "Main", params: { screen: "Home" } }],
+    });
 
   if (isLoading) {
     return (
@@ -62,8 +104,6 @@ export default function DailyMissionQuizMultipleChoiceScreen({
     );
   }
 
-  const answerResult = submitAnswer.data?.result;
-
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <ScreenHeader title="객관식 퀴즈" onBack={() => navigation.goBack()} />
@@ -81,7 +121,7 @@ export default function DailyMissionQuizMultipleChoiceScreen({
                   ? option.optionOrder === answerResult.answerNumber
                     ? "correct"
                     : "idle"
-                  : selected === option.optionOrder
+                  : option.optionOrder === answerResult.selectedOptionNumber
                     ? "wrong"
                     : option.optionOrder === answerResult.answerNumber
                       ? "answer"
@@ -120,23 +160,10 @@ export default function DailyMissionQuizMultipleChoiceScreen({
 
       <RegistrationFooter
         secondaryLabel="홈으로"
-        onSecondaryPress={() =>
-          navigation.reset({
-            index: 0,
-            routes: [{ name: "Main", params: { screen: "Home" } }],
-          })
-        }
-        primaryLabel={answerResult ? "다음" : "정답 확인하기"}
-        onPrimaryPress={
-          answerResult
-            ? () =>
-                navigation.reset({
-                  index: 0,
-                  routes: [{ name: "Main", params: { screen: "Home" } }],
-                })
-            : () => void handleSubmit()
-        }
-        primaryDisabled={selected === null || submitAnswer.isPending}
+        onSecondaryPress={goHome}
+        primaryLabel={answerResult ? "홈으로" : "정답 확인하기"}
+        onPrimaryPress={answerResult ? goHome : () => void handleSubmit()}
+        primaryDisabled={answerResult ? false : selected === null || submitAnswer.isPending}
         primaryLoading={submitAnswer.isPending}
       />
     </SafeAreaView>
@@ -186,3 +213,4 @@ const styles = StyleSheet.create({
     color: "#7F1D1D",
   },
 });
+

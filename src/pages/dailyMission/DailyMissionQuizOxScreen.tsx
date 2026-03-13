@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ScreenHeader from "@/components/common/ScreenHeader";
@@ -8,6 +8,7 @@ import QuizResultCard from "@/components/dailyMission/QuizResultCard";
 import RegistrationFooter from "@/components/registration/RegistrationFooter";
 import { useAnswerQuiz, useMissionQuiz } from "@/hooks/mission/useMissionApi";
 import type { RootStackScreenProps } from "@/navigation/types";
+import type { AnswerQuizResult } from "@/types/missions";
 
 type Props = RootStackScreenProps<"DailyMissionQuizOx">;
 
@@ -19,15 +20,50 @@ export default function DailyMissionQuizOxScreen({ navigation }: Props) {
   const submitAnswer = useAnswerQuiz();
 
   const options = useMemo(
-    () => [
+    () => data?.quizOptions?.length ? data.quizOptions : [
       { optionOrder: 0, optionText: "O" },
       { optionOrder: 1, optionText: "X" },
     ],
-    []
+    [data?.quizOptions]
   );
 
+  useEffect(() => {
+    if (data?.selectedOptionNumber != null) {
+      setSelected(data.selectedOptionNumber);
+    }
+  }, [data?.selectedOptionNumber]);
+
+  /*
+   * 한글 주석:
+   * OX 퀴즈도 객관식과 같은 복원 규칙을 써야 화면을 나갔다 와도
+   * 사용자가 고른 답과 해설을 다시 그대로 보여줄 수 있다.
+   */
+  const persistedAnswerResult = useMemo<AnswerQuizResult | null>(() => {
+    if (
+      !data?.isCompleted ||
+      data.selectedOptionNumber == null ||
+      data.answerNumber == null ||
+      data.isCorrect == null ||
+      data.answerDescription == null
+    ) {
+      return null;
+    }
+
+    return {
+      isCorrect: data.isCorrect,
+      answerDescription: data.answerDescription,
+      answerNumber: data.answerNumber,
+      isCompleted: true,
+      selectedOptionNumber: data.selectedOptionNumber,
+      quizQuestion: data.quizQuestion,
+      quizType: data.quizType,
+    };
+  }, [data]);
+
+  const answerResult = submitAnswer.data?.result ?? persistedAnswerResult;
+
   const handleSubmit = async () => {
-    if (!data?.quizId || selected === null || submitAnswer.isPending) {
+    if (!data?.quizId || selected === null || submitAnswer.isPending || answerResult) {
       return;
     }
 
@@ -36,6 +72,12 @@ export default function DailyMissionQuizOxScreen({ navigation }: Props) {
       selectedOptionOrder: selected,
     });
   };
+
+  const goHome = () =>
+    navigation.reset({
+      index: 0,
+      routes: [{ name: "Main", params: { screen: "Home" } }],
+    });
 
   if (isLoading) {
     return (
@@ -68,8 +110,6 @@ export default function DailyMissionQuizOxScreen({ navigation }: Props) {
     );
   }
 
-  const answerResult = submitAnswer.data?.result;
-
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <ScreenHeader title="OX 퀴즈" onBack={() => navigation.goBack()} />
@@ -87,7 +127,7 @@ export default function DailyMissionQuizOxScreen({ navigation }: Props) {
                   ? option.optionOrder === answerResult.answerNumber
                     ? "correct"
                     : "idle"
-                  : selected === option.optionOrder
+                  : option.optionOrder === answerResult.selectedOptionNumber
                     ? "wrong"
                     : option.optionOrder === answerResult.answerNumber
                       ? "answer"
@@ -126,23 +166,10 @@ export default function DailyMissionQuizOxScreen({ navigation }: Props) {
 
       <RegistrationFooter
         secondaryLabel="홈으로"
-        onSecondaryPress={() =>
-          navigation.reset({
-            index: 0,
-            routes: [{ name: "Main", params: { screen: "Home" } }],
-          })
-        }
-        primaryLabel={answerResult ? "다음" : "정답 확인하기"}
-        onPrimaryPress={
-          answerResult
-            ? () =>
-                navigation.reset({
-                  index: 0,
-                  routes: [{ name: "Main", params: { screen: "Home" } }],
-                })
-            : () => void handleSubmit()
-        }
-        primaryDisabled={selected === null || submitAnswer.isPending}
+        onSecondaryPress={goHome}
+        primaryLabel={answerResult ? "홈으로" : "정답 확인하기"}
+        onPrimaryPress={answerResult ? goHome : () => void handleSubmit()}
+        primaryDisabled={answerResult ? false : selected === null || submitAnswer.isPending}
         primaryLoading={submitAnswer.isPending}
       />
     </SafeAreaView>
@@ -192,3 +219,4 @@ const styles = StyleSheet.create({
     color: "#7F1D1D",
   },
 });
+

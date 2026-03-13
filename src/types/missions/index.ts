@@ -43,7 +43,13 @@ export interface QuizOption {
 export interface MissionQuiz {
   quizId: number;
   quizQuestion: string;
+  quizType: MissionQuizType;
   quizOptions?: QuizOption[] | null;
+  isCompleted?: boolean;
+  selectedOptionNumber?: number | null;
+  answerNumber?: number | null;
+  isCorrect?: boolean | null;
+  answerDescription?: string | null;
 }
 
 export interface GetQuizRequest {
@@ -66,6 +72,10 @@ export interface AnswerQuizResult {
   isCorrect: boolean;
   answerDescription: string;
   answerNumber: number;
+  isCompleted: boolean;
+  selectedOptionNumber: number;
+  quizQuestion: string;
+  quizType: MissionQuizType;
 }
 
 export interface AnswerQuizResponse {
