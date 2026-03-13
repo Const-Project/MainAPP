@@ -118,8 +118,14 @@ const styles = StyleSheet.create({
   },
   wateringImage: {
     position: "absolute",
-    left: "36%",
-    bottom: 132,
+
+    /*
+     * 한글 주석:
+     * 물뿌리개와 물방울 연출은 식물 중앙이 아니라
+     * 식물의 왼쪽 70% 높이 부근에서 시작하도록 고정 위치를 옮긴다.
+     */
+    left: "18%",
+    bottom: 168,
     width: 118,
     height: 118,
   },
