@@ -23,9 +23,6 @@ export default function HomeBottomSheet({
   missions,
   panel,
   currentLevel,
-  onPressLog,
-  onPressFeed,
-  onPressUnlockGarden,
   onPressMission,
   onPressEmotionCheck,
 }: {
@@ -34,9 +31,6 @@ export default function HomeBottomSheet({
   missions: TodayMission[];
   panel?: HomePanelPayload;
   currentLevel: number;
-  onPressLog: () => void;
-  onPressFeed: () => void;
-  onPressUnlockGarden: () => void;
   onPressMission: (mission: TodayMission) => void;
   onPressEmotionCheck: () => void;
 }) {
@@ -221,11 +215,7 @@ export default function HomeBottomSheet({
               </View>
             </View>
 
-            <View style={styles.quickLinksRow}>
-              <QuickLink label="키움일지" onPress={onPressLog} />
-              <QuickLink label="둘러보기" onPress={onPressFeed} />
-              <QuickLink label="텃밭 해금" onPress={onPressUnlockGarden} />
-            </View>
+
           </ScrollView>
         </View>
       </Animated.View>
@@ -233,13 +223,6 @@ export default function HomeBottomSheet({
   );
 }
 
-function QuickLink({ label, onPress }: { label: string; onPress: () => void }) {
-  return (
-    <TouchableOpacity activeOpacity={0.8} onPress={onPress} style={styles.quickLink}>
-      <Text style={styles.quickLinkText}>{label}</Text>
-    </TouchableOpacity>
-  );
-}
 
 function MissionStatusDot({ checked }: { checked: boolean }) {
   return (
@@ -258,18 +241,7 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(12, 18, 14, 0.10)",
   },
-  quickLink: {
-    flex: 1,
-    borderRadius: 14,
-    backgroundColor: "#EEF3EA",
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  quickLinkText: {
-    fontSize: 13,
-    color: "#2E5134",
-    fontWeight: "700",
-  },
+
   sheetWrap: {
     height: EXPANDED_HEIGHT,
   },
@@ -463,9 +435,5 @@ const styles = StyleSheet.create({
     color: "#6B7280",
     fontWeight: "600",
   },
-  quickLinksRow: {
-    marginTop: 18,
-    flexDirection: "row",
-    gap: 8,
-  },
+
 });

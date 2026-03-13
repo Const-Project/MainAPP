@@ -193,9 +193,6 @@ export default function HomeScreen({ navigation }: Props) {
           missions={todayMissions}
           panel={panel}
           currentLevel={userInfo?.level ?? 0}
-          onPressLog={() => navigation.navigate("Log")}
-          onPressFeed={() => navigation.navigate("Feed")}
-          onPressUnlockGarden={() => navigation.navigate("UnlockGarden")}
           onPressMission={mission => {
             /*
              * 한글 주석:
