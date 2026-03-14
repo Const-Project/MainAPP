@@ -5,15 +5,19 @@ import {
   getHomePanel,
   getHomeSummary,
   getNotifications,
-  getTrackingReport,
+  getTrackingPromptStatus,
   postGardenMyWater,
   postGardenSunlight,
+  postTrackingPromptConfirm,
 } from "@/apis/home/homeApi";
 import type { GlobalResponse } from "@/types/common/apiResponse.type";
 import type { GuestbookEntry, NotificationItem } from "@/types/home/alerts";
 import type { HomeSummaryPayload } from "@/types/home/garden";
 import type { HomePanelPayload } from "@/types/home/panel";
-import type { TrackingReportPayload } from "@/types/home/tracking";
+import type {
+  TrackingPromptConfirmRequest,
+  TrackingPromptStatusPayload,
+} from "@/types/home/tracking";
 
 export const useHomeApi = () =>
   useQuery<
@@ -35,9 +39,28 @@ export const useHomePanelApi = () =>
     refetchOnMount: "always",
   });
 
-export const useTrackingReport = () =>
-  useMutation<GlobalResponse<TrackingReportPayload>, AxiosError>({
-    mutationFn: getTrackingReport,
+export const useTrackingPromptStatus = () =>
+  useQuery<
+    GlobalResponse<TrackingPromptStatusPayload>,
+    AxiosError,
+    TrackingPromptStatusPayload
+  >({
+    // 한글 주석:
+    // 홈 진입, 홈 복귀, 액션 성공 뒤 모두 같은 키를 invalidate/refetch 해서
+    // tracking 리포트 노출 여부를 한 군데 기준으로 맞춘다.
+    queryKey: ["tracking-report-status"],
+    queryFn: getTrackingPromptStatus,
+    select: data => data.result,
+    refetchOnMount: "always",
+  });
+
+export const useTrackingPromptConfirm = () =>
+  useMutation<
+    GlobalResponse<Record<string, never>>,
+    AxiosError,
+    TrackingPromptConfirmRequest
+  >({
+    mutationFn: postTrackingPromptConfirm,
   });
 
 export const useNotifications = (enabled: boolean) =>
@@ -64,6 +87,7 @@ export const useGardenSunlightAction = () => {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["home-summary"] });
       await queryClient.invalidateQueries({ queryKey: ["home-panel"] });
+      await queryClient.invalidateQueries({ queryKey: ["tracking-report-status"] });
     },
   });
 };
@@ -76,6 +100,7 @@ export const useGardenWaterAction = () => {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["home-summary"] });
       await queryClient.invalidateQueries({ queryKey: ["home-panel"] });
+      await queryClient.invalidateQueries({ queryKey: ["tracking-report-status"] });
     },
   });
 };

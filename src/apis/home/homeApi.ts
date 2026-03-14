@@ -6,7 +6,10 @@ import {
 } from "@/types/home/garden";
 import type { GuestbookEntry, NotificationItem } from "@/types/home/alerts";
 import type { HomePanelPayload } from "@/types/home/panel";
-import type { TrackingReportPayload } from "@/types/home/tracking";
+import type {
+  TrackingPromptConfirmRequest,
+  TrackingPromptStatusPayload,
+} from "@/types/home/tracking";
 
 export const getHomeSummary = async (): ApiResponse<HomeSummaryPayload> => {
   const res = await api.get("/api/v1/home");
@@ -22,8 +25,20 @@ export const getHomePanel = async (): ApiResponse<HomePanelPayload> => {
   return res.data;
 };
 
-export const getTrackingReport = async (): ApiResponse<TrackingReportPayload> => {
-  const res = await api.get("/api/v1/tracking/report");
+export const getTrackingPromptStatus =
+  async (): ApiResponse<TrackingPromptStatusPayload> => {
+    // 한글 주석:
+    // 홈 자동 팝업 여부는 앱이 계산하지 않고 서버의 eligible 판정만 그대로 조회한다.
+    const res = await api.get("/api/v1/tracking/report/status");
+    return res.data;
+  };
+
+export const postTrackingPromptConfirm = async (
+  payload: TrackingPromptConfirmRequest
+) => {
+  // 한글 주석:
+  // 사용자가 이번 주기 리포트를 확인했다는 사실을 서버에 저장해 같은 cycle 재노출을 막는다.
+  const res = await api.post("/api/v1/tracking/report/confirm", payload);
   return res.data;
 };
 
