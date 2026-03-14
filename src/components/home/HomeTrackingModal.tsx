@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import {
   Image,
   Modal,
@@ -8,59 +7,49 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import type { TrackingReportPayload } from "@/types/home/tracking";
+import type { TrackingPromptStatusPayload } from "@/types/home/tracking";
 
 const trackingImage = require("@/assets/images/tracking.webp");
-const characterImage = require("@/assets/images/char.webp");
 
 export default function HomeTrackingModal({
   visible,
   report,
-  onClose,
+  isConfirming,
+  onConfirm,
 }: {
   visible: boolean;
-  report: TrackingReportPayload | null;
-  onClose: () => void;
+  report: TrackingPromptStatusPayload | null;
+  isConfirming: boolean;
+  onConfirm: () => void;
 }) {
-  const [liked, setLiked] = useState(true);
-
-  useEffect(() => {
-    if (visible) {
-      setLiked(true);
-    }
-  }, [visible]);
-
   if (!report) {
     return null;
   }
 
   return (
-    <Modal transparent animationType="fade" visible={visible} onRequestClose={onClose}>
+    <Modal transparent animationType="fade" visible={visible} onRequestClose={onConfirm}>
       <View style={styles.backdrop}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={onConfirm}
+          disabled={isConfirming}
+        />
         <View style={styles.card}>
-          <Text style={styles.title}>함께해요!</Text>
-          {liked ? (
-            <>
-              <Image source={trackingImage} style={styles.trackingImage} resizeMode="contain" />
-              <Text style={styles.body}>
-                2주동안 {report.praiseDayCount}일 물과 햇빛을 모두 챙기셨어요!{"\n"}
-                열심히 돌봐주셨군요{"\n"}
-                앞으로도 같이 잘 키워봐요!
-              </Text>
-              <TouchableOpacity style={styles.secondaryButton} onPress={() => setLiked(false)}>
-                <Text style={styles.secondaryButtonText}>좋아요</Text>
-              </TouchableOpacity>
-            </>
-          ) : (
-            <>
-              <Image source={characterImage} style={styles.characterImage} resizeMode="contain" />
-              <Text style={styles.body}>{report.message}</Text>
-              <TouchableOpacity style={styles.primaryButton} onPress={onClose}>
-                <Text style={styles.primaryButtonText}>고마워요</Text>
-              </TouchableOpacity>
-            </>
-          )}
+          <Text style={styles.title}>2주 리포트가 도착했어요</Text>
+          <Image source={trackingImage} style={styles.trackingImage} resizeMode="contain" />
+          <Text style={styles.body}>
+            최근 14일 동안 {report.perfectDayCount}일을 완벽하게 돌봤어요.{"\n"}
+            {report.message}
+          </Text>
+          <TouchableOpacity
+            style={[styles.primaryButton, isConfirming && styles.primaryButtonDisabled]}
+            onPress={onConfirm}
+            disabled={isConfirming}
+          >
+            <Text style={styles.primaryButtonText}>
+              {isConfirming ? "확인 중..." : "리포트 확인했어요"}
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
     </Modal>
@@ -90,14 +79,11 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "700",
     color: "#171717",
+    textAlign: "center",
   },
   trackingImage: {
     width: 200,
     height: 150,
-  },
-  characterImage: {
-    width: 84,
-    height: 84,
   },
   body: {
     fontSize: 15,
@@ -112,20 +98,11 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     alignItems: "center",
   },
+  primaryButtonDisabled: {
+    opacity: 0.6,
+  },
   primaryButtonText: {
     color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "700",
-  },
-  secondaryButton: {
-    width: "100%",
-    borderRadius: 16,
-    backgroundColor: "#EEF3EA",
-    paddingVertical: 14,
-    alignItems: "center",
-  },
-  secondaryButtonText: {
-    color: "#2E5134",
     fontSize: 15,
     fontWeight: "700",
   },

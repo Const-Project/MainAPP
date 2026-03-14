@@ -1,5 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
+import { useQueryClient } from "@tanstack/react-query";
+import { useFocusEffect } from "@react-navigation/native";
 import PagerView from "react-native-pager-view";
 import { SafeAreaView } from "react-native-safe-area-context";
 import HomeBottomSheet from "@/components/home/HomeBottomSheet";
@@ -7,11 +9,19 @@ import HomeAlertsModal from "@/components/home/HomeAlertsModal";
 import HomeEmotionModal from "@/components/home/HomeEmotionModal";
 import HomeGardenScene from "@/components/home/HomeGardenScene";
 import HomeMapModal from "@/components/home/HomeMapModal";
+import HomeTrackingModal from "@/components/home/HomeTrackingModal";
 import StatusView from "@/components/common/StatusView";
-import useHomeApi, { useHomePanelApi } from "@/hooks/home/useHomeApi";
+import useHomeApi, {
+  useHomePanelApi,
+  useTrackingPromptConfirm,
+  useTrackingPromptStatus,
+} from "@/hooks/home/useHomeApi";
 import { useDailySurvey } from "@/hooks/mission/useMissionApi";
 import type { MainTabScreenProps } from "@/navigation/types";
-import { useEmotionSurveyStore, getEmotionSurveyCooldownActive } from "@/stores/useEmotionSurveyStore";
+import {
+  getEmotionSurveyCooldownActive,
+  useEmotionSurveyStore,
+} from "@/stores/useEmotionSurveyStore";
 import { useHomeSummaryStore } from "@/stores/useHomeSummaryStore";
 import {
   getGardenLocked,
@@ -39,8 +49,14 @@ type SceneItem = {
 };
 
 export default function HomeScreen({ navigation }: Props) {
+  const queryClient = useQueryClient();
   const { data, error, isLoading, refetch } = useHomeApi();
   const { data: panel } = useHomePanelApi();
+  const {
+    data: trackingPromptStatus,
+    refetch: refetchTrackingPromptStatus,
+  } = useTrackingPromptStatus();
+  const trackingPromptConfirmMutation = useTrackingPromptConfirm();
   const surveyQuery = useDailySurvey();
   const { user, gardens, missions, todayDiaryId, hydrate } = useHomeSummaryStore();
   const {
@@ -54,7 +70,9 @@ export default function HomeScreen({ navigation }: Props) {
   const [isEmotionModalOpen, setIsEmotionModalOpen] = useState(false);
   const [isAlertsModalOpen, setIsAlertsModalOpen] = useState(false);
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
+  const [isTrackingModalOpen, setIsTrackingModalOpen] = useState(false);
   const [emotionAnswerKind, setEmotionAnswerKind] = useState<SurveyAnswerKind | null>(null);
+  const openedTrackingCycleKeysRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     debugScreenMounted("HomeScreen");
@@ -64,14 +82,26 @@ export default function HomeScreen({ navigation }: Props) {
     resetIfExpired();
   }, [lastAnsweredAt, resetIfExpired]);
 
+  useFocusEffect(
+    useCallback(() => {
+      // 한글 주석:
+      // 홈 복귀 시점에도 서버 기준 eligible 상태를 다시 읽어야
+      // 방금 물/햇빛을 완료한 뒤 즉시 2주 리포트 팝업을 띄울 수 있다.
+      void refetch();
+      void refetchTrackingPromptStatus();
+    }, [refetch, refetchTrackingPromptStatus])
+  );
+
   useEffect(() => {
     debugLog("HomeScreen", "query state changed", {
       isLoading,
       hasData: Boolean(data),
       hasError: Boolean(error),
       hasPanel: Boolean(panel),
+      trackingEligible: trackingPromptStatus?.eligible ?? false,
+      trackingCycleKey: trackingPromptStatus?.cycleKey ?? null,
     });
-  }, [data, error, isLoading, panel]);
+  }, [data, error, isLoading, panel, trackingPromptStatus]);
 
   useEffect(() => {
     if (data) {
@@ -82,6 +112,24 @@ export default function HomeScreen({ navigation }: Props) {
       hydrate(data);
     }
   }, [data, hydrate]);
+
+  useEffect(() => {
+    if (!trackingPromptStatus?.eligible || !trackingPromptStatus.cycleKey) {
+      return;
+    }
+
+    /*
+     * 한글 주석:
+     * 서버가 eligible 을 내려줘도 같은 앱 세션 안에서 이미 연 cycleKey 라면
+     * 홈 재포커스나 추가 refetch 때문에 같은 모달이 연속으로 다시 뜨지 않게 막는다.
+     */
+    if (openedTrackingCycleKeysRef.current.has(trackingPromptStatus.cycleKey)) {
+      return;
+    }
+
+    openedTrackingCycleKeysRef.current.add(trackingPromptStatus.cycleKey);
+    setIsTrackingModalOpen(true);
+  }, [trackingPromptStatus]);
 
   const userInfo = data?.userInfo ?? user;
   const gardenSummaries = data?.gardenSummaries ?? gardens;
@@ -122,6 +170,27 @@ export default function HomeScreen({ navigation }: Props) {
   useEffect(() => {
     setCurrentPage(initialPage);
   }, [initialPage]);
+
+  const handleTrackingPromptConfirm = useCallback(async () => {
+    if (!trackingPromptStatus?.cycleKey || trackingPromptConfirmMutation.isPending) {
+      return;
+    }
+
+    try {
+      /*
+       * 한글 주석:
+       * 닫기와 CTA 모두 같은 confirm API 로 모아 처리해서
+       * 이번 cycle 확인 완료 여부를 서버에 한 번만 기록한다.
+       */
+      await trackingPromptConfirmMutation.mutateAsync({
+        cycleKey: trackingPromptStatus.cycleKey,
+      });
+      await queryClient.invalidateQueries({ queryKey: ["tracking-report-status"] });
+      setIsTrackingModalOpen(false);
+    } catch (confirmError) {
+      debugLog("HomeScreen", "tracking prompt confirm failed", { confirmError });
+    }
+  }, [queryClient, trackingPromptConfirmMutation, trackingPromptStatus?.cycleKey]);
 
   if (isLoading && gardenSummaries.length === 0) {
     return (
@@ -232,6 +301,12 @@ export default function HomeScreen({ navigation }: Props) {
         slotNumber={currentPage + 1}
         onClose={() => setIsMapModalOpen(false)}
       />
+      <HomeTrackingModal
+        visible={isTrackingModalOpen}
+        report={trackingPromptStatus ?? null}
+        isConfirming={trackingPromptConfirmMutation.isPending}
+        onConfirm={() => void handleTrackingPromptConfirm()}
+      />
     </View>
   );
 }
@@ -292,4 +367,3 @@ const styles = StyleSheet.create({
     backgroundColor: "#F4F7F0",
   },
 });
-
