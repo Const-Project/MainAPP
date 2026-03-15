@@ -11,7 +11,6 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "@/navigation/types";
 import Splash from "@/components/common/Splash";
 import OnboardingCarousel from "@/components/onboarding/OnboardingCarousel";
-import { onboardingSlides } from "@/constants/onboardingSlides";
 import { useSupabaseOAuth } from "@/hooks/auth/useSupabaseOAuth";
 import useRegistrationStore from "@/stores/useRegistrationStore";
 import { debugLog, debugScreenMounted } from "@/utils/debug";
@@ -55,12 +54,13 @@ export default function OnboardingScreen() {
       provider,
       success: result?.success,
       isNewUser: result?.isNewUser,
+      requiresNicknameSetup: result?.requiresNicknameSetup,
       cancelled: result?.cancelled,
     });
 
-    if (result?.success && result.isNewUser) {
+    if (result?.success && (result.requiresNicknameSetup || result.isNewUser)) {
       resetRegistration();
-      debugLog("OnboardingScreen", "Reset -> SocialNickname for new social user");
+      debugLog("OnboardingScreen", "Reset -> SocialNickname for nickname-incomplete social user");
       navigation.reset({
         index: 0,
         routes: [

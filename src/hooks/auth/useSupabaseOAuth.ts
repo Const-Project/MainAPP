@@ -15,6 +15,7 @@ type OAuthResult = {
   cancelled?: boolean;
   error?: unknown;
   isNewUser?: boolean;
+  requiresNicknameSetup?: boolean;
   nickname?: string;
 };
 
@@ -88,11 +89,13 @@ export const useSupabaseOAuth = () => {
 
     debugLog("SupabaseOAuth", "Backend login complete", {
       isNewUser: backendRes.result?.newUser,
+      requiresNicknameSetup: backendRes.result?.requiresNicknameSetup,
       nickname: backendRes.result?.nickname,
     });
     return {
       success: true,
       isNewUser: backendRes.result?.newUser,
+      requiresNicknameSetup: backendRes.result?.requiresNicknameSetup,
       nickname: backendRes.result?.nickname,
     };
   };

@@ -4,4 +4,5 @@ export type PostRegisterResponse = {
   userId: number;
   nickname: string;
   newUser: boolean;
+  requiresNicknameSetup: boolean;
 };
