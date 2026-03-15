@@ -18,3 +18,10 @@ export const postFriendWater = async (
   const res = await api.post(`/api/v1/gardens/${gardenId}/friendwater`);
   return res.data;
 };
+
+export const patchMyNickname = async (newNickname: string): ApiResponse<void> => {
+  const res = await api.patch("/api/v1/users/me/nickname", {
+    newNickname,
+  });
+  return res.data;
+};

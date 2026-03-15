@@ -15,6 +15,7 @@ export type RootStackParamList = {
   // 인증/온보딩
   Onboarding: undefined;
   Register: undefined;
+  SocialNickname: { initialNickname?: string } | undefined;
 
   // 프로필
   Profile: { userId: number };

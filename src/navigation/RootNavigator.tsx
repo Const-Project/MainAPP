@@ -8,6 +8,7 @@ import MainTabNavigator from "./MainTabNavigator";
 
 import OnboardingScreen from "@/pages/onboarding/OnboardingScreen";
 import RegisterScreen from "@/pages/register/RegisterScreen";
+import SocialNicknameScreen from "@/pages/register/SocialNicknameScreen";
 import FeedDiaryScreen from "@/pages/feed/FeedDiaryScreen";
 import FeedAvatarScreen from "@/pages/feed/FeedAvatarScreen";
 import LogDetailScreen from "@/pages/log/LogDetailScreen";
@@ -70,6 +71,7 @@ export default function RootNavigator() {
         </>
       )}
 
+      <Stack.Screen name="SocialNickname" component={SocialNicknameScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Guestbook" component={GuestbookScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Follow" component={FollowScreen} options={{ headerShown: false }} />

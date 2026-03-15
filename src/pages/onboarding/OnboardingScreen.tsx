@@ -107,10 +107,15 @@ export default function OnboardingScreen() {
     if (result?.success) {
       if (result.isNewUser) {
         resetRegistration();
-        debugLog("OnboardingScreen", "Reset -> RegistrationAvatar for new user");
+        debugLog("OnboardingScreen", "Reset -> SocialNickname for new social user");
         navigation.reset({
           index: 0,
-          routes: [{ name: "RegistrationAvatar" }],
+          routes: [
+            {
+              name: "SocialNickname",
+              params: { initialNickname: result.nickname },
+            },
+          ],
         });
         return;
       }
