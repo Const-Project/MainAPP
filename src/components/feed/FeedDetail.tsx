@@ -132,37 +132,39 @@ export default function FeedDetail({
         animationType="slide"
         onRequestClose={handleCloseComments}
       >
-        <Pressable style={styles.backdrop} onPress={handleCloseComments} />
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={styles.sheetKeyboard}
-        >
-          <View style={styles.sheet}>
-            <View style={styles.sheetHandle} />
-            <Text style={styles.sheetTitle}>댓글 {result.commentCount}</Text>
-            {comments.length > 0 ? (
-              <FlatList
-                data={comments}
-                keyExtractor={item => item.id.toString()}
-                renderItem={({ item }) => <Comment comment={item} />}
-                style={styles.commentList}
-                showsVerticalScrollIndicator={false}
-              />
-            ) : (
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyText}>아직 작성된 댓글이 없습니다.</Text>
-              </View>
-            )}
-            {onChangeComment && onSubmitComment ? (
-              <CommentComposer
-                value={commentValue}
-                onChangeText={onChangeComment}
-                onSubmit={onSubmitComment}
-                disabled={isCommentPending}
-              />
-            ) : null}
-          </View>
-        </KeyboardAvoidingView>
+        <View style={styles.modalRoot}>
+          <Pressable style={styles.backdrop} onPress={handleCloseComments} />
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={styles.sheetKeyboard}
+          >
+            <View style={styles.sheet}>
+              <View style={styles.sheetHandle} />
+              <Text style={styles.sheetTitle}>댓글 {result.commentCount}</Text>
+              {comments.length > 0 ? (
+                <FlatList
+                  data={comments}
+                  keyExtractor={item => item.id.toString()}
+                  renderItem={({ item }) => <Comment comment={item} />}
+                  style={styles.commentList}
+                  showsVerticalScrollIndicator={false}
+                />
+              ) : (
+                <View style={styles.emptyState}>
+                  <Text style={styles.emptyText}>아직 작성된 댓글이 없습니다.</Text>
+                </View>
+              )}
+              {onChangeComment && onSubmitComment ? (
+                <CommentComposer
+                  value={commentValue}
+                  onChangeText={onChangeComment}
+                  onSubmit={onSubmitComment}
+                  disabled={isCommentPending}
+                />
+              ) : null}
+            </View>
+          </KeyboardAvoidingView>
+        </View>
       </Modal>
     </>
   );
@@ -255,11 +257,16 @@ const styles = StyleSheet.create({
   spacer: {
     width: 40,
   },
-  backdrop: {
+  modalRoot: {
     flex: 1,
+    justifyContent: "flex-end",
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(0,0,0,0.28)",
   },
   sheetKeyboard: {
+    flexShrink: 1,
     justifyContent: "flex-end",
   },
   sheet: {
