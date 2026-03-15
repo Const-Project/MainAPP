@@ -89,7 +89,9 @@ export const useReadNotifications = () => {
             ? {
                 ...previous,
                 result: previous.result.map(item =>
-                  notificationIds.includes(item.id) ? { ...item, isRead: true } : item
+                  notificationIds.includes(item.id)
+                    ? { ...item, isRead: true, read: true }
+                    : item
                 ),
               }
             : previous

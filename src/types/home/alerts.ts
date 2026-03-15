@@ -10,6 +10,7 @@ export interface NotificationItem {
   url: string | null;
   thumbnailUrl: string | null;
   isRead: boolean;
+  read?: boolean;
   notificationType: string;
   createdAt: string;
 }

@@ -11,6 +11,10 @@ import {
 import { useGuestbookList, useNotifications, useReadNotifications } from "@/hooks/home/useHomeApi";
 import type { GuestbookEntry, NotificationItem } from "@/types/home/alerts";
 
+function isNotificationRead(item: NotificationItem) {
+  return item.isRead ?? item.read ?? false;
+}
+
 type AlertTab = "GUESTBOOK" | "RECORD";
 
 export default function HomeAlertsModal({
@@ -149,7 +153,7 @@ export default function HomeAlertsModal({
                     <Text style={styles.metaText}>{formatDateTime(item.createdAt)}</Text>
                   </View>
                   <Text style={styles.secondaryText}>{item.content}</Text>
-                  {!item.isRead ? <View style={styles.unreadDot} /> : null}
+                  {!isNotificationRead(item) ? <View style={styles.unreadDot} /> : null}
                 </View>
               ))
             )}
