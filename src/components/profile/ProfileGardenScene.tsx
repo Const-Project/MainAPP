@@ -6,20 +6,11 @@ import WaterIcon from "@/assets/icons/water.svg";
 const mailboxImage = require("@/assets/images/profile/letterbox.png");
 const ACTION_RAIL_BOTTOM_OFFSET = 128;
 
-type FollowAction = {
-  label: string;
-  onPress: () => void;
-  pending: boolean;
-};
-
 type Props = {
   background: any;
   garden: GardenInfo;
-  userNickname: string;
-  leftWaterCountForOthers: number;
   isMe: boolean;
-  followAction: FollowAction | null;
-  onBack: () => void;
+  leftWaterCountForOthers: number;
   onWater: () => void;
   onPressGuestbook: () => void;
   waterDisabled?: boolean;
@@ -28,49 +19,22 @@ type Props = {
 export default function ProfileGardenScene({
   background,
   garden,
-  userNickname,
-  leftWaterCountForOthers,
   isMe,
-  followAction,
-  onBack,
+  leftWaterCountForOthers,
   onWater,
   onPressGuestbook,
   waterDisabled = false,
 }: Props) {
   const insets = useSafeAreaInsets();
   const canWater = !isMe && garden.isWateringAbleByMe && !waterDisabled;
-  const avatarName = garden.avatarInfo?.avatarName ?? `${userNickname}의 정원`;
+  const topOverlayOffset = insets.top + 92;
 
   return (
     <ImageBackground source={background} resizeMode="cover" style={styles.sceneBackground}>
       <View style={styles.sceneShade} />
 
-      <View style={[styles.sceneHeader, { paddingTop: insets.top + 12 }]}>
-        <TouchableOpacity activeOpacity={0.8} onPress={onBack} style={styles.headerSideButton}>
-          <Text style={styles.backArrow}>{"<"}</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.sceneTitle}>{avatarName}</Text>
-
-        <View style={styles.headerSideButton}>
-          {followAction ? (
-            <TouchableOpacity
-              onPress={followAction.onPress}
-              disabled={followAction.pending}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.followTextButton}>
-                {followAction.pending ? "처리 중..." : followAction.label}
-              </Text>
-            </TouchableOpacity>
-          ) : isMe ? (
-            <Text style={styles.selfBadgeText}>내 프로필</Text>
-          ) : null}
-        </View>
-      </View>
-
       {!isMe ? (
-        <View style={[styles.waterCountBadge, { top: insets.top + 16 }]}>
+        <View style={[styles.waterCountBadge, { top: topOverlayOffset }]}> 
           <WaterIcon width={18} height={18} />
           <Text style={styles.waterCountText}>{leftWaterCountForOthers}회</Text>
         </View>
@@ -137,50 +101,6 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(8, 20, 10, 0.08)",
   },
-  sceneHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    zIndex: 2,
-  },
-  headerSideButton: {
-    width: 72,
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 44,
-  },
-  backArrow: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#FFFFFF",
-    textShadowColor: "rgba(0,0,0,0.18)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
-  },
-  sceneTitle: {
-    flex: 1,
-    textAlign: "center",
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#FFFFFF",
-    textShadowColor: "rgba(0, 0, 0, 0.18)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
-  },
-  followTextButton: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#FFFFFF",
-    textShadowColor: "rgba(0,0,0,0.18)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
-    textAlign: "center",
-  },
-  selfBadgeText: {
-    fontSize: 13,
-    color: "rgba(255,255,255,0.7)",
-  },
   waterCountBadge: {
     position: "absolute",
     right: 16,
@@ -202,6 +122,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 24,
+    paddingTop: 44,
     paddingBottom: 64,
     position: "relative",
   },

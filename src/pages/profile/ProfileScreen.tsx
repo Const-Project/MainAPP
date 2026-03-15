@@ -120,50 +120,66 @@ export default function ProfileScreen({ navigation, route }: Props) {
     garden,
   }));
 
+  const renderProfileHeader = () => (
+    <SafeAreaView pointerEvents="box-none" style={styles.headerSafeArea} edges={["top"]}>
+      {/* 한글 주석:
+          프로필 화면의 상단은 방명록 화면과 톤을 맞춘 박스형 헤더로 분리해서,
+          뒤로가기/프로필/친구추가 역할이 정원 씬 위에 명확하게 보이도록 정리한다. */}
+      <View style={styles.headerCard}>
+        <TouchableOpacity onPress={handleBack} activeOpacity={0.7} style={styles.headerSideButton}>
+          <Text style={styles.headerBackText}>뒤로</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.headerTitle}>프로필</Text>
+
+        <View style={styles.headerActionWrap}>
+          {followAction ? (
+            <TouchableOpacity
+              onPress={followAction.onPress}
+              disabled={followAction.pending}
+              activeOpacity={0.7}
+              style={styles.followButton}
+            >
+              <Text style={styles.followButtonText}>
+                {followAction.pending ? "처리 중..." : followAction.label}
+              </Text>
+            </TouchableOpacity>
+          ) : isMe ? (
+            <Text style={styles.selfBadgeText}>내 프로필</Text>
+          ) : null}
+        </View>
+      </View>
+    </SafeAreaView>
+  );
+
   if (scenes.length === 0) {
     return (
-      <SafeAreaView style={styles.emptyContainer} edges={["top", "bottom"]}>
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <View style={styles.emptyHeader}>
-            <TouchableOpacity onPress={handleBack} activeOpacity={0.7}>
-              <Text style={styles.emptyBackText}>뒤로가기</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.summaryRow}>
-            <View style={styles.profileImageWrap}>
-              {data.profileImageUrl ? (
-                <Image
-                  source={{ uri: data.profileImageUrl }}
-                  style={styles.profileImage}
-                  resizeMode="cover"
-                />
-              ) : null}
+      <View style={styles.emptyContainer}>
+        {renderProfileHeader()}
+        <SafeAreaView style={styles.emptyScrollSafeArea} edges={["bottom"]}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.emptyScrollContent}>
+            <View style={styles.summaryRow}>
+              <View style={styles.profileImageWrap}>
+                {data.profileImageUrl ? (
+                  <Image
+                    source={{ uri: data.profileImageUrl }}
+                    style={styles.profileImage}
+                    resizeMode="cover"
+                  />
+                ) : null}
+              </View>
+              <Text style={styles.nickname}>{data.userNickname}</Text>
             </View>
-            <Text style={styles.nickname}>{data.userNickname}</Text>
-            {followAction ? (
-              <TouchableOpacity
-                onPress={followAction.onPress}
-                disabled={followAction.pending}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.followTextButton}>
-                  {followAction.pending ? "처리 중..." : followAction.label}
-                </Text>
-              </TouchableOpacity>
-            ) : isMe ? (
-              <Text style={styles.selfBadgeText}>내 프로필</Text>
-            ) : null}
-          </View>
 
-          <View style={styles.emptyGardenWrap}>
-            <Text style={styles.emptyGardenTitle}>정원 정보가 없습니다.</Text>
-            <Text style={styles.emptyGardenDescription}>
-              현재 API 기준으로 표시할 정원 데이터가 없어 기본 정보만 표시합니다.
-            </Text>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
+            <View style={styles.emptyGardenWrap}>
+              <Text style={styles.emptyGardenTitle}>정원 정보가 없습니다.</Text>
+              <Text style={styles.emptyGardenDescription}>
+                현재 API 기준으로 표시할 정원 데이터가 없어 기본 정보만 표시합니다.
+              </Text>
+            </View>
+          </ScrollView>
+        </SafeAreaView>
+      </View>
     );
   }
 
@@ -182,11 +198,8 @@ export default function ProfileScreen({ navigation, route }: Props) {
             <ProfileGardenScene
               background={scene.background}
               garden={scene.garden}
-              userNickname={data.userNickname}
-              leftWaterCountForOthers={data.leftWaterCountForOthers}
               isMe={isMe}
-              followAction={followAction}
-              onBack={handleBack}
+              leftWaterCountForOthers={data.leftWaterCountForOthers}
               onWater={() => void waterMutation.mutateAsync(scene.garden.gardenId)}
               onPressGuestbook={handleOpenGuestbook}
               waterDisabled={waterMutation.isPending}
@@ -194,6 +207,8 @@ export default function ProfileScreen({ navigation, route }: Props) {
           </View>
         ))}
       </PagerView>
+
+      {renderProfileHeader()}
 
       <SafeAreaView pointerEvents="box-none" style={styles.overlaySafeArea} edges={["top"]}>
         <View style={styles.pagination}>
@@ -227,6 +242,64 @@ const styles = StyleSheet.create({
   page: {
     flex: 1,
   },
+  headerSafeArea: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+  },
+  headerCard: {
+    marginHorizontal: 16,
+    marginTop: 8,
+    minHeight: 56,
+    borderRadius: 18,
+    backgroundColor: "rgba(255,255,255,0.96)",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  headerSideButton: {
+    width: 56,
+    minHeight: 44,
+    justifyContent: "center",
+  },
+  headerBackText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#374151",
+  },
+  headerTitle: {
+    flex: 1,
+    textAlign: "center",
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#171717",
+  },
+  headerActionWrap: {
+    minWidth: 72,
+    alignItems: "flex-end",
+  },
+  followButton: {
+    borderRadius: 12,
+    backgroundColor: "#E9F6EA",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  followButtonText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#2F7D32",
+  },
+  selfBadgeText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#6B7280",
+  },
   overlaySafeArea: {
     position: "absolute",
     top: 0,
@@ -234,7 +307,7 @@ const styles = StyleSheet.create({
     right: 0,
   },
   pagination: {
-    marginTop: 84,
+    marginTop: 86,
     alignSelf: "center",
     flexDirection: "row",
     alignItems: "center",
@@ -256,14 +329,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#FFFFFF",
   },
-  emptyHeader: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
+  emptyScrollSafeArea: {
+    flex: 1,
   },
-  emptyBackText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#6B7280",
+  emptyScrollContent: {
+    paddingTop: 104,
+    paddingBottom: 28,
   },
   summaryRow: {
     flexDirection: "row",
@@ -288,15 +359,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#171717",
-  },
-  followTextButton: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#4CAF50",
-  },
-  selfBadgeText: {
-    fontSize: 13,
-    color: "#9CA3AF",
   },
   emptyGardenWrap: {
     paddingHorizontal: 20,
