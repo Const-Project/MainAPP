@@ -1,29 +1,23 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   FlatList,
+  ListRenderItem,
   View,
   Text,
   Image,
-  Modal,
-  Pressable,
   KeyboardAvoidingView,
   Platform,
   TouchableOpacity,
   StyleSheet,
-  useWindowDimensions,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import Animated, {
-  Easing,
-  Extrapolation,
-  interpolate,
-  runOnJS,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from "react-native-reanimated";
+import {
+  BottomSheetBackdrop,
+  BottomSheetFlatList,
+  BottomSheetModal,
+  BottomSheetView,
+} from "@gorhom/bottom-sheet";
 import type { RootStackParamList } from "@/navigation/types";
 
 import { HeartIcon, ChatIcon } from "@/assets/icons/CommonIcons";
@@ -48,11 +42,8 @@ export default function FeedDetail({
 }: Props) {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const [isCommentSheetVisible, setCommentSheetVisible] = useState(false);
-  const { height: windowHeight } = useWindowDimensions();
-  const sheetHeight = Math.min(windowHeight * 0.6, 560);
-  const translateY = useSharedValue(sheetHeight);
-  const backdropOpacity = useSharedValue(0);
+  const bottomSheetModalRef = useRef<BottomSheetModal>(null);
+  const snapPoints = useMemo(() => ["60%", "90%"], []);
 
   const comments = useMemo(
     () =>
@@ -65,6 +56,12 @@ export default function FeedDetail({
     [result.comments]
   );
 
+  const renderCommentItem: ListRenderItem<(typeof comments)[number]> = ({
+    item,
+  }) => <Comment comment={item} />;
+
+  const getCommentKey = (item: (typeof comments)[number]) => item.id.toString();
+
   const formatDate = (iso: string) => {
     const d = new Date(iso);
     return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`;
@@ -75,96 +72,25 @@ export default function FeedDetail({
   };
 
   const handleOpenComments = () => {
-    setCommentSheetVisible(true);
+    bottomSheetModalRef.current?.present();
   };
 
   const handleCloseComments = () => {
-    translateY.value = withTiming(
-      sheetHeight,
-      {
-        duration: 240,
-        easing: Easing.out(Easing.cubic),
-      },
-      finished => {
-        if (finished) {
-          runOnJS(setCommentSheetVisible)(false);
-        }
-      }
-    );
-    backdropOpacity.value = withTiming(0, {
-      duration: 220,
-      easing: Easing.out(Easing.quad),
-    });
+    bottomSheetModalRef.current?.dismiss();
   };
 
-  useEffect(() => {
-    if (!isCommentSheetVisible) {
-      return;
-    }
-
-    translateY.value = sheetHeight;
-    backdropOpacity.value = 0;
-    translateY.value = withTiming(0, {
-      duration: 260,
-      easing: Easing.out(Easing.cubic),
-    });
-    backdropOpacity.value = withTiming(1, {
-      duration: 220,
-      easing: Easing.out(Easing.quad),
-    });
-  }, [backdropOpacity, isCommentSheetVisible, sheetHeight, translateY]);
-
-  const panGesture = Gesture.Pan()
-    .onUpdate(event => {
-      translateY.value = Math.max(0, event.translationY);
-      backdropOpacity.value = interpolate(
-        translateY.value,
-        [0, sheetHeight],
-        [1, 0],
-        Extrapolation.CLAMP
-      );
-    })
-    .onEnd(event => {
-      const shouldClose =
-        event.velocityY > 900 || translateY.value > sheetHeight * 0.28;
-
-      if (shouldClose) {
-        translateY.value = withTiming(
-          sheetHeight,
-          {
-            duration: 220,
-            easing: Easing.out(Easing.cubic),
-          },
-          finished => {
-            if (finished) {
-              runOnJS(setCommentSheetVisible)(false);
-            }
-          }
-        );
-        backdropOpacity.value = withTiming(0, {
-          duration: 200,
-          easing: Easing.out(Easing.quad),
-        });
-        return;
-      }
-
-      translateY.value = withTiming(0, {
-        duration: 220,
-        easing: Easing.out(Easing.cubic),
-      });
-      backdropOpacity.value = withTiming(1, {
-        duration: 200,
-        easing: Easing.out(Easing.quad),
-      });
-    });
-
-  const backdropAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: backdropOpacity.value,
-  }));
-
-  const sheetAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
-  }));
+  const renderBackdrop = useCallback(
+    (props: React.ComponentProps<typeof BottomSheetBackdrop>) => (
+      <BottomSheetBackdrop
+        {...props}
+        disappearsOnIndex={-1}
+        appearsOnIndex={0}
+        opacity={0.28}
+        pressBehavior="close"
+      />
+    ),
+    []
+  );
 
   return (
     <>
@@ -225,66 +151,53 @@ export default function FeedDetail({
         </View>
       </View>
 
-      <Modal
-        visible={isCommentSheetVisible}
-        transparent
-        animationType="none"
-        onRequestClose={handleCloseComments}
+      <BottomSheetModal
+        ref={bottomSheetModalRef}
+        snapPoints={snapPoints}
+        enablePanDownToClose
+        backdropComponent={renderBackdrop}
+        handleIndicatorStyle={styles.sheetHandle}
+        backgroundStyle={styles.sheetBackground}
+        onDismiss={handleCloseComments}
       >
-        <View style={styles.modalRoot}>
-          <Animated.View style={[styles.backdrop, backdropAnimatedStyle]}>
-            <Pressable style={styles.backdropPressable} onPress={handleCloseComments} />
-          </Animated.View>
-          <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-            style={styles.sheetKeyboard}
-          >
-            <Animated.View
-              style={[
-                styles.sheet,
-                { height: sheetHeight },
-                sheetAnimatedStyle,
-              ]}
-            >
-              <GestureDetector gesture={panGesture}>
-                <View style={styles.dragArea}>
-                  <View style={styles.sheetHandle} />
-                  <Text style={styles.sheetTitle}>댓글 {result.commentCount}</Text>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.sheetKeyboard}
+        >
+          <BottomSheetView style={styles.sheet}>
+            <Text style={styles.sheetTitle}>댓글 {result.commentCount}</Text>
+            <View style={styles.sheetContent}>
+              {comments.length > 0 ? (
+                <BottomSheetFlatList<(typeof comments)[number]>
+                  data={comments}
+                  keyExtractor={getCommentKey}
+                  renderItem={renderCommentItem}
+                  style={styles.commentList}
+                  contentContainerStyle={styles.commentListContent}
+                  showsVerticalScrollIndicator={false}
+                />
+              ) : (
+                <View style={styles.emptyState}>
+                  <Text style={styles.emptyText}>아직 작성된 댓글이 없습니다.</Text>
                 </View>
-              </GestureDetector>
-              <View style={styles.sheetContent}>
-                {comments.length > 0 ? (
-                  <FlatList
-                    data={comments}
-                    keyExtractor={item => item.id.toString()}
-                    renderItem={({ item }) => <Comment comment={item} />}
-                    style={styles.commentList}
-                    contentContainerStyle={styles.commentListContent}
-                    showsVerticalScrollIndicator={false}
-                  />
-                ) : (
-                  <View style={styles.emptyState}>
-                    <Text style={styles.emptyText}>아직 작성된 댓글이 없습니다.</Text>
-                  </View>
-                )}
+              )}
+            </View>
+            {onChangeComment && onSubmitComment ? (
+              <View style={styles.composerContainer}>
+                {/* 한글 주석:
+                    라이브러리 바텀시트로 교체해 드래그와 스냅은 시트가 맡고,
+                    입력창은 하단 고정, 댓글 목록은 독립 스크롤 구조를 유지한다. */}
+                <CommentComposer
+                  value={commentValue}
+                  onChangeText={onChangeComment}
+                  onSubmit={onSubmitComment}
+                  disabled={isCommentPending}
+                />
               </View>
-              {onChangeComment && onSubmitComment ? (
-                <View style={styles.composerContainer}>
-                  {/* 한글 주석:
-                      인스타처럼 댓글 입력창은 시트 하단에 고정하고,
-                      위쪽 댓글 목록만 독립적으로 스크롤되게 분리한다. */}
-                  <CommentComposer
-                    value={commentValue}
-                    onChangeText={onChangeComment}
-                    onSubmit={onSubmitComment}
-                    disabled={isCommentPending}
-                  />
-                </View>
-              ) : null}
-            </Animated.View>
-          </KeyboardAvoidingView>
-        </View>
-      </Modal>
+            ) : null}
+          </BottomSheetView>
+        </KeyboardAvoidingView>
+      </BottomSheetModal>
     </>
   );
 }
@@ -376,44 +289,31 @@ const styles = StyleSheet.create({
   spacer: {
     width: 40,
   },
-  modalRoot: {
-    flex: 1,
-    justifyContent: "flex-end",
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.28)",
-  },
-  backdropPressable: {
-    flex: 1,
-  },
   sheetKeyboard: {
     flex: 1,
-    justifyContent: "flex-end",
   },
-  sheet: {
+  sheetBackground: {
     backgroundColor: "#FFFFFF",
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
+  },
+  sheet: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
     overflow: "hidden",
   },
-  dragArea: {
-    paddingBottom: 8,
-  },
   sheetHandle: {
-    alignSelf: "center",
     width: 44,
     height: 5,
     borderRadius: 999,
     backgroundColor: "#D1D5DB",
-    marginTop: 10,
-    marginBottom: 14,
   },
   sheetTitle: {
     fontSize: 16,
     fontWeight: "700",
     color: "#171717",
     textAlign: "center",
+    marginTop: 8,
     marginBottom: 8,
   },
   sheetContent: {
