@@ -6,6 +6,7 @@ import {
   getHomeSummary,
   getNotifications,
   getTrackingPromptStatus,
+  patchNotificationRead,
   postGardenMyWater,
   postGardenSunlight,
   postTrackingPromptConfirm,
@@ -70,6 +71,28 @@ export const useNotifications = (enabled: boolean) =>
     select: data => data.result,
     enabled,
   });
+
+export const useReadNotifications = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (notificationIds: number[]) => {
+      await Promise.all(
+        notificationIds.map(notificationId => patchNotificationRead(notificationId))
+      );
+    },
+    onSuccess: async (_, notificationIds) => {
+      queryClient.setQueryData<NotificationItem[]>(["notifications"], previous =>
+        previous?.map(item =>
+          notificationIds.includes(item.id) ? { ...item, isRead: true } : item
+        ) ?? previous
+      );
+
+      await queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      await queryClient.invalidateQueries({ queryKey: ["home-summary"] });
+    },
+  });
+};
 
 export const useGuestbookList = (userId: number | null, enabled: boolean) =>
   useQuery<GlobalResponse<GuestbookEntry[]>, AxiosError, GuestbookEntry[]>({

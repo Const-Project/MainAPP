@@ -47,6 +47,11 @@ export const getNotifications = async (): ApiResponse<NotificationItem[]> => {
   return res.data;
 };
 
+export const patchNotificationRead = async (notificationId: number) => {
+  const res = await api.patch(`/api/v1/notifications/${notificationId}/read`);
+  return res.data;
+};
+
 export const getGuestbookList = async (
   userId: number
 ): ApiResponse<GuestbookEntry[]> => {

@@ -234,6 +234,7 @@ export default function HomeScreen({ navigation }: Props) {
               garden={scene.garden}
               isEmotionAnswered={isEmotionAnswered}
               answeredKind={answeredKind}
+              unreadNotificationCount={userInfo?.unreadNotificationCount ?? 0}
               onPressMap={() => setIsMapModalOpen(true)}
               onPressBird={() => setIsAlertsModalOpen(true)}
               onPressEmotion={() => setIsEmotionModalOpen(true)}

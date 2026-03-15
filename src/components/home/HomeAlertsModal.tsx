@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Modal,
   Pressable,
@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useGuestbookList, useNotifications } from "@/hooks/home/useHomeApi";
+import { useGuestbookList, useNotifications, useReadNotifications } from "@/hooks/home/useHomeApi";
 import type { GuestbookEntry, NotificationItem } from "@/types/home/alerts";
 
 type AlertTab = "GUESTBOOK" | "RECORD";
@@ -23,8 +23,10 @@ export default function HomeAlertsModal({
   onClose: () => void;
 }) {
   const [activeTab, setActiveTab] = useState<AlertTab>("GUESTBOOK");
+  const [hasMarkedRecordAsReadThisOpen, setHasMarkedRecordAsReadThisOpen] = useState(false);
   const notificationsQuery = useNotifications(visible);
   const guestbookQuery = useGuestbookList(userId, visible);
+  const readNotificationsMutation = useReadNotifications();
 
   const activeState = useMemo(() => {
     if (activeTab === "GUESTBOOK") {
@@ -48,6 +50,36 @@ export default function HomeAlertsModal({
     notificationsQuery.data,
     notificationsQuery.isError,
     notificationsQuery.isLoading,
+  ]);
+
+  useEffect(() => {
+    if (!visible) {
+      setHasMarkedRecordAsReadThisOpen(false);
+      return;
+    }
+
+    if (activeTab !== "RECORD" || hasMarkedRecordAsReadThisOpen) {
+      return;
+    }
+
+    const unreadNotificationIds =
+      notificationsQuery.data
+        ?.filter(item => !item.isRead)
+        .map(item => item.id) ?? [];
+
+    setHasMarkedRecordAsReadThisOpen(true);
+
+    if (unreadNotificationIds.length === 0) {
+      return;
+    }
+
+    void readNotificationsMutation.mutateAsync(unreadNotificationIds);
+  }, [
+    activeTab,
+    hasMarkedRecordAsReadThisOpen,
+    notificationsQuery.data,
+    readNotificationsMutation,
+    visible,
   ]);
 
   return (

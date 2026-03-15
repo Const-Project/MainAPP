@@ -36,6 +36,7 @@ type Props = {
   garden: GardenSummary | null;
   isEmotionAnswered: boolean;
   answeredKind: SurveyAnswerKind | null;
+  unreadNotificationCount?: number;
   onPressMap: () => void;
   onPressBird: () => void;
   onPressEmotion: () => void;
@@ -50,6 +51,7 @@ export default function HomeGardenScene({
   garden,
   isEmotionAnswered,
   answeredKind,
+  unreadNotificationCount = 0,
   onPressMap,
   onPressBird,
   onPressEmotion,
@@ -205,6 +207,7 @@ export default function HomeGardenScene({
                 isWatering={isWateringVisible}
                 isEmotionAnswered={isEmotionAnswered}
                 answeredKind={answeredKind}
+                unreadNotificationCount={unreadNotificationCount}
                 onPressEmotion={onPressEmotion}
                 onPressBird={onPressBird}
               />
