@@ -23,6 +23,7 @@ export type RootStackParamList = {
 
   // 설정
   UserNicknameEdit: undefined;
+  AvatarNicknameEdit: undefined;
   Policy: undefined;
 
   // 팔로우
