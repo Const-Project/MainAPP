@@ -31,8 +31,8 @@ export default function useFeedLikeToggle({
   }, [initialLiked, initialLikeCount]);
 
   const mutation = useMutation({
-    mutationFn: async () => {
-      if (liked) {
+    mutationFn: async (nextLiked: boolean) => {
+      if (!nextLiked) {
         await unlikeFeedTarget(targetId, targetType);
         return false;
       }
@@ -40,8 +40,7 @@ export default function useFeedLikeToggle({
       await likeFeedTarget(targetId, targetType);
       return true;
     },
-    onMutate: () => {
-      const nextLiked = !liked;
+    onMutate: nextLiked => {
       const nextLikeCount = Math.max(0, likeCount + (nextLiked ? 1 : -1));
 
       setLiked(nextLiked);
@@ -70,7 +69,8 @@ export default function useFeedLikeToggle({
         return;
       }
 
-      mutation.mutate();
+      const nextLiked = !liked;
+      mutation.mutate(nextLiked);
     },
     isLikePending: mutation.isPending,
   };
