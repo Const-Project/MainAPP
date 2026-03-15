@@ -338,6 +338,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   composerContainer: {
+    marginTop: "auto",
     borderTopWidth: 1,
     borderTopColor: "#E5E7EB",
     backgroundColor: "#FFFFFF",
