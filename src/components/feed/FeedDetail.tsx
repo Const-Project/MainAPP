@@ -14,6 +14,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
   BottomSheetBackdrop,
+  BottomSheetFooter,
   BottomSheetFlatList,
   BottomSheetModal,
   BottomSheetView,
@@ -92,6 +93,31 @@ export default function FeedDetail({
     []
   );
 
+  const renderFooter = useCallback(
+    (props: React.ComponentProps<typeof BottomSheetFooter>) => {
+      if (!onChangeComment || !onSubmitComment) {
+        return null;
+      }
+
+      return (
+        <BottomSheetFooter {...props} bottomInset={0}>
+          <View style={styles.composerContainer}>
+            {/* 한글 주석:
+                댓글 입력창은 바텀시트 본문 흐름과 분리된 footer로 렌더링해
+                댓글 수와 관계없이 항상 시트 최하단에 고정한다. */}
+            <CommentComposer
+              value={commentValue}
+              onChangeText={onChangeComment}
+              onSubmit={onSubmitComment}
+              disabled={isCommentPending}
+            />
+          </View>
+        </BottomSheetFooter>
+      );
+    },
+    [commentValue, isCommentPending, onChangeComment, onSubmitComment]
+  );
+
   return (
     <>
       <View style={styles.container}>
@@ -158,6 +184,7 @@ export default function FeedDetail({
         enableDynamicSizing={false}
         enablePanDownToClose
         backdropComponent={renderBackdrop}
+        footerComponent={renderFooter}
         handleIndicatorStyle={styles.sheetHandle}
         backgroundStyle={styles.sheetBackground}
         onDismiss={handleCloseComments}
@@ -184,19 +211,6 @@ export default function FeedDetail({
                 </View>
               )}
             </View>
-            {onChangeComment && onSubmitComment ? (
-              <View style={styles.composerContainer}>
-                {/* 한글 주석:
-                    라이브러리 바텀시트로 교체해 드래그와 스냅은 시트가 맡고,
-                    입력창은 하단 고정, 댓글 목록은 독립 스크롤 구조를 유지한다. */}
-                <CommentComposer
-                  value={commentValue}
-                  onChangeText={onChangeComment}
-                  onSubmit={onSubmitComment}
-                  disabled={isCommentPending}
-                />
-              </View>
-            ) : null}
           </BottomSheetView>
         </KeyboardAvoidingView>
       </BottomSheetModal>
@@ -325,7 +339,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   commentListContent: {
-    paddingBottom: 16,
+    paddingBottom: 120,
   },
   emptyState: {
     flex: 1,
@@ -338,9 +352,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   composerContainer: {
-    marginTop: "auto",
-    borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
     backgroundColor: "#FFFFFF",
   },
 });
