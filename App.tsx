@@ -5,6 +5,7 @@ import {
   NavigationContainer,
   useNavigationContainerRef,
 } from "@react-navigation/native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { RootNavigator } from "@/navigation";
 import QueryProvider from "@/providers/QueryProvider";
@@ -37,33 +38,35 @@ export default function App() {
   }
 
   return (
-    <SafeAreaProvider>
-      <QueryProvider>
-        <NavigationContainer
-          ref={navigationRef}
-          onReady={() => {
-            const routeName = navigationRef.getCurrentRoute()?.name;
-            currentRouteNameRef.current = routeName;
-            debugLog("Navigation", "ready", { routeName });
-          }}
-          onStateChange={() => {
-            const previousRouteName = currentRouteNameRef.current;
-            const nextRouteName = navigationRef.getCurrentRoute()?.name;
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <QueryProvider>
+          <NavigationContainer
+            ref={navigationRef}
+            onReady={() => {
+              const routeName = navigationRef.getCurrentRoute()?.name;
+              currentRouteNameRef.current = routeName;
+              debugLog("Navigation", "ready", { routeName });
+            }}
+            onStateChange={() => {
+              const previousRouteName = currentRouteNameRef.current;
+              const nextRouteName = navigationRef.getCurrentRoute()?.name;
 
-            if (previousRouteName !== nextRouteName) {
-              debugLog("Navigation", "route changed", {
-                from: previousRouteName,
-                to: nextRouteName,
-              });
-            }
+              if (previousRouteName !== nextRouteName) {
+                debugLog("Navigation", "route changed", {
+                  from: previousRouteName,
+                  to: nextRouteName,
+                });
+              }
 
-            currentRouteNameRef.current = nextRouteName;
-          }}
-        >
-          <RootNavigator />
-          <StatusBar style="auto" />
-        </NavigationContainer>
-      </QueryProvider>
-    </SafeAreaProvider>
+              currentRouteNameRef.current = nextRouteName;
+            }}
+          >
+            <RootNavigator />
+            <StatusBar style="auto" />
+          </NavigationContainer>
+        </QueryProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

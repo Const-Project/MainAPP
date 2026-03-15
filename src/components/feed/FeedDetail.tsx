@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   FlatList,
   View,
@@ -14,6 +14,16 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import Animated, {
+  Easing,
+  Extrapolation,
+  interpolate,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 import type { RootStackParamList } from "@/navigation/types";
 
 import { HeartIcon, ChatIcon } from "@/assets/icons/CommonIcons";
@@ -40,6 +50,9 @@ export default function FeedDetail({
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [isCommentSheetVisible, setCommentSheetVisible] = useState(false);
   const { height: windowHeight } = useWindowDimensions();
+  const sheetHeight = Math.min(windowHeight * 0.6, 560);
+  const translateY = useSharedValue(sheetHeight);
+  const backdropOpacity = useSharedValue(0);
 
   const comments = useMemo(
     () =>
@@ -66,8 +79,92 @@ export default function FeedDetail({
   };
 
   const handleCloseComments = () => {
-    setCommentSheetVisible(false);
+    translateY.value = withTiming(
+      sheetHeight,
+      {
+        duration: 240,
+        easing: Easing.out(Easing.cubic),
+      },
+      finished => {
+        if (finished) {
+          runOnJS(setCommentSheetVisible)(false);
+        }
+      }
+    );
+    backdropOpacity.value = withTiming(0, {
+      duration: 220,
+      easing: Easing.out(Easing.quad),
+    });
   };
+
+  useEffect(() => {
+    if (!isCommentSheetVisible) {
+      return;
+    }
+
+    translateY.value = sheetHeight;
+    backdropOpacity.value = 0;
+    translateY.value = withTiming(0, {
+      duration: 260,
+      easing: Easing.out(Easing.cubic),
+    });
+    backdropOpacity.value = withTiming(1, {
+      duration: 220,
+      easing: Easing.out(Easing.quad),
+    });
+  }, [backdropOpacity, isCommentSheetVisible, sheetHeight, translateY]);
+
+  const panGesture = Gesture.Pan()
+    .onUpdate(event => {
+      translateY.value = Math.max(0, event.translationY);
+      backdropOpacity.value = interpolate(
+        translateY.value,
+        [0, sheetHeight],
+        [1, 0],
+        Extrapolation.CLAMP
+      );
+    })
+    .onEnd(event => {
+      const shouldClose =
+        event.velocityY > 900 || translateY.value > sheetHeight * 0.28;
+
+      if (shouldClose) {
+        translateY.value = withTiming(
+          sheetHeight,
+          {
+            duration: 220,
+            easing: Easing.out(Easing.cubic),
+          },
+          finished => {
+            if (finished) {
+              runOnJS(setCommentSheetVisible)(false);
+            }
+          }
+        );
+        backdropOpacity.value = withTiming(0, {
+          duration: 200,
+          easing: Easing.out(Easing.quad),
+        });
+        return;
+      }
+
+      translateY.value = withTiming(0, {
+        duration: 220,
+        easing: Easing.out(Easing.cubic),
+      });
+      backdropOpacity.value = withTiming(1, {
+        duration: 200,
+        easing: Easing.out(Easing.quad),
+      });
+    });
+
+  const backdropAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: backdropOpacity.value,
+  }));
+
+  const sheetAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
 
   return (
     <>
@@ -131,25 +228,30 @@ export default function FeedDetail({
       <Modal
         visible={isCommentSheetVisible}
         transparent
-        animationType="slide"
+        animationType="none"
         onRequestClose={handleCloseComments}
       >
         <View style={styles.modalRoot}>
-          <Pressable style={styles.backdrop} onPress={handleCloseComments} />
+          <Animated.View style={[styles.backdrop, backdropAnimatedStyle]}>
+            <Pressable style={styles.backdropPressable} onPress={handleCloseComments} />
+          </Animated.View>
           <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : "height"}
             style={styles.sheetKeyboard}
           >
-            <View
+            <Animated.View
               style={[
                 styles.sheet,
-                {
-                  height: Math.min(windowHeight * 0.6, 560),
-                },
+                { height: sheetHeight },
+                sheetAnimatedStyle,
               ]}
             >
-              <View style={styles.sheetHandle} />
-              <Text style={styles.sheetTitle}>댓글 {result.commentCount}</Text>
+              <GestureDetector gesture={panGesture}>
+                <View style={styles.dragArea}>
+                  <View style={styles.sheetHandle} />
+                  <Text style={styles.sheetTitle}>댓글 {result.commentCount}</Text>
+                </View>
+              </GestureDetector>
               <View style={styles.sheetContent}>
                 {comments.length > 0 ? (
                   <FlatList
@@ -179,7 +281,7 @@ export default function FeedDetail({
                   />
                 </View>
               ) : null}
-            </View>
+            </Animated.View>
           </KeyboardAvoidingView>
         </View>
       </Modal>
@@ -282,6 +384,9 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(0,0,0,0.28)",
   },
+  backdropPressable: {
+    flex: 1,
+  },
   sheetKeyboard: {
     flex: 1,
     justifyContent: "flex-end",
@@ -291,6 +396,9 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     overflow: "hidden",
+  },
+  dragArea: {
+    paddingBottom: 8,
   },
   sheetHandle: {
     alignSelf: "center",
