@@ -7,10 +7,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import type { AxiosError } from "axios";
 import PagerView from "react-native-pager-view";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { RootStackScreenProps } from "@/navigation/types";
 import StatusView from "@/components/common/StatusView";
+import HomeToast from "@/components/home/HomeToast";
 import ProfileGardenScene from "@/components/profile/ProfileGardenScene";
 import { useFriendWater, useUserProfile } from "@/hooks/profile/useProfileApi";
 import { useFollowUser, useUnfollowUser } from "@/hooks/follow/useFollowApi";
@@ -35,6 +37,7 @@ export default function ProfileScreen({ navigation, route }: Props) {
   const unfollowMutation = useUnfollowUser(myUserId);
   const [currentPage, setCurrentPage] = useState(0);
   const [wateringGardenId, setWateringGardenId] = useState<number | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const isMe = String(userId) === myUserId;
 
@@ -55,13 +58,21 @@ export default function ProfileScreen({ navigation, route }: Props) {
   };
 
   const handleFriendWater = async (gardenId: number) => {
-    await waterMutation.mutateAsync(gardenId);
+    try {
+      await waterMutation.mutateAsync(gardenId);
 
-    // Show the watering overlay briefly on the just-watered garden.
-    setWateringGardenId(gardenId);
-    setTimeout(() => {
-      setWateringGardenId(prev => (prev === gardenId ? null : prev));
-    }, 1000);
+      // Show a short overlay and toast so the success state is obvious.
+      setWateringGardenId(gardenId);
+      setToastMessage("\uce5c\uad6c \uc815\uc6d0\uc5d0 \ubb3c\uc744 \uc8fc\uc5c8\uc2b5\ub2c8\ub2e4.");
+      setTimeout(() => {
+        setWateringGardenId(prev => (prev === gardenId ? null : prev));
+      }, 1000);
+    } catch (error) {
+      const axiosError = error as AxiosError<{ message?: string }>;
+      setToastMessage(
+        axiosError.response?.data?.message ?? "\uce5c\uad6c \ubb3c\uc8fc\uae30\uc5d0 \uc2e4\ud328\ud588\uc2b5\ub2c8\ub2e4."
+      );
+    }
   };
 
   const followAction = useMemo(() => {
@@ -235,6 +246,10 @@ export default function ProfileScreen({ navigation, route }: Props) {
           ))}
         </View>
       </SafeAreaView>
+
+      {toastMessage ? (
+        <HomeToast message={toastMessage} onClose={() => setToastMessage(null)} />
+      ) : null}
     </View>
   );
 }
