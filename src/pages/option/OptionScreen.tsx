@@ -13,7 +13,7 @@ import { logout } from "@/utils/auth";
 
 type Props = MainTabScreenProps<"Option">;
 
-export default function OptionScreen(_: Props) {
+export default function OptionScreen({ navigation }: Props) {
   const [pushNotification, setPushNotification] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { accessToken, userId, hasHydrated } = useTokenStore();
@@ -56,7 +56,7 @@ export default function OptionScreen(_: Props) {
             </TouchableOpacity>
           }
         />
-        <OptionRow label="유저 닉네임 변경" />
+        <OptionRow label="유저 닉네임 변경" onPress={() => navigation.navigate("UserNicknameEdit")} />
         <OptionRow label="아바타 닉네임 변경" />
         <OptionRow label="이용 약관" />
         <OptionRow label="서비스 안내" />

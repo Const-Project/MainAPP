@@ -21,6 +21,9 @@ export type RootStackParamList = {
   Profile: { userId: number };
   Guestbook: { userId: number; userNickname?: string };
 
+  // 설정
+  UserNicknameEdit: undefined;
+
   // 팔로우
   Follow: undefined;
 
