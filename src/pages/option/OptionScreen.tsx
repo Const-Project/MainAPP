@@ -58,7 +58,7 @@ export default function OptionScreen({ navigation }: Props) {
         />
         <OptionRow label="유저 닉네임 변경" onPress={() => navigation.navigate("UserNicknameEdit")} />
         <OptionRow label="아바타 닉네임 변경" />
-        <OptionRow label="이용 약관" />
+        <OptionRow label="이용 약관" onPress={() => navigation.navigate("Policy")} />
         <OptionRow label="서비스 안내" />
         <OptionRow
           label={isLoggingOut ? "로그아웃 중..." : "로그아웃"}
