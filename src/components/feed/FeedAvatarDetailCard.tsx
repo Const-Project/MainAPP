@@ -14,6 +14,13 @@ export default function FeedAvatarDetailCard({ postId }: Props) {
   const { data, isLoading, error, refetch } = useAvatarPostDetail(postId);
   const [content, setContent] = useState("");
   const { mutateAsync, isPending } = usePostComment(() => void refetch());
+  const { liked, likeCount, toggleLike, isLikePending } = useFeedLikeToggle({
+    targetId: postId,
+    targetType: "AVATAR_POST",
+    initialLiked: data?.isLiked ?? false,
+    initialLikeCount: data?.likeCount ?? 0,
+    onSuccessRefetch: refetch,
+  });
 
   const handleSendComment = async () => {
     if (!content.trim()) {
@@ -63,14 +70,6 @@ export default function FeedAvatarDetailCard({ postId }: Props) {
     updatedAt: data.updatedAt,
     isPublic: data.isPublic,
   };
-
-  const { liked, likeCount, toggleLike, isLikePending } = useFeedLikeToggle({
-    targetId: postId,
-    targetType: "AVATAR_POST",
-    initialLiked: result.isLiked,
-    initialLikeCount: result.likeCount,
-    onSuccessRefetch: refetch,
-  });
 
   return (
     <FeedDetail
