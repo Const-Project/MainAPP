@@ -62,10 +62,13 @@ export default function HomeAlertsModal({
       return;
     }
 
-    const unreadNotificationIds =
-      notificationsQuery.data
-        ?.filter(item => !item.isRead)
-        .map(item => item.id) ?? [];
+    if (notificationsQuery.isLoading || !notificationsQuery.data) {
+      return;
+    }
+
+    const unreadNotificationIds = notificationsQuery.data
+      .filter(item => !item.isRead)
+      .map(item => item.id);
 
     setHasMarkedRecordAsReadThisOpen(true);
 
@@ -78,6 +81,7 @@ export default function HomeAlertsModal({
     activeTab,
     hasMarkedRecordAsReadThisOpen,
     notificationsQuery.data,
+    notificationsQuery.isLoading,
     readNotificationsMutation,
     visible,
   ]);

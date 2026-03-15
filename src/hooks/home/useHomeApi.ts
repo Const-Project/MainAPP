@@ -82,10 +82,43 @@ export const useReadNotifications = () => {
       );
     },
     onSuccess: async (_, notificationIds) => {
-      queryClient.setQueryData<NotificationItem[]>(["notifications"], previous =>
-        previous?.map(item =>
-          notificationIds.includes(item.id) ? { ...item, isRead: true } : item
-        ) ?? previous
+      queryClient.setQueryData<GlobalResponse<NotificationItem[]>>(
+        ["notifications"],
+        previous =>
+          previous
+            ? {
+                ...previous,
+                result: previous.result.map(item =>
+                  notificationIds.includes(item.id) ? { ...item, isRead: true } : item
+                ),
+              }
+            : previous
+      );
+
+      queryClient.setQueryData<GlobalResponse<HomeSummaryPayload>>(
+        ["home-summary"],
+        previous => {
+          if (!previous) {
+            return previous;
+          }
+
+          const unreadDelta = previous.result.userInfo.unreadNotificationCount;
+          const nextUnreadCount = Math.max(
+            0,
+            unreadDelta - notificationIds.length
+          );
+
+          return {
+            ...previous,
+            result: {
+              ...previous.result,
+              userInfo: {
+                ...previous.result.userInfo,
+                unreadNotificationCount: nextUnreadCount,
+              },
+            },
+          };
+        }
       );
 
       await queryClient.invalidateQueries({ queryKey: ["notifications"] });
