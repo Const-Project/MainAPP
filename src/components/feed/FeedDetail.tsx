@@ -150,26 +150,34 @@ export default function FeedDetail({
             >
               <View style={styles.sheetHandle} />
               <Text style={styles.sheetTitle}>댓글 {result.commentCount}</Text>
-              {comments.length > 0 ? (
-                <FlatList
-                  data={comments}
-                  keyExtractor={item => item.id.toString()}
-                  renderItem={({ item }) => <Comment comment={item} />}
-                  style={styles.commentList}
-                  showsVerticalScrollIndicator={false}
-                />
-              ) : (
-                <View style={styles.emptyState}>
-                  <Text style={styles.emptyText}>아직 작성된 댓글이 없습니다.</Text>
-                </View>
-              )}
+              <View style={styles.sheetContent}>
+                {comments.length > 0 ? (
+                  <FlatList
+                    data={comments}
+                    keyExtractor={item => item.id.toString()}
+                    renderItem={({ item }) => <Comment comment={item} />}
+                    style={styles.commentList}
+                    contentContainerStyle={styles.commentListContent}
+                    showsVerticalScrollIndicator={false}
+                  />
+                ) : (
+                  <View style={styles.emptyState}>
+                    <Text style={styles.emptyText}>아직 작성된 댓글이 없습니다.</Text>
+                  </View>
+                )}
+              </View>
               {onChangeComment && onSubmitComment ? (
-                <CommentComposer
-                  value={commentValue}
-                  onChangeText={onChangeComment}
-                  onSubmit={onSubmitComment}
-                  disabled={isCommentPending}
-                />
+                <View style={styles.composerContainer}>
+                  {/* 한글 주석:
+                      인스타처럼 댓글 입력창은 시트 하단에 고정하고,
+                      위쪽 댓글 목록만 독립적으로 스크롤되게 분리한다. */}
+                  <CommentComposer
+                    value={commentValue}
+                    onChangeText={onChangeComment}
+                    onSubmit={onSubmitComment}
+                    disabled={isCommentPending}
+                  />
+                </View>
               ) : null}
             </View>
           </KeyboardAvoidingView>
@@ -279,7 +287,6 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   sheet: {
-    maxHeight: "78%",
     backgroundColor: "#FFFFFF",
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
@@ -301,16 +308,28 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 8,
   },
+  sheetContent: {
+    flex: 1,
+  },
   commentList: {
-    maxHeight: 420,
+    flex: 1,
+  },
+  commentListContent: {
+    paddingBottom: 16,
   },
   emptyState: {
-    paddingVertical: 28,
+    flex: 1,
+    justifyContent: "center",
     paddingHorizontal: 20,
   },
   emptyText: {
     fontSize: 14,
     color: "#9CA3AF",
     textAlign: "center",
+  },
+  composerContainer: {
+    borderTopWidth: 1,
+    borderTopColor: "#E5E7EB",
+    backgroundColor: "#FFFFFF",
   },
 });
