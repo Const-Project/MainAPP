@@ -25,8 +25,9 @@ const mapIcon = require("@/assets/images/map.png");
 const emptyGardenImage = require("@/assets/images/null.webp");
 const sunlightOverlay = require("@/assets/images/background/sunlight.png");
 
-const SCENE_BOTTOM_OFFSET = 64;
+const SCENE_BOTTOM_OFFSET = -16;
 const ACTION_RAIL_BOTTOM_OFFSET = 128;
+const WATER_ACTION_COOLDOWN_MS = 700;
 
 type Props = {
   background: any;
@@ -61,6 +62,7 @@ export default function HomeGardenScene({
   const [isWateringVisible, setIsWateringVisible] = useState(false);
   const [canSunlight, setCanSunlight] = useState(Boolean(garden?.ownerSunlightAble));
   const [canWater, setCanWater] = useState(Boolean(garden?.ownerWateringAble));
+  const [isWaterCooldownActive, setIsWaterCooldownActive] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -178,9 +180,13 @@ export default function HomeGardenScene({
                   activeOpacity={0.85}
                   onPress={() => void handleWater()}
                   style={styles.actionButton}
-                  disabled={waterMutation.isPending}
+                  disabled={waterMutation.isPending || isWaterCooldownActive}
                 >
-                  <WaterIcon width={60} height={60} opacity={waterMutation.isPending ? 0.55 : 1} />
+                  <WaterIcon
+                    width={60}
+                    height={60}
+                    opacity={waterMutation.isPending || isWaterCooldownActive ? 0.55 : 1}
+                  />
                 </TouchableOpacity>
               </View>
             ) : null}

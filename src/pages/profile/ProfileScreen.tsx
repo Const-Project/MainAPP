@@ -21,6 +21,8 @@ import { FollowStatus } from "@/types/profile/profileApi.type";
 
 type Props = RootStackScreenProps<"Profile">;
 
+const FRIEND_WATER_ACTION_COOLDOWN_MS = 700;
+
 const backgrounds = [
   require("@/assets/images/background/background1.webp"),
   require("@/assets/images/background/background2.webp"),
@@ -37,6 +39,7 @@ export default function ProfileScreen({ navigation, route }: Props) {
   const unfollowMutation = useUnfollowUser(myUserId);
   const [currentPage, setCurrentPage] = useState(0);
   const [wateringGardenId, setWateringGardenId] = useState<number | null>(null);
+  const [isFriendWaterCooldownActive, setIsFriendWaterCooldownActive] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const isMe = String(userId) === myUserId;
@@ -225,7 +228,7 @@ export default function ProfileScreen({ navigation, route }: Props) {
               isWateringVisible={wateringGardenId === scene.garden.gardenId}
               onWater={() => void handleFriendWater(scene.garden.gardenId)}
               onPressGuestbook={handleOpenGuestbook}
-              waterDisabled={waterMutation.isPending}
+              waterDisabled={waterMutation.isPending || isFriendWaterCooldownActive}
             />
           </View>
         ))}
