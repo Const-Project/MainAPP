@@ -153,7 +153,9 @@ export default function FeedDetail({
 
       <BottomSheetModal
         ref={bottomSheetModalRef}
+        index={0}
         snapPoints={snapPoints}
+        enableDynamicSizing={false}
         enablePanDownToClose
         backdropComponent={renderBackdrop}
         handleIndicatorStyle={styles.sheetHandle}

@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import FeedDetail from "@/components/feed/FeedDetail";
+import usePostComment from "@/hooks/comments/useCommentApi";
 import { useAvatarPostDetail } from "@/hooks/feed/useAvatarPostDetailApi";
 import type { FeedDetailResult } from "@/types/feed/detail";
 
@@ -8,7 +10,25 @@ type Props = {
 };
 
 export default function FeedAvatarDetailCard({ postId }: Props) {
-  const { data, isLoading, error } = useAvatarPostDetail(postId);
+  const { data, isLoading, error, refetch } = useAvatarPostDetail(postId);
+  const [content, setContent] = useState("");
+  const { mutateAsync, isPending } = usePostComment(() => void refetch());
+
+  const handleSendComment = async () => {
+    if (!content.trim()) {
+      return;
+    }
+
+    try {
+      await mutateAsync({ content, targetId: postId, targetType: "AVATAR_POST" });
+      setContent("");
+    } catch (commentError) {
+      console.error(
+        "[FeedAvatarDetailCard] Failed to post comment:",
+        commentError
+      );
+    }
+  };
 
   if (isLoading) {
     return (
@@ -43,7 +63,15 @@ export default function FeedAvatarDetailCard({ postId }: Props) {
     isPublic: data.isPublic,
   };
 
-  return <FeedDetail result={result} />;
+  return (
+    <FeedDetail
+      result={result}
+      commentValue={content}
+      onChangeComment={setContent}
+      onSubmitComment={() => void handleSendComment()}
+      isCommentPending={isPending}
+    />
+  );
 }
 
 const styles = StyleSheet.create({
