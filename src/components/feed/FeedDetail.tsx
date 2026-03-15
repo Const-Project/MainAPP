@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.28)",
   },
   sheetKeyboard: {
-    flexShrink: 1,
+    flex: 1,
     justifyContent: "flex-end",
   },
   sheet: {
