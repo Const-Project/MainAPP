@@ -1,21 +1,32 @@
 import { useState } from "react";
 import {
+  ActivityIndicator,
+  FlatList,
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
   StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { RootStackScreenProps } from "@/navigation/types";
-import CommentComposer from "@/components/common/CommentComposer";
 import ScreenHeader from "@/components/common/ScreenHeader";
 import StatusView from "@/components/common/StatusView";
-import FeedDetail from "@/components/feed/FeedDetail";
+import FeedInfiniteDetailItem from "@/components/feed/FeedInfiniteDetailItem";
 import usePostComment from "@/hooks/comments/useCommentApi";
+import { useRandomFeedSession } from "@/hooks/feed/useRandomFeedSession";
 import { useDiaryDetail } from "@/hooks/log/useDiaryDetailApi";
 import type { FeedDetailResult } from "@/types/feed/detail";
+import type { RandomFeedPostType } from "@/types/feed/randomFeedApi.type";
 
 type Props = RootStackScreenProps<"FeedDiary">;
+
+type FeedListItem = {
+  key: string;
+  postId: number;
+  postType: RandomFeedPostType;
+  isSeed: boolean;
+};
 
 export default function FeedDiaryScreen({ navigation, route }: Props) {
   const { postId } = route.params;
@@ -25,6 +36,18 @@ export default function FeedDiaryScreen({ navigation, route }: Props) {
   const { data, error, isLoading, refetch } = useDiaryDetail(isValidId ? id : 0);
   const [content, setContent] = useState("");
   const { mutateAsync, isPending } = usePostComment(() => refetch());
+  const {
+    data: randomSession,
+    isLoading: isRandomLoading,
+    isError: isRandomError,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useRandomFeedSession({
+    enabled: isValidId && Boolean(data),
+    sessionKey: `DIARY:${id}`,
+    size: 6,
+  });
 
   const handleBackClick = () => {
     if (navigation.canGoBack()) {
@@ -97,7 +120,7 @@ export default function FeedDiaryScreen({ navigation, route }: Props) {
     );
   }
 
-  const result: FeedDetailResult = {
+  const seedResult: FeedDetailResult = {
     id: data.id,
     writerId: data.writerId,
     writerName: data.writerName,
@@ -113,6 +136,25 @@ export default function FeedDiaryScreen({ navigation, route }: Props) {
     isPublic: data.isPublic,
   };
 
+  const seenKeys = new Set<string>([`DIARY:${id}`]);
+  const listData: FeedListItem[] = [
+    { key: `seed-DIARY-${id}`, postId: id, postType: "DIARY", isSeed: true },
+  ];
+
+  for (const item of randomSession?.items ?? []) {
+    const itemKey = `${item.postType}:${item.postId}`;
+    if (seenKeys.has(itemKey)) {
+      continue;
+    }
+    seenKeys.add(itemKey);
+    listData.push({
+      key: `random-${item.postType}-${item.postId}`,
+      postId: item.postId,
+      postType: item.postType,
+      isSeed: false,
+    });
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
       <KeyboardAvoidingView
@@ -120,14 +162,47 @@ export default function FeedDiaryScreen({ navigation, route }: Props) {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <ScreenHeader title="둘러보기" onBack={handleBackClick} />
-        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-          <FeedDetail result={result} />
-        </ScrollView>
-        <CommentComposer
-          value={content}
-          onChangeText={setContent}
-          onSubmit={() => void handleSend()}
-          disabled={isPending}
+        <FlatList
+          data={listData}
+          keyExtractor={item => item.key}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.listContent}
+          onEndReached={() => {
+            if (hasNextPage && !isFetchingNextPage) {
+              void fetchNextPage();
+            }
+          }}
+          onEndReachedThreshold={0.45}
+          renderItem={({ item }) => (
+            <FeedInfiniteDetailItem
+              postId={item.postId}
+              postType={item.postType}
+              isSeed={item.isSeed}
+              seedResult={item.isSeed ? seedResult : undefined}
+              commentValue={item.isSeed ? content : ""}
+              onChangeComment={item.isSeed ? setContent : undefined}
+              onSubmitComment={item.isSeed ? () => void handleSend() : undefined}
+              isCommentPending={item.isSeed ? isPending : false}
+            />
+          )}
+          ListFooterComponent={
+            <View style={styles.footer}>
+              {/* 한글 주석:
+                  seed 포스트 아래 랜덤 카드가 이어 붙기 때문에,
+                  다음 페이지 로딩 상태만 하단에서 가볍게 노출한다. */}
+              {isFetchingNextPage ? (
+                <ActivityIndicator color="#7DC960" />
+              ) : null}
+              {!isFetchingNextPage && isRandomLoading ? (
+                <ActivityIndicator color="#7DC960" />
+              ) : null}
+              {isRandomError ? (
+                <Text style={styles.footerText}>
+                  랜덤 피드를 이어서 불러오지 못했습니다.
+                </Text>
+              ) : null}
+            </View>
+          }
         />
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -142,7 +217,17 @@ const styles = StyleSheet.create({
   keyboardView: {
     flex: 1,
   },
-  scrollView: {
-    flex: 1,
+  listContent: {
+    paddingBottom: 24,
+  },
+  footer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 20,
+    gap: 8,
+  },
+  footerText: {
+    fontSize: 13,
+    color: "#6B7280",
   },
 });

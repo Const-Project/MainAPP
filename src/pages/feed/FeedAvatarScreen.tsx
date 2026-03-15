@@ -1,35 +1,53 @@
 import { useState } from "react";
 import {
+  ActivityIndicator,
+  FlatList,
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
   StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { RootStackScreenProps } from "@/navigation/types";
-import CommentComposer from "@/components/common/CommentComposer";
 import ScreenHeader from "@/components/common/ScreenHeader";
 import StatusView from "@/components/common/StatusView";
-import FeedDetail from "@/components/feed/FeedDetail";
+import FeedInfiniteDetailItem from "@/components/feed/FeedInfiniteDetailItem";
 import usePostComment from "@/hooks/comments/useCommentApi";
 import { useAvatarPostDetail } from "@/hooks/feed/useAvatarPostDetailApi";
+import { useRandomFeedSession } from "@/hooks/feed/useRandomFeedSession";
 import type { FeedDetailResult } from "@/types/feed/detail";
+import type { RandomFeedPostType } from "@/types/feed/randomFeedApi.type";
 
 type Props = RootStackScreenProps<"FeedAvatar">;
+
+type FeedListItem = {
+  key: string;
+  postId: number;
+  postType: RandomFeedPostType;
+  isSeed: boolean;
+};
 
 export default function FeedAvatarScreen({ navigation, route }: Props) {
   const { postId } = route.params;
 
   const id = Number(postId);
   const isValidId = Number.isFinite(id) && id > 0;
-  const {
-    data,
-    error,
-    isLoading,
-    refetch,
-  } = useAvatarPostDetail(isValidId ? id : 0);
+  const { data, error, isLoading, refetch } = useAvatarPostDetail(isValidId ? id : 0);
   const [content, setContent] = useState("");
   const { mutateAsync, isPending } = usePostComment(() => refetch());
+  const {
+    data: randomSession,
+    isLoading: isRandomLoading,
+    isError: isRandomError,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useRandomFeedSession({
+    enabled: isValidId && Boolean(data),
+    sessionKey: `AVATAR_POST:${id}`,
+    size: 6,
+  });
 
   const handleBackClick = () => {
     if (navigation.canGoBack()) {
@@ -102,7 +120,7 @@ export default function FeedAvatarScreen({ navigation, route }: Props) {
     );
   }
 
-  const result: FeedDetailResult = {
+  const seedResult: FeedDetailResult = {
     id: data.id,
     writerId: data.writerId,
     writerName: data.writerName,
@@ -118,6 +136,30 @@ export default function FeedAvatarScreen({ navigation, route }: Props) {
     isPublic: data.isPublic,
   };
 
+  const seenKeys = new Set<string>([`AVATAR_POST:${id}`]);
+  const listData: FeedListItem[] = [
+    {
+      key: `seed-AVATAR_POST-${id}`,
+      postId: id,
+      postType: "AVATAR_POST",
+      isSeed: true,
+    },
+  ];
+
+  for (const item of randomSession?.items ?? []) {
+    const itemKey = `${item.postType}:${item.postId}`;
+    if (seenKeys.has(itemKey)) {
+      continue;
+    }
+    seenKeys.add(itemKey);
+    listData.push({
+      key: `random-${item.postType}-${item.postId}`,
+      postId: item.postId,
+      postType: item.postType,
+      isSeed: false,
+    });
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
       <KeyboardAvoidingView
@@ -125,14 +167,44 @@ export default function FeedAvatarScreen({ navigation, route }: Props) {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <ScreenHeader title="둘러보기" onBack={handleBackClick} />
-        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-          <FeedDetail result={result} />
-        </ScrollView>
-        <CommentComposer
-          value={content}
-          onChangeText={setContent}
-          onSubmit={() => void handleSend()}
-          disabled={isPending}
+        <FlatList
+          data={listData}
+          keyExtractor={item => item.key}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.listContent}
+          onEndReached={() => {
+            if (hasNextPage && !isFetchingNextPage) {
+              void fetchNextPage();
+            }
+          }}
+          onEndReachedThreshold={0.45}
+          renderItem={({ item }) => (
+            <FeedInfiniteDetailItem
+              postId={item.postId}
+              postType={item.postType}
+              isSeed={item.isSeed}
+              seedResult={item.isSeed ? seedResult : undefined}
+              commentValue={item.isSeed ? content : ""}
+              onChangeComment={item.isSeed ? setContent : undefined}
+              onSubmitComment={item.isSeed ? () => void handleSend() : undefined}
+              isCommentPending={item.isSeed ? isPending : false}
+            />
+          )}
+          ListFooterComponent={
+            <View style={styles.footer}>
+              {isFetchingNextPage ? (
+                <ActivityIndicator color="#7DC960" />
+              ) : null}
+              {!isFetchingNextPage && isRandomLoading ? (
+                <ActivityIndicator color="#7DC960" />
+              ) : null}
+              {isRandomError ? (
+                <Text style={styles.footerText}>
+                  랜덤 피드를 이어서 불러오지 못했습니다.
+                </Text>
+              ) : null}
+            </View>
+          }
         />
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -147,7 +219,17 @@ const styles = StyleSheet.create({
   keyboardView: {
     flex: 1,
   },
-  scrollView: {
-    flex: 1,
+  listContent: {
+    paddingBottom: 24,
+  },
+  footer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 20,
+    gap: 8,
+  },
+  footerText: {
+    fontSize: 13,
+    color: "#6B7280",
   },
 });
