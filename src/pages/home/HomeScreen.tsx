@@ -30,7 +30,7 @@ import {
   type TodayMission,
 } from "@/types/home/garden";
 import type { SurveyAnswerKind } from "@/types/missions";
-import { debugLog, debugScreenMounted } from "@/utils/debug";
+import { createTimingLogger, debugLog, debugScreenMounted } from "@/utils/debug";
 
 type Props = MainTabScreenProps<"Home">;
 
@@ -73,9 +73,11 @@ export default function HomeScreen({ navigation }: Props) {
   const [isTrackingModalOpen, setIsTrackingModalOpen] = useState(false);
   const [emotionAnswerKind, setEmotionAnswerKind] = useState<SurveyAnswerKind | null>(null);
   const openedTrackingCycleKeysRef = useRef<Set<string>>(new Set());
+  const initialLoadTimingRef = useRef<ReturnType<typeof createTimingLogger> | null>(null);
 
   useEffect(() => {
     debugScreenMounted("HomeScreen");
+    initialLoadTimingRef.current = createTimingLogger("HomeScreen", "initial data load");
   }, []);
 
   useEffect(() => {
@@ -112,6 +114,18 @@ export default function HomeScreen({ navigation }: Props) {
       hydrate(data);
     }
   }, [data, hydrate]);
+
+  useEffect(() => {
+    if (!data || !initialLoadTimingRef.current) {
+      return;
+    }
+
+    initialLoadTimingRef.current({
+      gardenCount: data.gardenSummaries?.length ?? 0,
+      missionCount: data.todayMissions?.length ?? 0,
+    });
+    initialLoadTimingRef.current = null;
+  }, [data]);
 
   useEffect(() => {
     if (!trackingPromptStatus?.eligible || !trackingPromptStatus.cycleKey) {

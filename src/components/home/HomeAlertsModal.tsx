@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Modal,
   Pressable,
@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { useGuestbookList, useNotifications, useReadNotifications } from "@/hooks/home/useHomeApi";
 import type { GuestbookEntry, NotificationItem } from "@/types/home/alerts";
+import { createTimingLogger } from "@/utils/debug";
 
 function isNotificationRead(item: NotificationItem) {
   return item.isRead ?? item.read ?? false;
@@ -28,6 +29,7 @@ export default function HomeAlertsModal({
 }) {
   const [activeTab, setActiveTab] = useState<AlertTab>("GUESTBOOK");
   const [hasMarkedRecordAsReadThisOpen, setHasMarkedRecordAsReadThisOpen] = useState(false);
+  const openTimingRef = useRef<ReturnType<typeof createTimingLogger> | null>(null);
   const notificationsQuery = useNotifications(visible);
   const guestbookQuery = useGuestbookList(userId, visible);
   const readNotificationsMutation = useReadNotifications();
@@ -59,6 +61,7 @@ export default function HomeAlertsModal({
   useEffect(() => {
     if (!visible) {
       setHasMarkedRecordAsReadThisOpen(false);
+      openTimingRef.current = null;
       return;
     }
 
@@ -71,7 +74,7 @@ export default function HomeAlertsModal({
     }
 
     const unreadNotificationIds = notificationsQuery.data
-      .filter(item => !item.isRead)
+      .filter(item => !isNotificationRead(item))
       .map(item => item.id);
 
     setHasMarkedRecordAsReadThisOpen(true);
@@ -89,6 +92,29 @@ export default function HomeAlertsModal({
     readNotificationsMutation,
     visible,
   ]);
+
+  useEffect(() => {
+    if (!visible) {
+      return;
+    }
+
+    openTimingRef.current = createTimingLogger("HomeAlertsModal", "modal open", {
+      activeTab,
+    });
+  }, [activeTab, visible]);
+
+  useEffect(() => {
+    if (!visible || !openTimingRef.current || activeState.isLoading) {
+      return;
+    }
+
+    openTimingRef.current({
+      activeTab,
+      itemCount: activeState.items.length,
+      isError: activeState.isError,
+    });
+    openTimingRef.current = null;
+  }, [activeState.isError, activeState.isLoading, activeState.items.length, activeTab, visible]);
 
   return (
     <Modal transparent animationType="fade" visible={visible} onRequestClose={onClose}>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -18,6 +18,7 @@ import { useAvatarPostDetail } from "@/hooks/feed/useAvatarPostDetailApi";
 import { useRandomFeedSession } from "@/hooks/feed/useRandomFeedSession";
 import type { FeedDetailResult } from "@/types/feed/detail";
 import type { RandomFeedPostType } from "@/types/feed/randomFeedApi.type";
+import { createTimingLogger } from "@/utils/debug";
 
 type Props = RootStackScreenProps<"FeedAvatar">;
 
@@ -35,6 +36,7 @@ export default function FeedAvatarScreen({ navigation, route }: Props) {
   const isValidId = Number.isFinite(id) && id > 0;
   const { data, error, isLoading, refetch } = useAvatarPostDetail(isValidId ? id : 0);
   const [content, setContent] = useState("");
+  const initialLoadTimingRef = useRef<ReturnType<typeof createTimingLogger> | null>(null);
   const { mutateAsync, isPending } = usePostComment(() => refetch());
   const {
     data: randomSession,
@@ -48,6 +50,19 @@ export default function FeedAvatarScreen({ navigation, route }: Props) {
     sessionKey: `AVATAR_POST:${id}`,
     size: 6,
   });
+
+  useEffect(() => {
+    initialLoadTimingRef.current = createTimingLogger("FeedAvatarScreen", "initial detail load", { postId: id });
+  }, [id]);
+
+  useEffect(() => {
+    if (!data || !initialLoadTimingRef.current) {
+      return;
+    }
+
+    initialLoadTimingRef.current({ hasRandomSession: Boolean(randomSession) });
+    initialLoadTimingRef.current = null;
+  }, [data, randomSession]);
 
   const handleBackClick = () => {
     if (navigation.canGoBack()) {

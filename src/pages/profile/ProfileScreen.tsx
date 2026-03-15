@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Image,
   ScrollView,
@@ -17,6 +17,7 @@ import ProfileGardenScene from "@/components/profile/ProfileGardenScene";
 import { useFriendWater, useUserProfile } from "@/hooks/profile/useProfileApi";
 import { useFollowUser, useUnfollowUser } from "@/hooks/follow/useFollowApi";
 import useTokenStore from "@/stores/useTokenStore";
+import { createTimingLogger } from "@/utils/debug";
 import { FollowStatus } from "@/types/profile/profileApi.type";
 
 type Props = RootStackScreenProps<"Profile">;
@@ -41,8 +42,22 @@ export default function ProfileScreen({ navigation, route }: Props) {
   const [wateringGardenId, setWateringGardenId] = useState<number | null>(null);
   const [isFriendWaterCooldownActive, setIsFriendWaterCooldownActive] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const initialLoadTimingRef = useRef<ReturnType<typeof createTimingLogger> | null>(null);
 
   const isMe = String(userId) === myUserId;
+
+  useEffect(() => {
+    initialLoadTimingRef.current = createTimingLogger("ProfileScreen", "initial profile load", { userId });
+  }, [userId]);
+
+  useEffect(() => {
+    if (!data || !initialLoadTimingRef.current) {
+      return;
+    }
+
+    initialLoadTimingRef.current({ gardenCount: data.userGardens.length });
+    initialLoadTimingRef.current = null;
+  }, [data]);
 
   const handleBack = () => {
     if (navigation.canGoBack()) {
