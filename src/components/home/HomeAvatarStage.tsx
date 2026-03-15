@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
 import { Image, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import type { SurveyAnswerKind } from "@/types/missions";
+import { useEffect, useState } from "react";
+
 import { ANSWER_COPY } from "@/components/home/HomeEmotionModal";
+import type { SurveyAnswerKind } from "@/types/missions";
 
 const wateringImage = require("@/assets/images/background/watering.png");
 const birdImage = require("@/assets/images/bird.webp");
@@ -123,7 +124,7 @@ const styles = StyleSheet.create({
      * 화분 밑단을 더 아래로 내리기 위해 하단 여백을 줄였다.
      * 주변 오브젝트도 같은 기준선에서 함께 내려오도록 절대 위치 값도 맞춘다.
      */
-    marginBottom: 8,
+    marginBottom: -96,
   },
   wateringImage: {
     position: "absolute",
