@@ -1,9 +1,13 @@
 import { StyleSheet, View } from "react-native";
 import FeedDetail from "@/components/feed/FeedDetail";
+import useFeedLikeToggle from "@/hooks/feed/useFeedLikeToggle";
 import type { FeedDetailResult } from "@/types/feed/detail";
+import type { RandomFeedPostType } from "@/types/feed/randomFeedApi.type";
 
 type Props = {
   result: FeedDetailResult;
+  postType: RandomFeedPostType;
+  onRefetch: () => void | Promise<unknown>;
   commentValue: string;
   onChangeComment: (value: string) => void;
   onSubmitComment: () => void;
@@ -12,11 +16,21 @@ type Props = {
 
 export default function FeedSeedDetailCard({
   result,
+  postType,
+  onRefetch,
   commentValue,
   onChangeComment,
   onSubmitComment,
   isCommentPending,
 }: Props) {
+  const { liked, likeCount, toggleLike, isLikePending } = useFeedLikeToggle({
+    targetId: result.id,
+    targetType: postType,
+    initialLiked: result.isLiked,
+    initialLikeCount: result.likeCount,
+    onSuccessRefetch: onRefetch,
+  });
+
   return (
     <View style={styles.container}>
       {/* 한글 주석:
@@ -24,6 +38,10 @@ export default function FeedSeedDetailCard({
           기존 상세 댓글 작성 UX도 댓글 시트 안에서만 유지한다. */}
       <FeedDetail
         result={result}
+        liked={liked}
+        likeCount={likeCount}
+        onToggleLike={toggleLike}
+        isLikePending={isLikePending}
         commentValue={commentValue}
         onChangeComment={onChangeComment}
         onSubmitComment={onSubmitComment}

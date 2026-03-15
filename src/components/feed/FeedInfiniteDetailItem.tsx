@@ -9,6 +9,7 @@ type Props = {
   postType: RandomFeedPostType;
   isSeed: boolean;
   seedResult?: FeedDetailResult;
+  onSeedRefetch?: () => void | Promise<unknown>;
   commentValue?: string;
   onChangeComment?: (value: string) => void;
   onSubmitComment?: () => void;
@@ -20,15 +21,18 @@ export default function FeedInfiniteDetailItem({
   postType,
   isSeed,
   seedResult,
+  onSeedRefetch,
   commentValue = "",
   onChangeComment,
   onSubmitComment,
   isCommentPending = false,
 }: Props) {
-  if (isSeed && seedResult && onChangeComment && onSubmitComment) {
+  if (isSeed && seedResult && onSeedRefetch && onChangeComment && onSubmitComment) {
     return (
       <FeedSeedDetailCard
         result={seedResult}
+        postType={postType}
+        onRefetch={onSeedRefetch}
         commentValue={commentValue}
         onChangeComment={onChangeComment}
         onSubmitComment={onSubmitComment}

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import FeedDetail from "@/components/feed/FeedDetail";
 import usePostComment from "@/hooks/comments/useCommentApi";
+import useFeedLikeToggle from "@/hooks/feed/useFeedLikeToggle";
 import { useDiaryDetail } from "@/hooks/log/useDiaryDetailApi";
 import type { FeedDetailResult } from "@/types/feed/detail";
 
@@ -63,9 +64,21 @@ export default function FeedDiaryDetailCard({ postId }: Props) {
     isPublic: data.isPublic,
   };
 
+  const { liked, likeCount, toggleLike, isLikePending } = useFeedLikeToggle({
+    targetId: postId,
+    targetType: "DIARY",
+    initialLiked: result.isLiked,
+    initialLikeCount: result.likeCount,
+    onSuccessRefetch: refetch,
+  });
+
   return (
     <FeedDetail
       result={result}
+      liked={liked}
+      likeCount={likeCount}
+      onToggleLike={toggleLike}
+      isLikePending={isLikePending}
       commentValue={content}
       onChangeComment={setContent}
       onSubmitComment={() => void handleSendComment()}

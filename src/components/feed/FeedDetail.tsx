@@ -28,6 +28,10 @@ import type { FeedDetailResult } from "@/types/feed/detail";
 
 type Props = {
   result: FeedDetailResult;
+  liked?: boolean;
+  likeCount?: number;
+  onToggleLike?: () => void;
+  isLikePending?: boolean;
   commentValue?: string;
   onChangeComment?: (text: string) => void;
   onSubmitComment?: () => void;
@@ -36,6 +40,10 @@ type Props = {
 
 export default function FeedDetail({
   result,
+  liked = result.isLiked,
+  likeCount = result.likeCount,
+  onToggleLike,
+  isLikePending = false,
   commentValue = "",
   onChangeComment,
   onSubmitComment,
@@ -159,10 +167,21 @@ export default function FeedDetail({
         <View style={styles.actionBar}>
           <View style={styles.actionItems}>
             {/* 공감 */}
-            <View style={styles.actionItem}>
-              <HeartIcon size={20} color="#6B7280" filled={result.isLiked} />
-              <Text style={styles.actionText}>공감 {result.likeCount}</Text>
-            </View>
+            <TouchableOpacity
+              style={styles.actionItem}
+              activeOpacity={0.7}
+              onPress={onToggleLike}
+              disabled={!onToggleLike || isLikePending}
+            >
+              <HeartIcon
+                size={20}
+                color={liked ? "#FF5D73" : "#6B7280"}
+                filled={liked}
+              />
+              <Text style={[styles.actionText, liked ? styles.actionTextLiked : null]}>
+                공감 {likeCount}
+              </Text>
+            </TouchableOpacity>
             {/* 댓글 */}
             <TouchableOpacity
               style={styles.actionItem}
@@ -301,6 +320,9 @@ const styles = StyleSheet.create({
   actionText: {
     fontSize: 14,
     color: "#171717",
+  },
+  actionTextLiked: {
+    color: "#FF5D73",
   },
   spacer: {
     width: 40,

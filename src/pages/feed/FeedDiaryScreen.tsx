@@ -179,6 +179,7 @@ export default function FeedDiaryScreen({ navigation, route }: Props) {
               postType={item.postType}
               isSeed={item.isSeed}
               seedResult={item.isSeed ? seedResult : undefined}
+              onSeedRefetch={item.isSeed ? refetch : undefined}
               commentValue={item.isSeed ? content : ""}
               onChangeComment={item.isSeed ? setContent : undefined}
               onSubmitComment={item.isSeed ? () => void handleSend() : undefined}
