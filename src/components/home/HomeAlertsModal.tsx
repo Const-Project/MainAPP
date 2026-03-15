@@ -57,7 +57,7 @@ export default function HomeAlertsModal({
         <View style={styles.card}>
           <View style={styles.header}>
             <View style={styles.headerSpacer} />
-            <Text style={styles.title}>알림</Text>
+            <Text style={styles.title}>받은 소식</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
               <Text style={styles.closeText}>닫기</Text>
             </TouchableOpacity>
@@ -65,7 +65,7 @@ export default function HomeAlertsModal({
 
           <View style={styles.tabRow}>
             <TabButton
-              label="방명록"
+              label="받은 방명록"
               active={activeTab === "GUESTBOOK"}
               onPress={() => setActiveTab("GUESTBOOK")}
             />
@@ -84,11 +84,15 @@ export default function HomeAlertsModal({
             {activeState.isLoading ? (
               <Text style={styles.messageText}>불러오는 중입니다.</Text>
             ) : activeState.isError ? (
-              <Text style={styles.messageText}>알림을 불러오지 못했습니다.</Text>
+              <Text style={styles.messageText}>
+                {activeTab === "GUESTBOOK"
+                  ? "받은 방명록을 불러오지 못했습니다."
+                  : "알림을 불러오지 못했습니다."}
+              </Text>
             ) : activeState.items.length === 0 ? (
               <Text style={styles.messageText}>
                 {activeTab === "GUESTBOOK"
-                  ? "아직 방문한 친구들이 남긴 방명록이 없어요."
+                  ? "아직 받은 방명록이 없어요."
                   : "아직 기록이 없어요."}
               </Text>
             ) : activeTab === "GUESTBOOK" ? (
