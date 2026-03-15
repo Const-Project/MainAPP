@@ -18,6 +18,7 @@ import FollowScreen from "@/pages/follow/FollowScreen";
 import UserNicknameEditScreen from "@/pages/option/UserNicknameEditScreen";
 import AvatarNicknameEditScreen from "@/pages/option/AvatarNicknameEditScreen";
 import PolicyScreen from "@/pages/option/PolicyScreen";
+import ServiceGuideScreen from "@/pages/option/ServiceGuideScreen";
 import DeliveryScreen from "@/pages/delivery/DeliveryScreen";
 import DeliveryCompleteScreen from "@/pages/delivery/DeliveryCompleteScreen";
 import UnlockGardenScreen from "@/pages/delivery/UnlockGardenScreen";
@@ -80,6 +81,7 @@ export default function RootNavigator() {
       <Stack.Screen name="UserNicknameEdit" component={UserNicknameEditScreen} options={{ headerShown: false }} />
       <Stack.Screen name="AvatarNicknameEdit" component={AvatarNicknameEditScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Policy" component={PolicyScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="ServiceGuide" component={ServiceGuideScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Follow" component={FollowScreen} options={{ headerShown: false }} />
       <Stack.Screen name="FeedDiary" component={FeedDiaryScreen} options={{ headerShown: false }} />
       <Stack.Screen name="FeedAvatar" component={FeedAvatarScreen} options={{ headerShown: false }} />

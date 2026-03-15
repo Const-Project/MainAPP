@@ -25,6 +25,7 @@ export type RootStackParamList = {
   UserNicknameEdit: undefined;
   AvatarNicknameEdit: undefined;
   Policy: undefined;
+  ServiceGuide: undefined;
 
   // 팔로우
   Follow: undefined;
