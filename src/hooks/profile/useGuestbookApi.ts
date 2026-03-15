@@ -22,7 +22,13 @@ export const useCreateGuestbook = (userId: string | number | undefined) => {
   return useMutation({
     mutationFn: (body: CreateGuestbookRequest) => postGuestbook(String(userId), body),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["guestbook-list", userId] });
+      /*
+       * 한글 주석:
+       * 방명록 작성 후에는 현재 프로필 화면의 목록뿐 아니라
+       * 홈 비둘기 모달이 바라보는 방명록/알림 조회도 함께 새로 읽게 맞춘다.
+       */
+      await queryClient.invalidateQueries({ queryKey: ["guestbook-list"] });
+      await queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
   });
 };
