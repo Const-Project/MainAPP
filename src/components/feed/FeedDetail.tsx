@@ -10,6 +10,7 @@ import {
   Platform,
   TouchableOpacity,
   StyleSheet,
+  useWindowDimensions,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -38,6 +39,7 @@ export default function FeedDetail({
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [isCommentSheetVisible, setCommentSheetVisible] = useState(false);
+  const { height: windowHeight } = useWindowDimensions();
 
   const comments = useMemo(
     () =>
@@ -138,7 +140,14 @@ export default function FeedDetail({
             behavior={Platform.OS === "ios" ? "padding" : "height"}
             style={styles.sheetKeyboard}
           >
-            <View style={styles.sheet}>
+            <View
+              style={[
+                styles.sheet,
+                {
+                  height: Math.min(windowHeight * 0.6, 560),
+                },
+              ]}
+            >
               <View style={styles.sheetHandle} />
               <Text style={styles.sheetTitle}>댓글 {result.commentCount}</Text>
               {comments.length > 0 ? (
