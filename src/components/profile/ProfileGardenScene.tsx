@@ -1,9 +1,11 @@
 import { Image, ImageBackground, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+
 import type { GardenInfo } from "@/types/profile/profileApi.type";
 import WaterIcon from "@/assets/icons/water.svg";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const mailboxImage = require("@/assets/images/profile/letterbox.png");
+const wateringImage = require("@/assets/images/background/watering.png");
 const ACTION_RAIL_BOTTOM_OFFSET = 128;
 
 type Props = {
@@ -11,6 +13,7 @@ type Props = {
   garden: GardenInfo;
   isMe: boolean;
   leftWaterCountForOthers: number;
+  isWateringVisible: boolean;
   onWater: () => void;
   onPressGuestbook: () => void;
   waterDisabled?: boolean;
@@ -21,6 +24,7 @@ export default function ProfileGardenScene({
   garden,
   isMe,
   leftWaterCountForOthers,
+  isWateringVisible,
   onWater,
   onPressGuestbook,
   waterDisabled = false,
@@ -42,11 +46,18 @@ export default function ProfileGardenScene({
 
       <View style={styles.sceneBody}>
         {garden.avatarInfo?.avatarImageUrl ? (
-          <Image
-            source={{ uri: garden.avatarInfo.avatarImageUrl }}
-            style={styles.avatarImage}
-            resizeMode="contain"
-          />
+          <>
+            <Image
+              source={{ uri: garden.avatarInfo.avatarImageUrl }}
+              style={styles.avatarImage}
+              resizeMode="contain"
+            />
+            <Image
+              source={wateringImage}
+              style={[styles.wateringImage, !isWateringVisible && styles.wateringImageHidden]}
+              resizeMode="contain"
+            />
+          </>
         ) : (
           <View style={styles.emptyAvatarBubble}>
             <Text style={styles.emptyAvatarTitle}>정원 정보가 준비되지 않았습니다.</Text>
@@ -122,13 +133,23 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 24,
-    paddingTop: 44,
-    paddingBottom: 64,
+    paddingTop: 340,
+    paddingBottom: -32,
     position: "relative",
   },
   avatarImage: {
     width: 300,
     height: 300,
+  },
+  wateringImage: {
+    position: "absolute",
+    left: "24%",
+    bottom: 196,
+    width: 118,
+    height: 118,
+  },
+  wateringImageHidden: {
+    opacity: 0,
   },
   mailboxWrap: {
     position: "absolute",

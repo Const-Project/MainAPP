@@ -34,6 +34,7 @@ export default function ProfileScreen({ navigation, route }: Props) {
   const followMutation = useFollowUser(myUserId);
   const unfollowMutation = useUnfollowUser(myUserId);
   const [currentPage, setCurrentPage] = useState(0);
+  const [wateringGardenId, setWateringGardenId] = useState<number | null>(null);
 
   const isMe = String(userId) === myUserId;
 
@@ -51,6 +52,16 @@ export default function ProfileScreen({ navigation, route }: Props) {
       userId,
       userNickname: data?.userNickname,
     });
+  };
+
+  const handleFriendWater = async (gardenId: number) => {
+    await waterMutation.mutateAsync(gardenId);
+
+    // Show the watering overlay briefly on the just-watered garden.
+    setWateringGardenId(gardenId);
+    setTimeout(() => {
+      setWateringGardenId(prev => (prev === gardenId ? null : prev));
+    }, 1000);
   };
 
   const followAction = useMemo(() => {
@@ -200,7 +211,8 @@ export default function ProfileScreen({ navigation, route }: Props) {
               garden={scene.garden}
               isMe={isMe}
               leftWaterCountForOthers={data.leftWaterCountForOthers}
-              onWater={() => void waterMutation.mutateAsync(scene.garden.gardenId)}
+              isWateringVisible={wateringGardenId === scene.garden.gardenId}
+              onWater={() => void handleFriendWater(scene.garden.gardenId)}
               onPressGuestbook={handleOpenGuestbook}
               waterDisabled={waterMutation.isPending}
             />
