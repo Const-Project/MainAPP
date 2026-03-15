@@ -12,6 +12,7 @@ import FeedDiaryScreen from "@/pages/feed/FeedDiaryScreen";
 import FeedAvatarScreen from "@/pages/feed/FeedAvatarScreen";
 import LogDetailScreen from "@/pages/log/LogDetailScreen";
 import ProfileScreen from "@/pages/profile/ProfileScreen";
+import GuestbookScreen from "@/pages/profile/GuestbookScreen";
 import FollowScreen from "@/pages/follow/FollowScreen";
 import DeliveryScreen from "@/pages/delivery/DeliveryScreen";
 import DeliveryCompleteScreen from "@/pages/delivery/DeliveryCompleteScreen";
@@ -70,6 +71,7 @@ export default function RootNavigator() {
       )}
 
       <Stack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Guestbook" component={GuestbookScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Follow" component={FollowScreen} options={{ headerShown: false }} />
       <Stack.Screen name="FeedDiary" component={FeedDiaryScreen} options={{ headerShown: false }} />
       <Stack.Screen name="FeedAvatar" component={FeedAvatarScreen} options={{ headerShown: false }} />

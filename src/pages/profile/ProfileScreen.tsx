@@ -46,6 +46,13 @@ export default function ProfileScreen({ navigation, route }: Props) {
     navigation.navigate("Main", { screen: "Feed" });
   };
 
+  const handleOpenGuestbook = () => {
+    navigation.navigate("Guestbook", {
+      userId,
+      userNickname: data?.userNickname,
+    });
+  };
+
   const followAction = useMemo(() => {
     if (!data || isMe) return null;
 
@@ -181,6 +188,7 @@ export default function ProfileScreen({ navigation, route }: Props) {
               followAction={followAction}
               onBack={handleBack}
               onWater={() => void waterMutation.mutateAsync(scene.garden.gardenId)}
+              onPressGuestbook={handleOpenGuestbook}
               waterDisabled={waterMutation.isPending}
             />
           </View>

@@ -20,6 +20,7 @@ type Props = {
   followAction: FollowAction | null;
   onBack: () => void;
   onWater: () => void;
+  onPressGuestbook: () => void;
   waterDisabled?: boolean;
 };
 
@@ -32,6 +33,7 @@ export default function ProfileGardenScene({
   followAction,
   onBack,
   onWater,
+  onPressGuestbook,
   waterDisabled = false,
 }: Props) {
   const insets = useSafeAreaInsets();
@@ -99,6 +101,17 @@ export default function ProfileGardenScene({
             disabled={!canWater}
           >
             <WaterIcon width={60} height={60} opacity={!canWater ? 0.4 : 1} />
+          </TouchableOpacity>
+        </View>
+      ) : null}
+
+      {!isMe ? (
+        <View style={[styles.guestbookWrap, { paddingBottom: insets.bottom + 16 }]}>
+          {/* 한글 주석:
+              타인 프로필의 방명록 버튼은 별도 전체 화면 방명록 페이지로 이동시키고,
+              목록 확인과 새 글 작성은 그 화면에서 처리한다. */}
+          <TouchableOpacity style={styles.guestbookButton} activeOpacity={0.85} onPress={onPressGuestbook}>
+            <Text style={styles.guestbookButtonText}>방명록 작성</Text>
           </TouchableOpacity>
         </View>
       ) : null}
@@ -222,5 +235,25 @@ const styles = StyleSheet.create({
   },
   actionButtonDisabled: {
     backgroundColor: "rgba(255,255,255,0.08)",
+  },
+  guestbookWrap: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+  },
+  guestbookButton: {
+    borderRadius: 18,
+    backgroundColor: "rgba(255,255,255,0.92)",
+    paddingVertical: 18,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  guestbookButtonText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#4CAF50",
   },
 });
