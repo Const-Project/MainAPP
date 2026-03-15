@@ -3,6 +3,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { GardenInfo } from "@/types/profile/profileApi.type";
 import WaterIcon from "@/assets/icons/water.svg";
 
+const mailboxImage = require("@/assets/images/profile/letterbox.png");
 const ACTION_RAIL_BOTTOM_OFFSET = 128;
 
 type FollowAction = {
@@ -90,6 +91,15 @@ export default function ProfileGardenScene({
             </Text>
           </View>
         )}
+
+        {!isMe ? (
+          <View pointerEvents="none" style={styles.mailboxWrap}>
+            {/* 한글 주석:
+                타인 프로필의 우편함은 홈의 비둘기처럼 식물 우하단에 붙는 장식 요소로만 두고,
+                실제 방명록 진입은 하단 버튼에서 처리한다. */}
+            <Image source={mailboxImage} style={styles.mailboxImage} resizeMode="contain" />
+          </View>
+        ) : null}
       </View>
 
       {!isMe ? (
@@ -193,10 +203,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 24,
     paddingBottom: 64,
+    position: "relative",
   },
   avatarImage: {
     width: 300,
     height: 300,
+  },
+  mailboxWrap: {
+    position: "absolute",
+    right: 48,
+    bottom: 18,
+    zIndex: 2,
+  },
+  mailboxImage: {
+    width: 84,
+    height: 84,
   },
   emptyAvatarBubble: {
     borderRadius: 24,
