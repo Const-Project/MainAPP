@@ -20,6 +20,7 @@ export default function ScreenHeader({
 
   return (
     <View style={styles.header}>
+      {/* 왼쪽: 닫기(X) 버튼 */}
       {onBack ? (
         <TouchableOpacity
           onPress={onBack}
@@ -31,7 +32,11 @@ export default function ScreenHeader({
       ) : (
         <View style={styles.sideButton} />
       )}
+
+      {/* 중앙: 화면 타이틀 */}
       <Text style={styles.title}>{title}</Text>
+
+      {/* 오른쪽: 완료 텍스트 버튼 */}
       {resolvedRightAction ? (
         <TouchableOpacity
           onPress={resolvedRightAction}
@@ -52,14 +57,14 @@ export default function ScreenHeader({
 
 const styles = StyleSheet.create({
   header: {
-    height: 52,
+    height: 56,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
     backgroundColor: "#FFFFFF",
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#E5E7EB",
+    borderBottomWidth: 1,
+    borderBottomColor: "#EFEFEF",
   },
   sideButton: {
     width: 48,
@@ -69,19 +74,21 @@ const styles = StyleSheet.create({
   },
   closeText: {
     fontSize: 18,
-    color: "#374151",
+    color: "#171717",
   },
+  // 완료 버튼: Regular 16px 검정
   completeText: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "#374151",
+    fontWeight: "400",
+    color: "#171717",
     textAlign: "right",
   },
   disabledText: {
-    color: "#9CA3AF",
+    color: "#BFBFBF",
   },
+  // 타이틀: SemiBold 18px
   title: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: "600",
     color: "#171717",
   },

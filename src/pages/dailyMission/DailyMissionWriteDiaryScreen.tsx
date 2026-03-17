@@ -7,12 +7,14 @@ import ScreenHeader from "@/components/common/ScreenHeader";
 import CheckIcon from "@/assets/icons/Check.svg";
 import Check2Icon from "@/assets/icons/Check2.svg";
 import ImageAttachmentCard from "@/components/dailyMission/ImageAttachmentCard";
-import RegistrationFooter from "@/components/registration/RegistrationFooter";
-import RegistrationTextField from "@/components/registration/RegistrationTextField";
 import { useWriteDiaryImageUpload, useWriteDiarySubmit } from "@/hooks/mission/useMissionApi";
 import type { RootStackScreenProps } from "@/navigation/types";
 
 type Props = RootStackScreenProps<"DailyMissionWriteDiary">;
+
+// 임시 하드코딩 힌트 문구 (추후 백엔드 API 연결 예정)
+const HINT_KEYWORD = "내 식물의 겨울나기";
+const HINT_SUFFIX = "에 대해서\n이야기해보는 건 어때요?";
 
 export default function DailyMissionWriteDiaryScreen({ navigation }: Props) {
   const queryClient = useQueryClient();
@@ -28,12 +30,14 @@ export default function DailyMissionWriteDiaryScreen({ navigation }: Props) {
   const uploadDiaryImage = useWriteDiaryImageUpload();
   const submitDiary = useWriteDiarySubmit();
 
+  // 홈 화면으로 초기화 이동
   const goHome = () =>
     navigation.reset({
       index: 0,
       routes: [{ name: "Main", params: { screen: "Home" } }],
     });
 
+  // 갤러리에서 이미지 선택 후 서버 업로드
   const handlePickImage = async () => {
     if (!permissionRequested) {
       const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -81,6 +85,7 @@ export default function DailyMissionWriteDiaryScreen({ navigation }: Props) {
     }
   };
 
+  // 일기 저장 후 관련 쿼리 무효화 및 홈 이동
   const handleSubmit = async () => {
     if (!title.trim() || !content.trim()) {
       return;
@@ -100,9 +105,6 @@ export default function DailyMissionWriteDiaryScreen({ navigation }: Props) {
         imageUrl: uploadedImage.imageUrl,
       });
 
-      /*
-       * Invalidate related queries so home and log reflect the new diary immediately.
-       */
       await queryClient.invalidateQueries({ queryKey: ["home-summary"] });
       await queryClient.invalidateQueries({ queryKey: ["calendar"] });
       await queryClient.invalidateQueries({ queryKey: ["diaries"] });
@@ -113,6 +115,13 @@ export default function DailyMissionWriteDiaryScreen({ navigation }: Props) {
     }
   };
 
+  const isSubmitDisabled =
+    !title.trim() ||
+    !content.trim() ||
+    !uploadedImage ||
+    uploadDiaryImage.isPending ||
+    submitDiary.isPending;
+
   const today = new Date().toLocaleDateString("ko-KR", {
     year: "numeric",
     month: "long",
@@ -121,7 +130,13 @@ export default function DailyMissionWriteDiaryScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
-      <ScreenHeader title="일기 쓰기" onBack={goHome} />
+      {/* 헤더: X 닫기 + 완료 제출 버튼 */}
+      <ScreenHeader
+        title="일기 쓰기"
+        onBack={goHome}
+        onRightAction={() => void handleSubmit()}
+        rightActionDisabled={isSubmitDisabled}
+      />
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         {/* 날짜 + 제목 섹션 (하단 구분선으로 묶음) */}
@@ -136,6 +151,7 @@ export default function DailyMissionWriteDiaryScreen({ navigation }: Props) {
           />
         </View>
 
+        {/* 이미지 첨부 카드 */}
         <ImageAttachmentCard
           imageUrl={selectedImageUri}
           onPress={() => void handlePickImage()}
@@ -148,26 +164,32 @@ export default function DailyMissionWriteDiaryScreen({ navigation }: Props) {
           }
         />
 
-        <RegistrationTextField
-          label=""
+        {/* 본문 입력 필드 */}
+        <TextInput
           value={content}
           onChangeText={setContent}
           placeholder="오늘 식물에게 있었던 일을 적어주세요"
+          placeholderTextColor="#BFBFBF"
           multiline
+          textAlignVertical="top"
+          style={styles.contentInput}
         />
 
+        {/* AI 글쓰기 힌트 문구 (추후 백엔드 API 연결 예정) */}
+        <Text style={styles.hintText}>
+          <Text style={styles.hintKeyword}>{HINT_KEYWORD}</Text>
+          {HINT_SUFFIX}
+        </Text>
+
+        {/* 공개 여부 선택 */}
         <View style={styles.visibilityRow}>
           <TouchableOpacity
             style={styles.visibilityOption}
             onPress={() => setIsPublic(false)}
             activeOpacity={0.7}
           >
-            <View style={[styles.radioCircle, !isPublic ? styles.radioCircleSelected : null]}>
-              {!isPublic ? <CheckIcon width={20} height={20} /> : <Check2Icon width={20} height={20} />}
-            </View>
-            <Text style={[styles.visibilityLabel, !isPublic ? styles.visibilityLabelSelected : null]}>
-              {"나만 보기"}
-            </Text>
+            {!isPublic ? <CheckIcon width={24} height={24} /> : <Check2Icon width={24} height={24} />}
+            <Text style={styles.visibilityLabel}>나만 보기</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -175,42 +197,26 @@ export default function DailyMissionWriteDiaryScreen({ navigation }: Props) {
             onPress={() => setIsPublic(true)}
             activeOpacity={0.7}
           >
-            <View style={[styles.radioCircle, isPublic ? styles.radioCircleSelected : null]}>
-              {isPublic ? <CheckIcon width={20} height={20} /> : <Check2Icon width={20} height={20} />}
-            </View>
-            <Text style={[styles.visibilityLabel, isPublic ? styles.visibilityLabelSelected : null]}>
-              {"공개하기"}
-            </Text>
+            {isPublic ? <CheckIcon width={24} height={24} /> : <Check2Icon width={24} height={24} />}
+            <Text style={styles.visibilityLabel}>공개하기</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
-
-      <RegistrationFooter
-        primaryLabel="등록하기"
-        onPrimaryPress={() => void handleSubmit()}
-        primaryDisabled={
-          !title.trim() ||
-          !content.trim() ||
-          !uploadedImage ||
-          uploadDiaryImage.isPending ||
-          submitDiary.isPending
-        }
-        primaryLoading={submitDiary.isPending}
-      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  // 전체 배경 흰색
   safeArea: {
     flex: 1,
-    backgroundColor: "#F7F8F4",
+    backgroundColor: "#FFFFFF",
   },
   content: {
     paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingTop: 24,
     paddingBottom: 32,
-    gap: 20,
+    gap: 24,
   },
   // 날짜 + 제목 묶음 섹션
   titleSection: {
@@ -219,23 +225,49 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#EFEFEF",
   },
+  // 날짜 텍스트
   dateText: {
     fontSize: 16,
     color: "#282828",
     fontWeight: "400",
+    lineHeight: 16 * 1.6,
   },
-  // 제목 입력 필드 (박스 없이 큰 텍스트 스타일)
+  // 제목 입력 (박스 없이 큰 텍스트)
   titleInput: {
     fontSize: 24,
     fontWeight: "600",
     color: "#171717",
+    lineHeight: 24 * 1.35,
     paddingVertical: 0,
     paddingHorizontal: 0,
   },
+  // 본문 입력 (플레인 멀티라인)
+  contentInput: {
+    fontSize: 16,
+    fontWeight: "400",
+    color: "#171717",
+    lineHeight: 16 * 1.6,
+    minHeight: 80,
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+  },
+  // AI 힌트 문구 영역
+  hintText: {
+    fontSize: 16,
+    fontWeight: "400",
+    color: "#9B9B9B",
+    lineHeight: 16 * 1.6,
+  },
+  // 힌트 키워드 강조 (SemiBold 18px)
+  hintKeyword: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#9B9B9B",
+  },
+  // 공개 여부 선택 행
   visibilityRow: {
     flexDirection: "row",
-    gap: 24,
-    paddingTop: 4,
+    gap: 16,
     paddingBottom: 8,
   },
   visibilityOption: {
@@ -243,20 +275,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
   },
-  radioCircle: {
-    width: 22,
-    height: 22,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  radioCircleSelected: {},
+  // 공개 여부 텍스트 (선택 여부 무관 검정)
   visibilityLabel: {
     fontSize: 14,
-    color: "#9CA3AF",
     fontWeight: "400",
-  },
-  visibilityLabelSelected: {
     color: "#171717",
-    fontWeight: "500",
+    lineHeight: 14 * 1.6,
   },
 });
