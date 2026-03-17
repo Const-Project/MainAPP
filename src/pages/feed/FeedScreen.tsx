@@ -1,5 +1,6 @@
 import React from "react";
 import {
+  RefreshControl,
   View,
   Text,
   TouchableOpacity,
@@ -10,13 +11,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import type { MainTabScreenProps } from "@/navigation/types";
 
 import { UserPlusIcon } from "@/assets/icons/CommonIcons";
+import StatusView from "@/components/common/StatusView";
 import FeedList from "@/components/feed/FeedList";
 import { useFeed } from "@/hooks/feed/useFeedApi";
 
 type Props = MainTabScreenProps<"Feed">;
 
 export default function FeedScreen({ navigation }: Props) {
-  const { data: result, isLoading, error } = useFeed();
+  const { data: result, isLoading, isRefetching, error, refetch } = useFeed();
 
   const handleUserPlusClick = () => {
     navigation.navigate("Follow");
@@ -37,7 +39,16 @@ export default function FeedScreen({ navigation }: Props) {
     <SafeAreaView style={styles.container} edges={["top"]}>
       {/* Header spacing is tuned to match the centered title layout from the FE design. */}
       <View style={styles.header}>
-        <View style={styles.headerSpacer} />
+        <TouchableOpacity
+          style={styles.headerTextButton}
+          onPress={() => void refetch()}
+          activeOpacity={0.7}
+          disabled={isLoading || isRefetching}
+        >
+          <Text style={[styles.headerTextButtonLabel, (isLoading || isRefetching) && styles.headerTextButtonDisabled]}>
+            새로고침
+          </Text>
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>둘러보기</Text>
         <TouchableOpacity
           style={styles.headerButton}
@@ -48,18 +59,36 @@ export default function FeedScreen({ navigation }: Props) {
         </TouchableOpacity>
       </View>
 
-      {/* Feed content remains unchanged; only the surrounding layout was tightened. */}
-      <ScrollView
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
-      >
-        <FeedList
-          feedData={{ result: dataForRender }}
-          onSelectPost={handleSelectPost}
-          isLoading={isLoading}
-          error={error ? "피드를 불러오지 못했습니다." : null}
+      {error && !isLoading ? (
+        <StatusView
+          title="피드를 불러오지 못했습니다."
+          description="헤더 새로고침이나 아래 버튼으로 다시 시도해주세요."
+          actionLabel="다시 시도"
+          onAction={() => void refetch()}
         />
-      </ScrollView>
+      ) : (
+        <ScrollView
+          style={styles.scrollView}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefetching && !isLoading}
+              onRefresh={() => void refetch()}
+              tintColor="#7DC960"
+            />
+          }
+        >
+          {/* 한글 주석:
+              피드 메인에서는 빈 상태와 로딩 상태를 리스트 컴포넌트가 맡고,
+              네트워크 재시도는 상단 버튼과 pull-to-refresh 둘 다 열어 둔다. */}
+          <FeedList
+            feedData={{ result: dataForRender }}
+            onSelectPost={handleSelectPost}
+            isLoading={isLoading}
+            error={null}
+          />
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
@@ -79,13 +108,22 @@ const styles = StyleSheet.create({
     paddingLeft: 20,
     marginBottom: 12,
   },
-  headerSpacer: {
-    width: 24,
-  },
   headerTitle: {
     fontSize: 18,
     fontWeight: "700",
     color: "#171717",
+  },
+  headerTextButton: {
+    minWidth: 56,
+    justifyContent: "center",
+  },
+  headerTextButtonLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#374151",
+  },
+  headerTextButtonDisabled: {
+    color: "#9CA3AF",
   },
   headerButton: {
     width: 24,

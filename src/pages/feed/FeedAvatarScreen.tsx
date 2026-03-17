@@ -4,6 +4,7 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
+  RefreshControl,
   StyleSheet,
   Text,
   View,
@@ -34,7 +35,7 @@ export default function FeedAvatarScreen({ navigation, route }: Props) {
 
   const id = Number(postId);
   const isValidId = Number.isFinite(id) && id > 0;
-  const { data, error, isLoading, refetch } = useAvatarPostDetail(isValidId ? id : 0);
+  const { data, error, isLoading, isRefetching, refetch } = useAvatarPostDetail(isValidId ? id : 0);
   const [content, setContent] = useState("");
   const initialLoadTimingRef = useRef<ReturnType<typeof createTimingLogger> | null>(null);
   const { mutateAsync, isPending } = usePostComment(() => refetch());
@@ -101,7 +102,13 @@ export default function FeedAvatarScreen({ navigation, route }: Props) {
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-        <ScreenHeader title="둘러보기" onBack={handleBackClick} />
+        <ScreenHeader
+          title="둘러보기"
+          onBack={handleBackClick}
+          rightActionLabel="새로고침"
+          onRightAction={() => void refetch()}
+          rightActionDisabled={isLoading || isRefetching}
+        />
         <StatusView title="게시글을 불러오는 중입니다." loading />
       </SafeAreaView>
     );
@@ -110,10 +117,16 @@ export default function FeedAvatarScreen({ navigation, route }: Props) {
   if (error) {
     return (
       <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-        <ScreenHeader title="둘러보기" onBack={handleBackClick} />
+        <ScreenHeader
+          title="둘러보기"
+          onBack={handleBackClick}
+          rightActionLabel="새로고침"
+          onRightAction={() => void refetch()}
+          rightActionDisabled={isLoading || isRefetching}
+        />
         <StatusView
           title="게시글을 불러오지 못했습니다."
-          description="현재 API 응답을 다시 확인해야 합니다."
+          description="상단 새로고침이나 아래 버튼으로 다시 시도해주세요."
           actionLabel="다시 시도"
           onAction={() => void refetch()}
         />
@@ -124,7 +137,13 @@ export default function FeedAvatarScreen({ navigation, route }: Props) {
   if (!data) {
     return (
       <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-        <ScreenHeader title="둘러보기" onBack={handleBackClick} />
+        <ScreenHeader
+          title="둘러보기"
+          onBack={handleBackClick}
+          rightActionLabel="새로고침"
+          onRightAction={() => void refetch()}
+          rightActionDisabled={isLoading || isRefetching}
+        />
         <StatusView
           title="게시글 정보가 없습니다."
           description="현재 API에서 반환된 상세 데이터가 비어 있습니다."
@@ -181,12 +200,25 @@ export default function FeedAvatarScreen({ navigation, route }: Props) {
         style={styles.keyboardView}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <ScreenHeader title="둘러보기" onBack={handleBackClick} />
+        <ScreenHeader
+          title="둘러보기"
+          onBack={handleBackClick}
+          rightActionLabel="새로고침"
+          onRightAction={() => void refetch()}
+          rightActionDisabled={isLoading || isRefetching}
+        />
         <FlatList
           data={listData}
           keyExtractor={item => item.key}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefetching && !isLoading}
+              onRefresh={() => void refetch()}
+              tintColor="#7DC960"
+            />
+          }
           onEndReached={() => {
             if (hasNextPage && !isFetchingNextPage) {
               void fetchNextPage();

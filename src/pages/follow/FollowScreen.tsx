@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
   Image,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -30,6 +31,9 @@ export default function FollowScreen({ navigation }: Props) {
   const unfollowMutation = useUnfollowUser(userId);
 
   const isLoading = activeTab === "added" ? followingQuery.isLoading : followersQuery.isLoading;
+  const isRefetching = activeTab === "added"
+    ? followingQuery.isRefetching
+    : followersQuery.isRefetching;
   const error = activeTab === "added" ? followingQuery.error : followersQuery.error;
   const users =
     activeTab === "added"
@@ -56,7 +60,13 @@ export default function FollowScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-      <ScreenHeader title="내 친구" onBack={handleBack} />
+      <ScreenHeader
+        title="내 친구"
+        onBack={handleBack}
+        rightActionLabel="새로고침"
+        onRightAction={handleRetry}
+        rightActionDisabled={isLoading || isRefetching}
+      />
 
       {/* Tabs are renamed to match the app copy while still mapping to following/follower queries. */}
       <View style={styles.tabRow}>
@@ -98,7 +108,20 @@ export default function FollowScreen({ navigation }: Props) {
           description="팔로우 데이터가 준비되면 이 화면에서 바로 목록을 볼 수 있습니다."
         />
       ) : (
-        <ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          style={styles.list}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefetching && !isLoading}
+              onRefresh={handleRetry}
+              tintColor="#7DC960"
+            />
+          }
+        >
+          {/* 한글 주석:
+              팔로우 탭은 활성 탭 쿼리만 다시 읽으면 되므로,
+              헤더 새로고침과 pull-to-refresh 모두 같은 handleRetry로 묶는다. */}
           {users.map(user => (
             // The custom row matches the FE design more closely than the previous generic card.
             <View key={user.userId} style={styles.userRow}>

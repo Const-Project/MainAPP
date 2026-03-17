@@ -3,9 +3,21 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 type Props = {
   title: string;
   onBack?: () => void;
+  rightActionLabel?: string;
+  onRightAction?: () => void;
+  rightActionDisabled?: boolean;
 };
 
-export default function ScreenHeader({ title, onBack }: Props) {
+export default function ScreenHeader({
+  title,
+  onBack,
+  rightActionLabel,
+  onRightAction,
+  rightActionDisabled = false,
+}: Props) {
+  const resolvedRightAction = onRightAction ?? onBack;
+  const resolvedRightLabel = rightActionLabel ?? "완료";
+
   return (
     <View style={styles.header}>
       {onBack ? (
@@ -20,13 +32,20 @@ export default function ScreenHeader({ title, onBack }: Props) {
         <View style={styles.sideButton} />
       )}
       <Text style={styles.title}>{title}</Text>
-      <TouchableOpacity
-        onPress={onBack}
-        activeOpacity={0.7}
-        style={styles.sideButton}
-      >
-        <Text style={styles.completeText}>완료</Text>
-      </TouchableOpacity>
+      {resolvedRightAction ? (
+        <TouchableOpacity
+          onPress={resolvedRightAction}
+          disabled={rightActionDisabled}
+          activeOpacity={0.7}
+          style={styles.sideButton}
+        >
+          <Text style={[styles.completeText, rightActionDisabled && styles.disabledText]}>
+            {resolvedRightLabel}
+          </Text>
+        </TouchableOpacity>
+      ) : (
+        <View style={styles.sideButton} />
+      )}
     </View>
   );
 }
@@ -57,6 +76,9 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#374151",
     textAlign: "right",
+  },
+  disabledText: {
+    color: "#9CA3AF",
   },
   title: {
     fontSize: 17,
