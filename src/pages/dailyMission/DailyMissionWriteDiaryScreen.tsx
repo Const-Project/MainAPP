@@ -210,10 +210,9 @@ const styles = StyleSheet.create({
     gap: 20,
   },
   dateText: {
-    fontSize: 13,
-    color: "#9CA3AF",
+    fontSize: 16,
+    color: "#282828",
     fontWeight: "400",
-    letterSpacing: 0.2,
   },
   visibilityRow: {
     flexDirection: "row",
