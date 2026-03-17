@@ -1,5 +1,5 @@
 import * as ImagePicker from "expo-image-picker";
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -124,14 +124,17 @@ export default function DailyMissionWriteDiaryScreen({ navigation }: Props) {
       <ScreenHeader title="일기 쓰기" onBack={goHome} />
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text style={styles.dateText}>{today}</Text>
-
-        <RegistrationTextField
-          label=""
-          value={title}
-          onChangeText={setTitle}
-          placeholder="제목을 입력하세요"
-        />
+        {/* 날짜 + 제목 섹션 (하단 구분선으로 묶음) */}
+        <View style={styles.titleSection}>
+          <Text style={styles.dateText}>{today}</Text>
+          <TextInput
+            value={title}
+            onChangeText={setTitle}
+            placeholder="제목을 입력하세요"
+            placeholderTextColor="#BFBFBF"
+            style={styles.titleInput}
+          />
+        </View>
 
         <ImageAttachmentCard
           imageUrl={selectedImageUri}
@@ -209,10 +212,25 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
     gap: 20,
   },
+  // 날짜 + 제목 묶음 섹션
+  titleSection: {
+    gap: 8,
+    paddingBottom: 24,
+    borderBottomWidth: 1,
+    borderBottomColor: "#EFEFEF",
+  },
   dateText: {
     fontSize: 16,
     color: "#282828",
     fontWeight: "400",
+  },
+  // 제목 입력 필드 (박스 없이 큰 텍스트 스타일)
+  titleInput: {
+    fontSize: 24,
+    fontWeight: "600",
+    color: "#171717",
+    paddingVertical: 0,
+    paddingHorizontal: 0,
   },
   visibilityRow: {
     flexDirection: "row",
