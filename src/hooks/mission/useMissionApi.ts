@@ -21,6 +21,7 @@ import type {
   WriteDiaryRequest,
   WriteDiaryResponse,
 } from "@/types/missions";
+import { createTimingLogger, debugLog } from "@/utils/debug";
 
 export const useWriteDiaryImageUpload = () =>
   useMutation<DiaryImageUploadResponse, Error, FormData>({
@@ -70,18 +71,32 @@ export const useAnswerDailySurvey = () => {
 
   return useMutation<AnswerDailySurveyResponse, Error, AnswerDailySurveyRequest>({
     mutationFn: payload => answerDailySurveyApi(payload),
-    onSuccess: async () => {
+    onSuccess: () => {
       /*
-       * 한글 주석:
-       * 마음 건강 체크는 홈 캐릭터 상태와 미션 패널 양쪽에서 사용하므로
-       * 설문 결과와 홈 데이터를 모두 같은 시점에 다시 받아온다.
+       * Keep the survey modal responsive.
+       * Refresh related queries in the background after submit succeeds.
        */
-      await queryClient.invalidateQueries({ queryKey: ["daily-survey"] });
-      await queryClient.invalidateQueries({ queryKey: ["home-summary"] });
-      await queryClient.invalidateQueries({ queryKey: ["home-panel"] });
-      await queryClient.refetchQueries({ queryKey: ["daily-survey"], type: "all" });
-      await queryClient.refetchQueries({ queryKey: ["home-summary"], type: "all" });
-      await queryClient.refetchQueries({ queryKey: ["home-panel"], type: "all" });
+      const finishRefreshTiming = createTimingLogger(
+        "useAnswerDailySurvey",
+        "post-submit background refresh"
+      );
+
+      void Promise.allSettled([
+        queryClient.invalidateQueries({ queryKey: ["daily-survey"] }),
+        queryClient.invalidateQueries({ queryKey: ["home-summary"] }),
+        queryClient.invalidateQueries({ queryKey: ["home-panel"] }),
+        queryClient.refetchQueries({ queryKey: ["daily-survey"], type: "all" }),
+        queryClient.refetchQueries({ queryKey: ["home-summary"], type: "all" }),
+        queryClient.refetchQueries({ queryKey: ["home-panel"], type: "all" }),
+      ]).then(results => {
+        const rejectedCount = results.filter(result => result.status === "rejected").length;
+
+        finishRefreshTiming({ rejectedCount });
+
+        if (rejectedCount > 0) {
+          debugLog("useAnswerDailySurvey", "background refresh had failures", { results });
+        }
+      });
     },
   });
 };

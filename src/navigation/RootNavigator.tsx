@@ -17,6 +17,7 @@ import GuestbookScreen from "@/pages/profile/GuestbookScreen";
 import FollowScreen from "@/pages/follow/FollowScreen";
 import UserNicknameEditScreen from "@/pages/option/UserNicknameEditScreen";
 import AvatarNicknameEditScreen from "@/pages/option/AvatarNicknameEditScreen";
+import AvatarNicknameEditStep2Screen from "@/pages/option/AvatarNicknameEditStep2Screen";
 import PolicyScreen from "@/pages/option/PolicyScreen";
 import ServiceGuideScreen from "@/pages/option/ServiceGuideScreen";
 import DeliveryScreen from "@/pages/delivery/DeliveryScreen";
@@ -80,6 +81,7 @@ export default function RootNavigator() {
       <Stack.Screen name="Guestbook" component={GuestbookScreen} options={{ headerShown: false }} />
       <Stack.Screen name="UserNicknameEdit" component={UserNicknameEditScreen} options={{ headerShown: false }} />
       <Stack.Screen name="AvatarNicknameEdit" component={AvatarNicknameEditScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="AvatarNicknameEditStep2" component={AvatarNicknameEditStep2Screen} options={{ headerShown: false }} />
       <Stack.Screen name="Policy" component={PolicyScreen} options={{ headerShown: false }} />
       <Stack.Screen name="ServiceGuide" component={ServiceGuideScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Follow" component={FollowScreen} options={{ headerShown: false }} />

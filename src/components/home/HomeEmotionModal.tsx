@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+﻿import { useMemo, useState } from "react";
 import type { AxiosError } from "axios";
 import {
   Image,
@@ -15,6 +15,7 @@ import {
   SURVEY_ANSWER_VALUE_MAP,
   type SurveyAnswerKind,
 } from "@/types/missions";
+import { createTimingLogger, debugLog } from "@/utils/debug";
 
 const characterImage = require("@/assets/images/char.webp");
 
@@ -58,6 +59,11 @@ export default function HomeEmotionModal({
       return;
     }
 
+    const finishSubmitTiming = createTimingLogger("HomeEmotionModal", "answer submit", {
+      answer,
+      questionId: data.id,
+    });
+
     setSubmitErrorMessage(null);
 
     try {
@@ -67,12 +73,12 @@ export default function HomeEmotionModal({
       });
 
       /*
-       * 한글 주석:
-       * 홈 팝업은 제출 직후 닫히고 말풍선 상태도 즉시 바뀌어야 한다.
-       * 서버 재조회 완료를 기다리지 않고 성공 시점을 홈 화면에 바로 전달한다.
+       * Close the modal as soon as submit succeeds.
+       * Home state is updated immediately and query refresh continues in the background.
        */
       onAnswered(answer);
       onClose();
+      finishSubmitTiming({ closedImmediately: true });
     } catch (error) {
       const axiosError = error as AxiosError<ErrorResponse>;
       const status = axiosError.response?.status;
@@ -81,9 +87,18 @@ export default function HomeEmotionModal({
       if (status === 409) {
         onAnswered(answer);
         onClose();
+        finishSubmitTiming({ closedImmediately: true, treatedAsAlreadyAnswered: true });
         return;
       }
 
+      finishSubmitTiming({
+        closedImmediately: false,
+        status: status ?? null,
+      });
+      debugLog("HomeEmotionModal", "answer submit failed", {
+        status: status ?? null,
+        serverMessage: serverMessage ?? null,
+      });
       setSubmitErrorMessage(serverMessage ?? "답변 저장에 실패했습니다. 잠시 후 다시 시도해주세요.");
     }
   };
@@ -211,4 +226,5 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 });
+
 

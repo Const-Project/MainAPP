@@ -1,26 +1,16 @@
 import * as ImagePicker from "expo-image-picker";
-
-import {
-  Alert,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import {
-  useWriteDiaryImageUpload,
-  useWriteDiarySubmit,
-} from "@/hooks/mission/useMissionApi";
-
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { SafeAreaView } from "react-native-safe-area-context";
+import ScreenHeader from "@/components/common/ScreenHeader";
+import CheckIcon from "@/assets/icons/Check.svg";
+import Check2Icon from "@/assets/icons/Check2.svg";
 import ImageAttachmentCard from "@/components/dailyMission/ImageAttachmentCard";
 import RegistrationFooter from "@/components/registration/RegistrationFooter";
 import RegistrationTextField from "@/components/registration/RegistrationTextField";
+import { useWriteDiaryImageUpload, useWriteDiarySubmit } from "@/hooks/mission/useMissionApi";
 import type { RootStackScreenProps } from "@/navigation/types";
-import { SafeAreaView } from "react-native-safe-area-context";
-import ScreenHeader from "@/components/common/ScreenHeader";
-import { useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
 
 type Props = RootStackScreenProps<"DailyMissionWriteDiary">;
 
@@ -46,15 +36,11 @@ export default function DailyMissionWriteDiaryScreen({ navigation }: Props) {
 
   const handlePickImage = async () => {
     if (!permissionRequested) {
-      const permission =
-        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
       setPermissionRequested(true);
 
       if (!permission.granted) {
-        Alert.alert(
-          "권한 필요",
-          "일기 이미지를 선택하려면 사진 접근 권한이 필요합니다."
-        );
+        Alert.alert("권한 필요", "일기 이미지를 선택하려면 사진 접근 권한이 필요합니다.");
         return;
       }
     }
@@ -74,11 +60,14 @@ export default function DailyMissionWriteDiaryScreen({ navigation }: Props) {
     const fileType = asset.mimeType ?? "image/jpeg";
     const formData = new FormData();
 
-    formData.append("file", {
-      uri: asset.uri,
-      name: fileName,
-      type: fileType,
-    } as never);
+    formData.append(
+      "file",
+      {
+        uri: asset.uri,
+        name: fileName,
+        type: fileType,
+      } as never
+    );
 
     setSelectedImageUri(asset.uri);
     setUploadedImage(null);
@@ -87,8 +76,7 @@ export default function DailyMissionWriteDiaryScreen({ navigation }: Props) {
       const response = await uploadDiaryImage.mutateAsync(formData);
       setUploadedImage(response.result);
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "이미지 업로드에 실패했습니다.";
+      const message = error instanceof Error ? error.message : "이미지 업로드에 실패했습니다.";
       Alert.alert("업로드 실패", message);
     }
   };
@@ -113,17 +101,14 @@ export default function DailyMissionWriteDiaryScreen({ navigation }: Props) {
       });
 
       /*
-       * 한글 주석:
-       * 일기 작성 완료 후 홈과 로그에서 최신 상태를 바로 보이게 하려면
-       * 관련 쿼리를 함께 갱신하고 홈으로 복귀시키는 흐름이 필요하다.
+       * Invalidate related queries so home and log reflect the new diary immediately.
        */
       await queryClient.invalidateQueries({ queryKey: ["home-summary"] });
       await queryClient.invalidateQueries({ queryKey: ["calendar"] });
       await queryClient.invalidateQueries({ queryKey: ["diaries"] });
       goHome();
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "일기 저장에 실패했습니다.";
+      const message = error instanceof Error ? error.message : "일기 저장에 실패했습니다.";
       Alert.alert("일기 저장 실패", message);
     }
   };
@@ -138,14 +123,9 @@ export default function DailyMissionWriteDiaryScreen({ navigation }: Props) {
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <ScreenHeader title="일기 쓰기" onBack={goHome} />
 
-      <ScrollView
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-      >
-        {/* 날짜 */}
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={styles.dateText}>{today}</Text>
 
-        {/* 제목 입력 (라벨 없이 큰 플레이스홀더) */}
         <RegistrationTextField
           label=""
           value={title}
@@ -153,7 +133,6 @@ export default function DailyMissionWriteDiaryScreen({ navigation }: Props) {
           placeholder="제목을 입력하세요"
         />
 
-        {/* 이미지 첨부 */}
         <ImageAttachmentCard
           imageUrl={selectedImageUri}
           onPress={() => void handlePickImage()}
@@ -166,7 +145,6 @@ export default function DailyMissionWriteDiaryScreen({ navigation }: Props) {
           }
         />
 
-        {/* 내용 입력 */}
         <RegistrationTextField
           label=""
           value={content}
@@ -175,28 +153,17 @@ export default function DailyMissionWriteDiaryScreen({ navigation }: Props) {
           multiline
         />
 
-        {/* 공개 설정 — 라디오 버튼 스타일 */}
         <View style={styles.visibilityRow}>
           <TouchableOpacity
             style={styles.visibilityOption}
             onPress={() => setIsPublic(false)}
             activeOpacity={0.7}
           >
-            <View
-              style={[
-                styles.radioCircle,
-                !isPublic ? styles.radioCircleSelected : null,
-              ]}
-            >
-              {!isPublic && <Text style={styles.radioCheck}>✓</Text>}
+            <View style={[styles.radioCircle, !isPublic ? styles.radioCircleSelected : null]}>
+              {!isPublic ? <CheckIcon width={20} height={20} /> : <Check2Icon width={20} height={20} />}
             </View>
-            <Text
-              style={[
-                styles.visibilityLabel,
-                !isPublic ? styles.visibilityLabelSelected : null,
-              ]}
-            >
-              나만 보기
+            <Text style={[styles.visibilityLabel, !isPublic ? styles.visibilityLabelSelected : null]}>
+              {"나만 보기"}
             </Text>
           </TouchableOpacity>
 
@@ -205,21 +172,11 @@ export default function DailyMissionWriteDiaryScreen({ navigation }: Props) {
             onPress={() => setIsPublic(true)}
             activeOpacity={0.7}
           >
-            <View
-              style={[
-                styles.radioCircle,
-                isPublic ? styles.radioCircleSelected : null,
-              ]}
-            >
-              {isPublic && <Text style={styles.radioCheck}>✓</Text>}
+            <View style={[styles.radioCircle, isPublic ? styles.radioCircleSelected : null]}>
+              {isPublic ? <CheckIcon width={20} height={20} /> : <Check2Icon width={20} height={20} />}
             </View>
-            <Text
-              style={[
-                styles.visibilityLabel,
-                isPublic ? styles.visibilityLabelSelected : null,
-              ]}
-            >
-              공개하기
+            <Text style={[styles.visibilityLabel, isPublic ? styles.visibilityLabelSelected : null]}>
+              {"공개하기"}
             </Text>
           </TouchableOpacity>
         </View>
@@ -258,8 +215,6 @@ const styles = StyleSheet.create({
     fontWeight: "400",
     letterSpacing: 0.2,
   },
-
-  // 공개 설정 — 라디오 버튼
   visibilityRow: {
     flexDirection: "row",
     gap: 24,
@@ -274,23 +229,10 @@ const styles = StyleSheet.create({
   radioCircle: {
     width: 22,
     height: 22,
-    borderRadius: 11,
-    borderWidth: 1.5,
-    borderColor: "#C4C9C0",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "transparent",
   },
-  radioCircleSelected: {
-    borderColor: "#2F7D32",
-    backgroundColor: "#2F7D32",
-  },
-  radioCheck: {
-    fontSize: 12,
-    color: "#FFFFFF",
-    fontWeight: "700",
-    lineHeight: 14,
-  },
+  radioCircleSelected: {},
   visibilityLabel: {
     fontSize: 14,
     color: "#9CA3AF",
@@ -301,6 +243,3 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
 });
-
-
-

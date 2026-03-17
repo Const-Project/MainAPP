@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Animated,
   PanResponder,
@@ -9,7 +9,10 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { RightIcon } from "@/assets/icons/CommonIcons";
+import CheckIcon from "@/assets/icons/Check.svg";
+import Check2Icon from "@/assets/icons/Check2.svg";
+import PlantBadgeIcon from "@/assets/icons/bottom-sheet/plant.svg";
+import WishTreeInfoModal from "@/components/home/WishTreeInfoModal";
 import { getMissionCompleted, type TodayMission } from "@/types/home/garden";
 import type { HomePanelPayload } from "@/types/home/panel";
 
@@ -36,6 +39,7 @@ export default function HomeBottomSheet({
 }) {
   const translateY = useRef(new Animated.Value(expanded ? 0 : DRAG_RANGE)).current;
   const dragStart = useRef(DRAG_RANGE);
+  const [isWishInfoVisible, setIsWishInfoVisible] = useState(false);
 
   useEffect(() => {
     Animated.spring(translateY, {
@@ -170,7 +174,7 @@ export default function HomeBottomSheet({
                   <Text style={[styles.sheetMissionLabel, card.checked && styles.sheetMissionLabelDone]}>
                     {card.label}
                   </Text>
-                  {card.checked ? <MissionStatusDot checked /> : <RightIcon size={22} color="#9CA3AF" />}
+                  <MissionStatusDot checked={card.checked} />
                 </TouchableOpacity>
               ))}
             </View>
@@ -180,9 +184,17 @@ export default function HomeBottomSheet({
             <View style={styles.wishHeader}>
               <View style={styles.wishTitleRow}>
                 <View style={styles.wishTreeBadge}>
-                  <Text style={styles.wishTreeBadgeText}>T</Text>
+                  <PlantBadgeIcon width={22} height={22} />
                 </View>
-                <Text style={styles.wishTitle}>소망 나무</Text>
+                <Text style={styles.wishTitle}>{"\uC18C\uB9DD \uB098\uBB34"}</Text>
+                <View style={{ flex: 1 }} />
+                <TouchableOpacity
+                  hitSlop={12}
+                  onPress={() => setIsWishInfoVisible(true)}
+                  style={styles.wishInfoButton}
+                >
+                  <Text style={styles.wishInfoIcon}>?</Text>
+                </TouchableOpacity>
               </View>
               <Text style={styles.wishBody}>
                 {progressPercent >= 100
@@ -219,6 +231,10 @@ export default function HomeBottomSheet({
           </ScrollView>
         </View>
       </Animated.View>
+      <WishTreeInfoModal
+        visible={isWishInfoVisible}
+        onClose={() => setIsWishInfoVisible(false)}
+      />
     </View>
   );
 }
@@ -226,8 +242,8 @@ export default function HomeBottomSheet({
 
 function MissionStatusDot({ checked }: { checked: boolean }) {
   return (
-    <View style={[styles.statusDot, checked ? styles.statusDotChecked : styles.statusDotUnchecked]}>
-      {checked ? <Text style={styles.statusDotCheck}>✓</Text> : null}
+    <View style={styles.statusDot}>
+      {checked ? <CheckIcon width={20} height={20} /> : <Check2Icon width={20} height={20} />}
     </View>
   );
 }
@@ -297,22 +313,10 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   statusDot: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 24,
+    height: 24,
     alignItems: "center",
     justifyContent: "center",
-  },
-  statusDotChecked: {
-    backgroundColor: "#7DC960",
-  },
-  statusDotUnchecked: {
-    backgroundColor: "#E5E7EB",
-  },
-  statusDotCheck: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "700",
   },
   sheetMissionList: {
     marginTop: 8,
@@ -334,6 +338,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#EEF7E8",
   },
   sheetMissionLabel: {
+    flex: 1,
     fontSize: 15,
     color: "#6B7280",
   },
@@ -355,22 +360,33 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   wishTreeBadge: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: "#EEF7E8",
     alignItems: "center",
     justifyContent: "center",
-  },
-  wishTreeBadgeText: {
-    color: "#59A647",
-    fontSize: 13,
-    fontWeight: "700",
+    overflow: "hidden",
   },
   wishTitle: {
     fontSize: 18,
     fontWeight: "700",
     color: "#171717",
+  },
+  wishInfoButton: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    borderWidth: 1.5,
+    borderColor: "#9CA3AF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  wishInfoIcon: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#9CA3AF",
+    lineHeight: 16,
   },
   wishBody: {
     fontSize: 14,
@@ -437,3 +453,5 @@ const styles = StyleSheet.create({
   },
 
 });
+
+

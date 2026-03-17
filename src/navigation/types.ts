@@ -24,6 +24,11 @@ export type RootStackParamList = {
   // 설정
   UserNicknameEdit: undefined;
   AvatarNicknameEdit: undefined;
+  AvatarNicknameEditStep2: {
+    avatarId: number;
+    avatarName: string;
+    avatarImageUrl: string;
+  };
   Policy: undefined;
   ServiceGuide: undefined;
 

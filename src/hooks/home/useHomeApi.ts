@@ -19,6 +19,7 @@ import type {
   TrackingPromptConfirmRequest,
   TrackingPromptStatusPayload,
 } from "@/types/home/tracking";
+import { createTimingLogger, debugLog } from "@/utils/debug";
 
 export const useHomeApi = () =>
   useQuery<
@@ -142,10 +143,25 @@ export const useGardenSunlightAction = () => {
 
   return useMutation({
     mutationFn: (gardenId: number) => postGardenSunlight(gardenId),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["home-summary"] });
-      await queryClient.invalidateQueries({ queryKey: ["home-panel"] });
-      await queryClient.invalidateQueries({ queryKey: ["tracking-report-status"] });
+    onSuccess: () => {
+      const finishRefreshTiming = createTimingLogger(
+        "useGardenSunlightAction",
+        "post-action background refresh"
+      );
+
+      void Promise.allSettled([
+        queryClient.invalidateQueries({ queryKey: ["home-summary"] }),
+        queryClient.invalidateQueries({ queryKey: ["home-panel"] }),
+        queryClient.invalidateQueries({ queryKey: ["tracking-report-status"] }),
+      ]).then(results => {
+        const rejectedCount = results.filter(result => result.status === "rejected").length;
+
+        finishRefreshTiming({ rejectedCount });
+
+        if (rejectedCount > 0) {
+          debugLog("useGardenSunlightAction", "background refresh had failures", { results });
+        }
+      });
     },
   });
 };
@@ -155,10 +171,25 @@ export const useGardenWaterAction = () => {
 
   return useMutation({
     mutationFn: (gardenId: number) => postGardenMyWater(gardenId),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["home-summary"] });
-      await queryClient.invalidateQueries({ queryKey: ["home-panel"] });
-      await queryClient.invalidateQueries({ queryKey: ["tracking-report-status"] });
+    onSuccess: () => {
+      const finishRefreshTiming = createTimingLogger(
+        "useGardenWaterAction",
+        "post-action background refresh"
+      );
+
+      void Promise.allSettled([
+        queryClient.invalidateQueries({ queryKey: ["home-summary"] }),
+        queryClient.invalidateQueries({ queryKey: ["home-panel"] }),
+        queryClient.invalidateQueries({ queryKey: ["tracking-report-status"] }),
+      ]).then(results => {
+        const rejectedCount = results.filter(result => result.status === "rejected").length;
+
+        finishRefreshTiming({ rejectedCount });
+
+        if (rejectedCount > 0) {
+          debugLog("useGardenWaterAction", "background refresh had failures", { results });
+        }
+      });
     },
   });
 };

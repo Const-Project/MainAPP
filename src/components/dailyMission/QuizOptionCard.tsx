@@ -1,4 +1,6 @@
-import { StyleSheet, Text, TouchableOpacity } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import CheckIcon from "@/assets/icons/Check.svg";
+import Check2Icon from "@/assets/icons/Check2.svg";
 
 type Props = {
   label: string;
@@ -15,6 +17,17 @@ export default function QuizOptionCard({
   state = "idle",
   onPress,
 }: Props) {
+  const BadgeIcon =
+    state === "correct" || state === "answer" || selected ? CheckIcon : Check2Icon;
+  const badgeText =
+    state === "correct" || state === "answer"
+      ? "\uC815\uB2F5"
+      : state === "wrong"
+        ? "\uC624\uB2F5"
+        : selected
+          ? "\uC120\uD0DD\uB428"
+          : null;
+
   return (
     <TouchableOpacity
       style={[
@@ -28,15 +41,20 @@ export default function QuizOptionCard({
       onPress={onPress}
     >
       <Text style={styles.text}>{label}</Text>
-      <Text style={styles.badge}>
-        {state === "correct" || state === "answer"
-          ? "정답"
-          : state === "wrong"
-            ? "오답"
-            : selected
-              ? "선택됨"
-              : ""}
-      </Text>
+      <View style={styles.badgeWrap}>
+        <BadgeIcon width={20} height={20} />
+        {badgeText ? (
+          <Text
+            style={[
+              styles.badgeText,
+              state === "correct" || state === "answer" ? styles.badgeTextCorrect : null,
+              state === "wrong" ? styles.badgeTextWrong : null,
+            ]}
+          >
+            {badgeText}
+          </Text>
+        ) : null}
+      </View>
     </TouchableOpacity>
   );
 }
@@ -71,9 +89,22 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     color: "#171717",
   },
-  badge: {
+  badgeWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    minWidth: 54,
+    justifyContent: "flex-end",
+  },
+  badgeText: {
     fontSize: 12,
     fontWeight: "700",
     color: "#4B5563",
+  },
+  badgeTextCorrect: {
+    color: "#2F7D32",
+  },
+  badgeTextWrong: {
+    color: "#DC2626",
   },
 });

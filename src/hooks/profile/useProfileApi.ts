@@ -5,6 +5,7 @@ import {
   postFriendWater,
 } from "@/apis/profile/profileApi";
 import type { GetUserProfileResponse } from "@/types/profile/profileApi.type";
+import { createTimingLogger, debugLog } from "@/utils/debug";
 
 export const useUserProfile = (userId: string | number | undefined) =>
   useQuery<{ result: GetUserProfileResponse }, unknown, GetUserProfileResponse>({
@@ -20,8 +21,23 @@ export const useFriendWater = (userId: string | number | undefined) => {
 
   return useMutation({
     mutationFn: (gardenId: number) => postFriendWater(gardenId),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["profile", userId] });
+    onSuccess: () => {
+      const finishRefreshTiming = createTimingLogger(
+        "useFriendWater",
+        "post-action background refresh"
+      );
+
+      void Promise.allSettled([
+        queryClient.invalidateQueries({ queryKey: ["profile", userId] }),
+      ]).then(results => {
+        const rejectedCount = results.filter(result => result.status === "rejected").length;
+
+        finishRefreshTiming({ rejectedCount });
+
+        if (rejectedCount > 0) {
+          debugLog("useFriendWater", "background refresh had failures", { results, userId });
+        }
+      });
     },
   });
 };

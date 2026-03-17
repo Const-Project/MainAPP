@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import {
   Image,
   ImageBackground,
@@ -20,6 +20,9 @@ import {
 import type { SurveyAnswerKind } from "@/types/missions";
 import SunIcon from "@/assets/icons/sun.svg";
 import WaterIcon from "@/assets/icons/water.svg";
+import LockIcon from "@/assets/icons/lock.svg";
+import UnlockedIcon from "@/assets/icons/unlocked.svg";
+import { createTimingLogger, debugLog } from "@/utils/debug";
 
 const mapIcon = require("@/assets/images/map.png");
 const emptyGardenImage = require("@/assets/images/null.webp");
@@ -78,43 +81,86 @@ export default function HomeGardenScene({
   const isEmptySlot = !isLocked && !hasAvatar;
   const title = hasAvatar ? garden?.avatar?.avatarName : `텃밭 ${slotNumber}`;
   const gardenId = garden?.gardenId;
+  const LockStatusIcon = isUnlockable ? UnlockedIcon : LockIcon;
 
-  const handleActionError = (error: unknown) => {
+  const handleActionError = (action: "sunlight" | "water", error: unknown) => {
     const axiosError = error as AxiosError<{ message?: string }>;
-    setToastMessage(axiosError.response?.data?.message ?? "홈 상호작용 처리에 실패했습니다.");
+    const status = axiosError.response?.status;
+    const serverMessage = axiosError.response?.data?.message;
+
+    debugLog("HomeGardenScene", `${action} action failed`, {
+      gardenId,
+      slotNumber,
+      status: status ?? null,
+      serverMessage: serverMessage ?? null,
+    });
+    setToastMessage(serverMessage ?? "홈 상호작용 처리에 실패했습니다.");
   };
 
   const handleSunlight = async () => {
     if (!gardenId) return;
-    if (!canSunlight) {
-      setToastMessage("햇빛 주기는 오전 6시에 초기화 됩니다");
+    if (!canSunlight || sunlightMutation.isPending) {
+      if (!canSunlight) {
+        setToastMessage("햇빛 주기는 오전 6시에 초기화 됩니다");
+      }
       return;
     }
 
+    const finishActionTiming = createTimingLogger("HomeGardenScene", "sunlight action", {
+      gardenId,
+      slotNumber,
+    });
+
+    setCanSunlight(false);
+    setIsSunlightVisible(true);
+    setTimeout(() => setIsSunlightVisible(false), 1000);
+
     try {
       await sunlightMutation.mutateAsync(gardenId);
-      setCanSunlight(false);
-      setIsSunlightVisible(true);
-      setTimeout(() => setIsSunlightVisible(false), 1000);
+      finishActionTiming({ startedImmediately: true });
     } catch (error) {
-      handleActionError(error);
+      setCanSunlight(true);
+      setIsSunlightVisible(false);
+      finishActionTiming({
+        startedImmediately: true,
+        rolledBack: true,
+      });
+      handleActionError("sunlight", error);
     }
   };
 
   const handleWater = async () => {
     if (!gardenId) return;
-    if (!canWater) {
-      setToastMessage("물 주기는 오전 12시에 초기화 됩니다");
+    if (!canWater || waterMutation.isPending || isWaterCooldownActive) {
+      if (!canWater) {
+        setToastMessage("물 주기는 오전 12시에 초기화 됩니다");
+      }
       return;
     }
 
+    const finishActionTiming = createTimingLogger("HomeGardenScene", "water action", {
+      gardenId,
+      slotNumber,
+    });
+
+    setCanWater(false);
+    setIsWaterCooldownActive(true);
+    setIsWateringVisible(true);
+    setTimeout(() => setIsWateringVisible(false), 1000);
+    setTimeout(() => setIsWaterCooldownActive(false), WATER_ACTION_COOLDOWN_MS);
+
     try {
       await waterMutation.mutateAsync(gardenId);
-      setCanWater(false);
-      setIsWateringVisible(true);
-      setTimeout(() => setIsWateringVisible(false), 1000);
+      finishActionTiming({ startedImmediately: true });
     } catch (error) {
-      handleActionError(error);
+      setCanWater(true);
+      setIsWateringVisible(false);
+      setIsWaterCooldownActive(false);
+      finishActionTiming({
+        startedImmediately: true,
+        rolledBack: true,
+      });
+      handleActionError("water", error);
     }
   };
 
@@ -142,13 +188,18 @@ export default function HomeGardenScene({
         {isLocked ? (
           <View style={styles.lockedSceneBody}>
             <View style={styles.lockedOverlay}>
+              <LockStatusIcon
+                width={isUnlockable ? 52 : 40}
+                height={isUnlockable ? 52 : 44}
+                style={styles.lockStatusIcon}
+              />
               <Text style={[styles.lockedHeading, isUnlockable && styles.unlockHeading]}>
-                해금되지 않았습니다
+                {isUnlockable ? "\uC9C0\uAE08 \uC5F4 \uC218 \uC788\uC5B4\uC694" : "\uD574\uAE08\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4"}
               </Text>
               <Text style={styles.lockedBody}>
                 {isUnlockable
-                  ? "지금은 씨앗을 받아 새로운 텃밭을 열 수 있어요."
-                  : "소망 나무가 충분히 자라면 새로운 텃밭을 열 수 있어요."}
+                  ? "\uC528\uC557\uC744 \uBC1B\uC544 \uC0C8\uB85C\uC6B4 \uD143\uBC2D\uC744 \uC5F4 \uC218 \uC788\uC5B4\uC694."
+                  : "\uC18C\uB9DD \uB098\uBB34\uAC00 \uCDA9\uBD84\uD788 \uC790\uB77C\uBA74 \uC0C8\uB85C\uC6B4 \uD143\uBC2D\uC744 \uC5F4 \uC218 \uC788\uC5B4\uC694."}
               </Text>
             </View>
 
@@ -322,6 +373,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 28,
     gap: 10,
   },
+  lockStatusIcon: {
+    marginBottom: 6,
+  },
   lockedHeading: {
     fontSize: 24,
     fontWeight: "700",
@@ -389,4 +443,5 @@ const styles = StyleSheet.create({
     height: 240,
   },
 });
+
 
