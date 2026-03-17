@@ -1,87 +1,70 @@
-import { useMemo, useState } from "react";
 import {
-  Alert,
+  FlatList,
   Image,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
+  useWindowDimensions,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useMemo, useRef, useState } from "react";
+
+import type { GardenSummary } from "@/types/home/garden";
+import { LeftIcon } from "@/assets/icons/CommonIcons";
 import type { RootStackScreenProps } from "@/navigation/types";
-import RegistrationFooter from "@/components/registration/RegistrationFooter";
-import RegistrationTextField from "@/components/registration/RegistrationTextField";
+import { SafeAreaView } from "react-native-safe-area-context";
 import StatusView from "@/components/common/StatusView";
 import useHomeApi from "@/hooks/home/useHomeApi";
-import { useUpdateAvatarNickname } from "@/hooks/option/useAvatarNicknameApi";
-import type { GardenSummary } from "@/types/home/garden";
 
 type Props = RootStackScreenProps<"AvatarNicknameEdit">;
 
 type SelectableAvatar = {
-  gardenId: number;
-  gardenSlotNumber: number;
   avatarId: number;
   avatarName: string;
   avatarImageUrl: string;
 };
 
+// 캐러셀 아이템 너비 및 아이템 간 간격
+const ITEM_WIDTH = 258;
+const ITEM_GAP = 16;
+
 export default function AvatarNicknameEditScreen({ navigation }: Props) {
+  const { width: screenWidth } = useWindowDimensions();
   const { data, isLoading, error, refetch } = useHomeApi();
-  const updateAvatarNickname = useUpdateAvatarNickname();
-  const [selectedAvatarId, setSelectedAvatarId] = useState<number | null>(null);
-  const [draftNickname, setDraftNickname] = useState("");
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const flatListRef = useRef<FlatList>(null);
 
+  // 캐러셀 아이템이 화면 중앙에 오도록 좌우 패딩 계산
+  const sidePadding = (screenWidth - ITEM_WIDTH) / 2;
+
+  // 아바타가 있는 정원 목록만 필터링
   const avatars = useMemo<SelectableAvatar[]>(() => {
-    if (!data?.gardenSummaries) {
-      return [];
-    }
-
+    if (!data?.gardenSummaries) return [];
     return data.gardenSummaries
-      .filter((garden: GardenSummary) => Boolean(garden.avatar?.avatarId))
-      .map((garden: GardenSummary) => ({
-        gardenId: garden.gardenId,
-        gardenSlotNumber: garden.gardenSlotNumber,
-        avatarId: garden.avatar!.avatarId,
-        avatarName: garden.avatar!.avatarName,
-        avatarImageUrl: garden.avatar!.avatarImageUrl,
+      .filter((g: GardenSummary) => Boolean(g.avatar?.avatarId))
+      .map((g: GardenSummary) => ({
+        avatarId: g.avatar!.avatarId,
+        avatarName: g.avatar!.avatarName,
+        avatarImageUrl: g.avatar!.avatarImageUrl,
       }));
   }, [data]);
 
-  const selectedAvatar =
-    avatars.find(avatar => avatar.avatarId === selectedAvatarId) ?? avatars[0] ?? null;
+  const selectedAvatar = avatars[currentIndex] ?? null;
+  const isButtonEnabled = selectedAvatar !== null;
 
-  const nickname = draftNickname || selectedAvatar?.avatarName || "";
-  const trimmedNickname = nickname.trim();
-  const isValidNickname = trimmedNickname.length >= 1 && trimmedNickname.length <= 6;
-  const isChanged = trimmedNickname.length > 0 && trimmedNickname !== (selectedAvatar?.avatarName ?? "");
+  const handleBack = () => navigation.goBack();
 
-  const handleBack = () => {
-    navigation.goBack();
+  // 선택한 아바타 정보를 다음 단계(닉네임 입력)로 전달
+  const handleNext = () => {
+    if (!selectedAvatar) return;
+    navigation.navigate("AvatarNicknameEditStep2", {
+      avatarId: selectedAvatar.avatarId,
+      avatarName: selectedAvatar.avatarName,
+      avatarImageUrl: selectedAvatar.avatarImageUrl,
+    });
   };
 
-  const handleSelectAvatar = (avatarId: number, avatarName: string) => {
-    setSelectedAvatarId(avatarId);
-    setDraftNickname(avatarName);
-  };
-
-  const handleSubmit = async () => {
-    if (!selectedAvatar || !isValidNickname || !isChanged || updateAvatarNickname.isPending) {
-      return;
-    }
-
-    try {
-      await updateAvatarNickname.mutateAsync({
-        avatarId: selectedAvatar.avatarId,
-        newAvatarName: trimmedNickname,
-      });
-      navigation.goBack();
-    } catch {
-      Alert.alert("아바타 닉네임 변경에 실패했습니다", "잠시 후 다시 시도해주세요.");
-    }
-  };
-
+  // --- 로딩 / 에러 / 빈 상태 처리 ---
   if (isLoading) {
     return (
       <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
@@ -116,66 +99,69 @@ export default function AvatarNicknameEditScreen({ navigation }: Props) {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top"]}>
+    <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
+      {/* 상단 헤더 */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={handleBack} activeOpacity={0.7} style={styles.sideButton}>
-          <Text style={styles.backText}>뒤로</Text>
+        <TouchableOpacity onPress={handleBack} activeOpacity={0.7} style={styles.backButton}>
+          <LeftIcon size={24} color="#171717" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>아바타 닉네임 변경</Text>
-        <View style={styles.sideButton} />
+        <View style={styles.backButton} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.heroCard}>
-          <Text style={styles.eyebrow}>설정</Text>
-          <Text style={styles.heroTitle}>식물별 이름을 수정합니다.</Text>
-          <Text style={styles.heroDescription}>
-            {/* 한글 주석:
-                유저 닉네임과 달리 아바타 닉네임은 식물별로 따로 가지므로,
-                먼저 변경할 식물을 선택한 뒤 1개 대상만 수정하도록 분리한다. */}
-            홈과 프로필에 보이는 식물 이름을 선택해서 바꿀 수 있습니다.
-          </Text>
-        </View>
+      <Text style={styles.title}>변경할 식물을 선택해주세요</Text>
 
-        <View style={styles.avatarList}>
-          {avatars.map(avatar => {
-            const selected = avatar.avatarId === (selectedAvatar?.avatarId ?? null);
+      {/* 아바타 캐러셀 + 이름 + 페이지 점 */}
+      <View style={styles.carouselWrapper}>
+        <FlatList
+          ref={flatListRef}
+          data={avatars}
+          keyExtractor={item => String(item.avatarId)}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          snapToInterval={ITEM_WIDTH + ITEM_GAP}
+          decelerationRate="fast"
+          contentContainerStyle={{ paddingHorizontal: sidePadding }}
+          ItemSeparatorComponent={() => <View style={{ width: ITEM_GAP }} />}
+          onMomentumScrollEnd={e => {
+            // 스크롤 위치로 현재 선택 인덱스 갱신
+            const index = Math.round(e.nativeEvent.contentOffset.x / (ITEM_WIDTH + ITEM_GAP));
+            setCurrentIndex(Math.max(0, Math.min(index, avatars.length - 1)));
+          }}
+          renderItem={({ item, index }) => {
+            const isSelected = index === currentIndex;
             return (
-              <TouchableOpacity
-                key={avatar.avatarId}
-                activeOpacity={0.8}
-                style={[styles.avatarCard, selected && styles.avatarCardSelected]}
-                onPress={() => handleSelectAvatar(avatar.avatarId, avatar.avatarName)}
-              >
-                <Image source={{ uri: avatar.avatarImageUrl }} style={styles.avatarImage} resizeMode="contain" />
-                <View style={styles.avatarTextWrap}>
-                  <Text style={styles.avatarCardTitle}>{avatar.avatarName}</Text>
-                  <Text style={styles.avatarCardCaption}>텃밭 {avatar.gardenSlotNumber}</Text>
-                </View>
-              </TouchableOpacity>
+              <View style={[styles.carouselItem, isSelected && styles.carouselItemSelected, !isSelected && styles.carouselItemDimmed]}>
+                <Image
+                  source={{ uri: item.avatarImageUrl }}
+                  style={styles.carouselImage}
+                  resizeMode="contain"
+                />
+              </View>
             );
-          })}
-        </View>
-
-        <RegistrationTextField
-          label="아바타 닉네임"
-          value={nickname}
-          onChangeText={setDraftNickname}
-          placeholder="아바타 닉네임을 입력해주세요"
-          helperText={
-            trimmedNickname.length > 6
-              ? "아바타 닉네임은 6자 이하로 입력해주세요."
-              : "선택한 식물에만 반영됩니다."
-          }
+          }}
         />
-      </ScrollView>
+        {/* 선택된 아바타 이름 */}
+        <Text style={styles.carouselName}>{selectedAvatar?.avatarName ?? ""}</Text>
+        {/* 페이지 인디케이터 점 */}
+        <View style={styles.dotRow}>
+          {avatars.map((_, i) => (
+            <View key={i} style={[styles.dot, i === currentIndex && styles.dotActive]} />
+          ))}
+        </View>
+      </View>
 
-      <RegistrationFooter
-        primaryLabel="저장"
-        onPrimaryPress={() => void handleSubmit()}
-        primaryDisabled={!selectedAvatar || !isValidNickname || !isChanged || updateAvatarNickname.isPending}
-        primaryLoading={updateAvatarNickname.isPending}
-      />
+      {/* 하단 다음 버튼 */}
+      <View style={styles.footer}>
+        <TouchableOpacity
+          style={[styles.button, isButtonEnabled ? styles.buttonActive : styles.buttonDisabled]}
+          onPress={handleNext}
+          disabled={!isButtonEnabled}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.buttonText}>다음</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
@@ -183,91 +169,107 @@ export default function AvatarNicknameEditScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#F7F8F4",
+    backgroundColor: "#FFFFFF",
   },
+  // 상단 헤더 영역
   header: {
     height: 56,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    backgroundColor: "#FFFFFF",
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#E5E7EB",
+    paddingHorizontal: 13,
+    borderBottomWidth: 1,
+    borderBottomColor: "#EFEFEF",
   },
-  sideButton: {
-    width: 56,
+  backButton: {
+    width: 44,
     height: 44,
     justifyContent: "center",
   },
-  backText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#374151",
-  },
   headerTitle: {
-    fontSize: 17,
-    fontWeight: "700",
+    fontSize: 18,
+    fontWeight: "600",
     color: "#171717",
   },
-  content: {
-    padding: 20,
-    gap: 18,
+  // 안내 타이틀
+  title: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#171717",
+    marginTop: 32,
+    marginLeft: 25,
   },
-  heroCard: {
-    borderRadius: 22,
-    padding: 20,
-    backgroundColor: "#234A2F",
-    gap: 8,
-  },
-  eyebrow: {
-    fontSize: 12,
-    color: "#D7E9D8",
-  },
-  heroTitle: {
-    fontSize: 24,
-    lineHeight: 32,
-    fontWeight: "700",
-    color: "#FFFFFF",
-  },
-  heroDescription: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#E5F4E5",
-  },
-  avatarList: {
-    gap: 10,
-  },
-  avatarCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-    borderRadius: 18,
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
-  avatarCardSelected: {
-    borderColor: "#2F7D32",
-    backgroundColor: "#F1FBF1",
-  },
-  avatarImage: {
-    width: 52,
-    height: 52,
-  },
-  avatarTextWrap: {
+  // 캐러셀 + 이름 + 점 묶음 영역
+  // paddingTop으로 이미지 상단 여백 조정 (수동 조정 가능)
+  carouselWrapper: {
     flex: 1,
-    gap: 4,
+    justifyContent: "flex-start",
+    alignItems: "center",
+    gap: 16,
+    paddingTop: 160,
   },
-  avatarCardTitle: {
-    fontSize: 16,
-    fontWeight: "700",
+  // 개별 아바타 카드
+  carouselItem: {
+    width: ITEM_WIDTH,
+    height: 292,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: "#72D14E",
+    overflow: "hidden",
+  },
+  carouselItemSelected: {
+    backgroundColor: "#EEF9EA",
+    opacity: 1,
+  },
+  carouselItemDimmed: {
+    opacity: 0.5,
+  },
+  carouselImage: {
+    width: "100%",
+    height: "100%",
+  },
+  // 아바타 이름 텍스트
+  carouselName: {
+    fontSize: 18,
+    fontWeight: "600",
     color: "#171717",
+    textAlign: "center",
   },
-  avatarCardCaption: {
-    fontSize: 13,
-    color: "#6B7280",
+  // 페이지 인디케이터 점 행
+  dotRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 100,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#BFBFBF",
+  },
+  dotActive: {
+    backgroundColor: "#171717",
+  },
+  // 하단 버튼 영역
+  footer: {
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+  },
+  button: {
+    height: 56,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  buttonActive: {
+    backgroundColor: "#72D14E",
+  },
+  buttonDisabled: {
+    backgroundColor: "#7C7C7C",
+  },
+  buttonText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#FFFFFF",
   },
 });
