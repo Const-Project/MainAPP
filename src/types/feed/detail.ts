@@ -1,5 +1,6 @@
 export interface FeedComment {
   commentId: number;
+  writerId: number | null;
   profileImageUrl: string | null;
   writer: string;
   content: string;

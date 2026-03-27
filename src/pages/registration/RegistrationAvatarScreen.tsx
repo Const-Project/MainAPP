@@ -1,73 +1,81 @@
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+﻿import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ScreenHeader from "@/components/common/ScreenHeader";
-import RegistrationFooter from "@/components/registration/RegistrationFooter";
-import RegistrationModeCard from "@/components/registration/RegistrationModeCard";
 import type { RootStackScreenProps } from "@/navigation/types";
 import useRegistrationStore from "@/stores/useRegistrationStore";
 
 type Props = RootStackScreenProps<"RegistrationAvatar">;
 
-export default function RegistrationAvatarScreen({ navigation }: Props) {
-  const { mode, selectedMaster, selectedPreview, setMode } = useRegistrationStore();
+type EntryMode = "initial" | "garden";
 
-  const goNext = () => {
-    if (mode === "selection") {
-      navigation.navigate("RegistrationSelectionDetail");
-      return;
-    }
+const selectionImage = require("@/assets/images/creationAvatar/SelectionDefultImg.png");
+const creationImage = require("@/assets/images/creationAvatar/CreationDefultImg.png");
 
-    if (mode === "creation") {
-      navigation.navigate("RegistrationCreationDetail");
-    }
+export default function RegistrationAvatarScreen({ navigation, route }: Props) {
+  const { setMode } = useRegistrationStore();
+  const entry: EntryMode = route.params?.entry ?? "initial";
+  const isGardenEntry = entry === "garden";
+
+  const goSelection = () => {
+    setMode("selection");
+    navigation.navigate("RegistrationSelectionDetail", { entry });
+  };
+
+  const goCreation = () => {
+    setMode("creation");
+    navigation.navigate("RegistrationCreationDetail", { entry });
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top"]}>
+    <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
       <ScreenHeader
         title="식물 데려오기"
-        onBack={() => navigation.navigate("Main", { screen: "Home" })}
+        onBack={isGardenEntry ? undefined : () => navigation.navigate("Main", { screen: "Home" })}
       />
+
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.heroCard}>
-          <Text style={styles.eyebrow}>등록 플로우 시작</Text>
-          <Text style={styles.heroTitle}>어떤 방식으로 식물을 데려올지 선택하세요.</Text>
-          <Text style={styles.heroDescription}>
-            선택형은 제공된 아바타를 고르는 방식이고, 생성형은 이미지를 업로드한 뒤 별명을 붙이는 방식입니다.
-          </Text>
+        <View style={styles.card}>
+          <View style={styles.copyWrap}>
+            <Text style={styles.cardTitle}>아바타 선택</Text>
+            <Text style={styles.cardDescription}>00종의 아바타 중에서{"\n"}선택할 수 있어요</Text>
+            <TouchableOpacity style={styles.cardActionButton} activeOpacity={0.88} onPress={goSelection}>
+              <Text style={styles.cardActionLabel}>선택하러 가기</Text>
+            </TouchableOpacity>
+          </View>
+          <Image source={selectionImage} resizeMode="contain" style={styles.cardImage} />
         </View>
 
-        <RegistrationModeCard
-          mode="selection"
-          title="아바타 선택"
-          description="제공된 식물 아바타 목록 중 하나를 고른 뒤 별명을 붙입니다."
-          previewLabel={selectedMaster?.description ?? "선택 가능한 식물 목록 보기"}
-          selected={mode === "selection"}
-          onPress={() => setMode("selection")}
-        />
+        <View style={styles.divider} />
 
-        <RegistrationModeCard
-          mode="creation"
-          title="나만의 아바타"
-          description="이미지를 업로드하고, 업로드된 imageUrl로 최종 아바타 등록을 진행합니다."
-          previewLabel={selectedPreview?.description ?? "이미지를 골라 나만의 식물 등록하기"}
-          selected={mode === "creation"}
-          onPress={() => setMode("creation")}
-        />
+        <View style={styles.card}>
+          <View style={styles.copyWrap}>
+            <Text style={styles.cardTitle}>나만의 아바타</Text>
+            <Text style={styles.cardDescription}>내 식물의 생김새를{"\n"}반영한 나만의 아바타를{"\n"}만들 수 있어요</Text>
+            <TouchableOpacity style={styles.cardActionButton} activeOpacity={0.88} onPress={goCreation}>
+              <Text style={styles.cardActionLabel}>만들러 가기</Text>
+            </TouchableOpacity>
+          </View>
+          <Image source={creationImage} resizeMode="contain" style={styles.cardImage} />
+        </View>
       </ScrollView>
 
-      <RegistrationFooter
-        secondaryLabel="나중에 하기"
-        onSecondaryPress={() =>
-          navigation.reset({
-            index: 0,
-            routes: [{ name: "Main", params: { screen: "Home" } }],
-          })
-        }
-        primaryLabel="다음"
-        onPrimaryPress={goNext}
-        primaryDisabled={!mode}
-      />
+      <View style={styles.footer}>
+        <TouchableOpacity
+          style={[styles.footerButton, isGardenEntry ? styles.footerButtonDisabled : styles.footerButtonSecondary]}
+          disabled={isGardenEntry}
+          activeOpacity={0.88}
+          onPress={() =>
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "Main", params: { screen: "Home" } }],
+            })
+          }
+        >
+          <Text style={[styles.footerLabel, isGardenEntry ? styles.footerLabelDisabled : styles.footerLabelSecondary]}>
+            {isGardenEntry ? "다음" : "나중에 만들기"}
+          </Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
@@ -75,31 +83,87 @@ export default function RegistrationAvatarScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#F7F8F4",
+    backgroundColor: "#FFFFFF",
   },
   content: {
-    padding: 20,
-    gap: 16,
+    paddingTop: 18,
+    paddingBottom: 24,
   },
-  heroCard: {
-    borderRadius: 22,
-    padding: 20,
-    backgroundColor: "#234A2F",
-    gap: 8,
+  card: {
+    minHeight: 300,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    gap: 12,
   },
-  eyebrow: {
-    fontSize: 12,
-    color: "#D7E9D8",
+  divider: {
+    height: 1,
+    backgroundColor: "#EFEFEF",
   },
-  heroTitle: {
-    fontSize: 24,
-    lineHeight: 32,
+  copyWrap: {
+    flex: 1,
+    gap: 12,
+  },
+  cardTitle: {
+    fontSize: 40 / 2,
+    lineHeight: 56 / 2,
     fontWeight: "700",
+    color: "#171717",
+  },
+  cardDescription: {
+    fontSize: 16,
+    lineHeight: 40 / 2,
+    color: "#171717",
+  },
+  cardActionButton: {
+    marginTop: 8,
+    alignSelf: "flex-start",
+    minWidth: 146,
+    minHeight: 44,
+    borderRadius: 8,
+    backgroundColor: "#6FCF4A",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 18,
+  },
+  cardActionLabel: {
+    fontSize: 32 / 2,
+    lineHeight: 54 / 2,
+    fontWeight: "600",
     color: "#FFFFFF",
   },
-  heroDescription: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#E5F4E5",
+  cardImage: {
+    width: 184,
+    height: 184,
+    opacity: 0.95,
+  },
+  footer: {
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 20,
+  },
+  footerButton: {
+    minHeight: 56,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  footerButtonSecondary: {
+    backgroundColor: "#EFF9EA",
+  },
+  footerButtonDisabled: {
+    backgroundColor: "#EAEAEA",
+  },
+  footerLabel: {
+    fontSize: 18,
+    lineHeight: 27,
+    fontWeight: "600",
+  },
+  footerLabelSecondary: {
+    color: "#46C02B",
+  },
+  footerLabelDisabled: {
+    color: "#BFBFBF",
   },
 });

@@ -1,12 +1,11 @@
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+﻿import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ScreenHeader from "@/components/common/ScreenHeader";
-import AvatarPreviewCard from "@/components/registration/AvatarPreviewCard";
-import RegistrationFooter from "@/components/registration/RegistrationFooter";
-import RegistrationTextField from "@/components/registration/RegistrationTextField";
 import { useFinalChoiceAvatar } from "@/hooks/avatars/useAvatarApi";
 import type { RootStackScreenProps } from "@/navigation/types";
 import useRegistrationStore from "@/stores/useRegistrationStore";
+
+const MAX_NICKNAME_LENGTH = 6;
 
 type Props = RootStackScreenProps<"RegistrationPlantNickname">;
 
@@ -23,18 +22,18 @@ export default function RegistrationPlantNicknameScreen({ navigation }: Props) {
   const finalChoiceAvatar = useFinalChoiceAvatar();
 
   const trimmedNickname = nickname.trim();
-  const isInvalid = trimmedNickname.length === 0 || trimmedNickname.length > 6;
+  const isTooLong = trimmedNickname.length > MAX_NICKNAME_LENGTH;
+  const isEmpty = trimmedNickname.length === 0;
+  const isInvalid = isEmpty || isTooLong;
   const canSubmitToApi =
     (mode === "selection" && Boolean(selectedMaster?.id && selectedMaster.defaultImageUrl)) ||
     (mode === "creation" && Boolean(creationDetail.uploadedImageUrl));
 
-  const helperText =
-    mode === "selection"
-      ? "선택형은 imageUrl과 masterId를 함께 보내 최종 등록합니다."
-      : "생성형은 업로드된 imageUrl과 masterId:null로 최종 등록합니다.";
+  const previewImageUrl =
+    selectedPreview?.imageUrl ?? creationDetail.uploadedImageUrl ?? selectedMaster?.defaultImageUrl ?? null;
 
   const completeFlow = async () => {
-    if (isInvalid || !canSubmitToApi) {
+    if (isInvalid || !canSubmitToApi || finalChoiceAvatar.isPending) {
       return;
     }
 
@@ -59,7 +58,7 @@ export default function RegistrationPlantNicknameScreen({ navigation }: Props) {
         routes: [{ name: "Main", params: { screen: "Home" } }],
       });
     } catch {
-      // Error card below handles the failure case.
+      // Keep same visual state and allow retry.
     }
   };
 
@@ -73,63 +72,60 @@ export default function RegistrationPlantNicknameScreen({ navigation }: Props) {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top"]}>
-      <ScreenHeader title="식물 별명" onBack={goBackTarget} />
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.headerBlock}>
-          <Text style={styles.title}>식물의 별명을 지어주세요.</Text>
-          <Text style={styles.subtitle}>
-            별명과 imageUrl을 함께 보내 최종 아바타 등록을 완료합니다.
-          </Text>
-        </View>
+    <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
+      <ScreenHeader title="식물 데려오기" onBack={goBackTarget} />
 
-        <AvatarPreviewCard
-          imageUrl={selectedPreview?.imageUrl ?? creationDetail.uploadedImageUrl ?? undefined}
-          title={trimmedNickname || "내 식물"}
-          description={selectedPreview?.description}
-        />
+      <View style={styles.content}>
+        <Text style={styles.title}>식물의 별명을 지어주세요</Text>
 
-        <RegistrationTextField
-          label="식물 별명"
-          value={nickname}
-          onChangeText={setNickname}
-          placeholder="별명을 입력해주세요"
-          helperText={helperText}
-        />
-
-        <View style={styles.captionRow}>
-          <Text style={[styles.caption, isInvalid ? styles.captionError : null]}>
-            {trimmedNickname.length > 6
-              ? "최대 6자까지 입력할 수 있습니다."
-              : "공백을 제외한 별명을 입력해주세요."}
-          </Text>
-          {!canSubmitToApi ? (
-            <Text style={[styles.caption, styles.captionError]}>
-              {mode === "creation"
-                ? "생성형 이미지를 먼저 업로드해야 합니다."
-                : "선택한 아바타 정보를 다시 확인해주세요."}
-            </Text>
+        <View style={styles.previewCard}>
+          {previewImageUrl ? (
+            <Image source={{ uri: previewImageUrl }} resizeMode="cover" style={styles.previewImage} />
           ) : null}
         </View>
 
-        {finalChoiceAvatar.isError ? (
-          <View style={styles.errorCard}>
-            <Text style={styles.errorTitle}>최종 등록에 실패했습니다.</Text>
-            <Text style={styles.errorDescription}>
-              `POST /api/v1/avatars` 호출에 실패했습니다. 같은 정보로 다시 시도할 수 있습니다.
-            </Text>
-          </View>
-        ) : null}
-      </ScrollView>
+        <View
+          style={[
+            styles.inputWrap,
+            isTooLong ? styles.inputWrapError : null,
+            !isEmpty && !isTooLong ? styles.inputWrapActive : null,
+          ]}
+        >
+          <TextInput
+            value={nickname}
+            onChangeText={setNickname}
+            placeholder="별명을 지어주세요"
+            placeholderTextColor="#BFBFBF"
+            style={styles.input}
+          />
+          {isEmpty ? <Text style={styles.maxCount}>최대 6자</Text> : null}
+        </View>
 
-      <RegistrationFooter
-        secondaryLabel="이전"
-        onSecondaryPress={goBackTarget}
-        primaryLabel="내 텃밭으로 가기"
-        onPrimaryPress={() => void completeFlow()}
-        primaryDisabled={isInvalid || !canSubmitToApi || finalChoiceAvatar.isPending}
-        primaryLoading={finalChoiceAvatar.isPending}
-      />
+        {isTooLong ? <Text style={styles.errorText}>최대 6자 입력해주세요.</Text> : null}
+      </View>
+
+      <View style={styles.footer}>
+        <TouchableOpacity
+          activeOpacity={0.88}
+          disabled={isInvalid || !canSubmitToApi || finalChoiceAvatar.isPending}
+          onPress={() => void completeFlow()}
+          style={[
+            styles.primaryButton,
+            isInvalid || !canSubmitToApi || finalChoiceAvatar.isPending ? styles.primaryButtonDisabled : null,
+          ]}
+        >
+          <Text
+            style={[
+              styles.primaryButtonText,
+              isInvalid || !canSubmitToApi || finalChoiceAvatar.isPending
+                ? styles.primaryButtonTextDisabled
+                : null,
+            ]}
+          >
+            내 텃밭으로 가기
+          </Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
@@ -137,51 +133,99 @@ export default function RegistrationPlantNicknameScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#F7F8F4",
+    backgroundColor: "#FFFFFF",
   },
   content: {
-    padding: 20,
-    gap: 18,
-  },
-  headerBlock: {
-    gap: 8,
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 32,
+    alignItems: "center",
   },
   title: {
-    fontSize: 24,
-    lineHeight: 32,
-    fontWeight: "700",
+    width: "100%",
+    paddingHorizontal: 5,
+    fontSize: 20,
+    lineHeight: 28,
+    fontWeight: "600",
     color: "#171717",
+    marginBottom: 73,
   },
-  subtitle: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#6B7280",
+  previewCard: {
+    width: 258,
+    height: 292,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: "#72D14E",
+    backgroundColor: "#EEF9EA",
+    marginBottom: 16,
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  captionRow: {
-    gap: 8,
+  previewImage: {
+    width: 220,
+    height: 261,
   },
-  caption: {
-    fontSize: 12,
-    lineHeight: 18,
-    color: "#6B7280",
+  inputWrap: {
+    width: 353,
+    height: 60,
+    borderWidth: 1,
+    borderColor: "#BFBFBF",
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
-  captionError: {
-    color: "#B91C1C",
+  inputWrapActive: {
+    borderColor: "#171717",
   },
-  errorCard: {
-    borderRadius: 18,
-    padding: 16,
-    backgroundColor: "#FEF2F2",
-    gap: 6,
+  inputWrapError: {
+    borderColor: "#F76868",
   },
-  errorTitle: {
+  input: {
+    flex: 1,
     fontSize: 16,
-    fontWeight: "700",
-    color: "#B91C1C",
+    lineHeight: 26,
+    color: "#171717",
+    paddingVertical: 0,
   },
-  errorDescription: {
+  maxCount: {
     fontSize: 14,
-    lineHeight: 20,
-    color: "#7F1D1D",
+    lineHeight: 22,
+    color: "#7C7C7C",
+    marginLeft: 8,
+  },
+  errorText: {
+    width: "100%",
+    paddingLeft: 17,
+    marginTop: 8,
+    fontSize: 14,
+    lineHeight: 22,
+    color: "#7C7C7C",
+  },
+  footer: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 20,
+  },
+  primaryButton: {
+    minHeight: 56,
+    borderRadius: 8,
+    backgroundColor: "#72D14E",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  primaryButtonDisabled: {
+    backgroundColor: "#EFEFEF",
+  },
+  primaryButtonText: {
+    fontSize: 18,
+    lineHeight: 27,
+    fontWeight: "600",
+    color: "#FFFFFF",
+  },
+  primaryButtonTextDisabled: {
+    color: "#BFBFBF",
   },
 });

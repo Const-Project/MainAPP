@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+﻿import { useEffect } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -18,7 +18,9 @@ type Props = RootStackScreenProps<"RegistrationSelectionDetail">;
 
 export default function RegistrationSelectionDetailScreen({
   navigation,
+  route,
 }: Props) {
+  const entry = route.params?.entry;
   const { data, isLoading, isError, refetch } = useAvatarMasters();
   const {
     selectedMaster,
@@ -57,7 +59,7 @@ export default function RegistrationSelectionDetailScreen({
       <SafeAreaView style={styles.safeArea} edges={["top"]}>
         <ScreenHeader
           title="아바타 선택"
-          onBack={() => navigation.navigate("RegistrationAvatar")}
+          onBack={() => navigation.navigate("RegistrationAvatar", { entry })}
         />
         <StatusView title="선택 가능한 식물을 불러오는 중입니다." loading />
       </SafeAreaView>
@@ -69,7 +71,7 @@ export default function RegistrationSelectionDetailScreen({
       <SafeAreaView style={styles.safeArea} edges={["top"]}>
         <ScreenHeader
           title="아바타 선택"
-          onBack={() => navigation.navigate("RegistrationAvatar")}
+          onBack={() => navigation.navigate("RegistrationAvatar", { entry })}
         />
         <StatusView
           title="식물 아바타 목록을 불러오지 못했습니다."
@@ -86,7 +88,7 @@ export default function RegistrationSelectionDetailScreen({
       <SafeAreaView style={styles.safeArea} edges={["top"]}>
         <ScreenHeader
           title="아바타 선택"
-          onBack={() => navigation.navigate("RegistrationAvatar")}
+          onBack={() => navigation.navigate("RegistrationAvatar", { entry })}
         />
         <StatusView
           title="선택 가능한 아바타가 없습니다."
@@ -100,7 +102,7 @@ export default function RegistrationSelectionDetailScreen({
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <ScreenHeader
         title="아바타 선택"
-        onBack={() => navigation.navigate("RegistrationAvatar")}
+        onBack={() => navigation.navigate("RegistrationAvatar", { entry })}
       />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.headerBlock}>
@@ -123,7 +125,7 @@ export default function RegistrationSelectionDetailScreen({
 
       <RegistrationFooter
         secondaryLabel="처음으로"
-        onSecondaryPress={() => navigation.navigate("RegistrationAvatar")}
+        onSecondaryPress={() => navigation.navigate("RegistrationAvatar", { entry })}
         primaryLabel="별명 정하러 가기"
         onPrimaryPress={goNext}
         primaryDisabled={!selectedMaster}
@@ -162,3 +164,4 @@ const styles = StyleSheet.create({
     rowGap: 12,
   },
 });
+

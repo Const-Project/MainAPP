@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { useQueryClient } from "@tanstack/react-query";
 import { useFocusEffect } from "@react-navigation/native";
@@ -86,9 +86,6 @@ export default function HomeScreen({ navigation }: Props) {
 
   useFocusEffect(
     useCallback(() => {
-      // 한글 주석:
-      // 홈 복귀 시점에도 서버 기준 eligible 상태를 다시 읽어야
-      // 방금 물/햇빛을 완료한 뒤 즉시 2주 리포트 팝업을 띄울 수 있다.
       void refetch();
       void refetchTrackingPromptStatus();
     }, [refetch, refetchTrackingPromptStatus])
@@ -132,11 +129,6 @@ export default function HomeScreen({ navigation }: Props) {
       return;
     }
 
-    /*
-     * 한글 주석:
-     * 서버가 eligible 을 내려줘도 같은 앱 세션 안에서 이미 연 cycleKey 라면
-     * 홈 재포커스나 추가 refetch 때문에 같은 모달이 연속으로 다시 뜨지 않게 막는다.
-     */
     if (openedTrackingCycleKeysRef.current.has(trackingPromptStatus.cycleKey)) {
       return;
     }
@@ -172,11 +164,6 @@ export default function HomeScreen({ navigation }: Props) {
     }
   }, [isCurrentGardenLocked, isSheetExpanded]);
 
-  /*
-   * 한글 주석:
-   * 홈 말풍선은 서버 응답과 별개로, 홈에서 방금 답한 직후 상태도 바로 반영해야 한다.
-   * 로컬 24시간 완료 상태를 함께 보아야 버튼이 다시 나타나는 깜빡임을 막을 수 있다.
-   */
   const isEmotionAnswered = (surveyQuery.data?.isAnswered ?? false) || isEmotionCooldownActive;
   const answeredKind = emotionAnswerKind ?? lastAnswerKind;
   const initialPage = Math.max(0, Math.min(3, (userInfo?.lastAccessedSlotNumber ?? 1) - 1));
@@ -191,11 +178,6 @@ export default function HomeScreen({ navigation }: Props) {
     }
 
     try {
-      /*
-       * 한글 주석:
-       * 닫기와 CTA 모두 같은 confirm API 로 모아 처리해서
-       * 이번 cycle 확인 완료 여부를 서버에 한 번만 기록한다.
-       */
       await trackingPromptConfirmMutation.mutateAsync({
         cycleKey: trackingPromptStatus.cycleKey,
       });
@@ -252,8 +234,13 @@ export default function HomeScreen({ navigation }: Props) {
               onPressMap={() => setIsMapModalOpen(true)}
               onPressBird={() => setIsAlertsModalOpen(true)}
               onPressEmotion={() => setIsEmotionModalOpen(true)}
-              onPressUnlock={() => navigation.navigate("UnlockGarden")}
-              onPressEmpty={() => navigation.navigate("RegistrationAvatar")}
+              onPressUnlock={() =>
+                navigation.navigate("UnlockGarden", {
+                  gardenId: scene.garden?.gardenId,
+                  gardenSlotNumber: scene.slotNumber,
+                })
+              }
+              onPressEmpty={() => navigation.navigate("RegistrationAvatar", { entry: "garden" })}
             />
           </View>
         ))}
@@ -278,11 +265,6 @@ export default function HomeScreen({ navigation }: Props) {
           panel={panel}
           currentLevel={userInfo?.level ?? 0}
           onPressMission={mission => {
-            /*
-             * 한글 주석:
-             * 완료된 일기 미션은 다시 작성 화면으로 보내지 않고,
-             * 오늘 방금 작성한 일기 상세로 연결해야 결과 확인 흐름이 자연스럽다.
-             */
             if (mission.missionType === "DIARY" && mission.isCompleted && latestTodayDiaryId) {
               navigation.navigate("LogDetail", { id: latestTodayDiaryId });
               return;
@@ -382,3 +364,4 @@ const styles = StyleSheet.create({
     backgroundColor: "#F4F7F0",
   },
 });
+

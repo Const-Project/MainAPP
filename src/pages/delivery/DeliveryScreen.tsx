@@ -1,17 +1,11 @@
-import { useMemo, useState } from "react";
-import {
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+﻿import { useMemo, useState } from "react";
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ScreenHeader from "@/components/common/ScreenHeader";
 import StatusView from "@/components/common/StatusView";
 import DeliveryRequestSelector from "@/components/delivery/DeliveryRequestSelector";
 import DeliveryTextField from "@/components/delivery/DeliveryTextField";
-import { useCreateSeedDelivery } from "@/hooks/delivery/useDeliveryApi";
+import { useCreateSeedDelivery, useUnlockGarden } from "@/hooks/delivery/useDeliveryApi";
 import type { RootStackScreenProps } from "@/navigation/types";
 import { useHomeSummaryStore } from "@/stores/useHomeSummaryStore";
 
@@ -19,7 +13,11 @@ type Props = RootStackScreenProps<"Delivery">;
 
 export default function DeliveryScreen({ navigation, route }: Props) {
   const user = useHomeSummaryStore(state => state.user);
+  const gardens = useHomeSummaryStore(state => state.gardens);
+  const updateGarden = useHomeSummaryStore(state => state.updateGarden);
+  const setUser = useHomeSummaryStore(state => state.setUser);
   const createSeedDelivery = useCreateSeedDelivery();
+  const unlockGarden = useUnlockGarden();
 
   const [recipientName, setRecipientName] = useState(user?.username ?? "");
   const [recipientPhone, setRecipientPhone] = useState("");
@@ -31,6 +29,12 @@ export default function DeliveryScreen({ navigation, route }: Props) {
 
   const seedType = route.params?.seedType;
   const seedName = route.params?.seedName;
+  const gardenId = route.params?.gardenId;
+  const gardenSlotNumber = route.params?.gardenSlotNumber;
+  const selectedGarden = useMemo(
+    () => gardens.find(garden => garden.gardenId === gardenId) ?? null,
+    [gardenId, gardens]
+  );
   const resolvedMessage = message === "직접 입력" ? customMessage.trim() : message;
 
   const isFormValid = useMemo(
@@ -52,11 +56,14 @@ export default function DeliveryScreen({ navigation, route }: Props) {
       return;
     }
 
-    navigation.navigate("UnlockGarden");
+    navigation.navigate("UnlockGarden", {
+      gardenId,
+      gardenSlotNumber,
+    });
   };
 
   const handleSubmit = async () => {
-    if (!seedType || !isFormValid || createSeedDelivery.isPending) {
+    if (!seedType || !isFormValid || createSeedDelivery.isPending || unlockGarden.isPending) {
       return;
     }
 
@@ -68,42 +75,63 @@ export default function DeliveryScreen({ navigation, route }: Props) {
         postalCode: postalCode.trim(),
         address: address.trim(),
         addressDetail: addressDetail.trim(),
-        message: resolvedMessage,
+        message: resolvedMessage || undefined,
       });
+
+      await unlockGarden.mutateAsync();
+
+      if (selectedGarden) {
+        updateGarden(selectedGarden.gardenId, {
+          isLocked: false,
+          locked: false,
+          isUnlockable: false,
+          unlockable: false,
+          avatar: null,
+        });
+      }
+
+      if (user) {
+        setUser({
+          ...user,
+          lastAccessedSlotNumber: gardenSlotNumber ?? user.lastAccessedSlotNumber,
+        });
+      }
 
       navigation.replace("DeliveryComplete", {
         seedName,
-        gardenId: route.params?.gardenId,
+        gardenId,
+        gardenSlotNumber,
       });
-    } catch {
-      // Error state is rendered below through mutation state.
+    } catch (error) {
+      if (error instanceof Error) {
+        Alert.alert("진행 실패", error.message);
+      }
     }
   };
 
   if (!seedType) {
     return (
       <SafeAreaView style={styles.safeArea} edges={["top"]}>
-        <ScreenHeader title="배송 정보 입력" onBack={handleBack} />
+        <ScreenHeader title="텃밭 해금하기" onBack={handleBack} />
         <StatusView
           title="먼저 배송 받을 식물을 선택해주세요."
-          description="이번 플로우에서는 `UnlockGarden` 화면에서 식물 선택 후 배송 화면으로 진입하도록 정리했습니다."
           actionLabel="식물 고르러 가기"
-          onAction={() => navigation.replace("UnlockGarden")}
+          onAction={() => navigation.replace("UnlockGarden", { gardenId, gardenSlotNumber })}
         />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top"]}>
-      <ScreenHeader title="배송 정보 입력" onBack={handleBack} />
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.heroCard}>
-          <Text style={styles.eyebrow}>Step 2 / 3</Text>
-          <Text style={styles.heroTitle}>배송 받을 정보를 입력해주세요.</Text>
-          <Text style={styles.heroDescription}>
-            선택한 식물: {seedName ?? `씨앗 타입 #${seedType}`}
-          </Text>
+    <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
+      <ScreenHeader title="텃밭 해금하기" onBack={handleBack} />
+      <View style={styles.progressTrack}>
+        <View style={[styles.progressFill, { width: "66.66%" }]} />
+      </View>
+
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <View style={styles.headerBlock}>
+          <Text style={styles.title}>배송 정보를 입력해주세요</Text>
         </View>
 
         <View style={styles.section}>
@@ -124,26 +152,25 @@ export default function DeliveryScreen({ navigation, route }: Props) {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>주소 정보</Text>
+          <Text style={styles.sectionTitle}>배송지 정보</Text>
           <DeliveryTextField
-            label="우편번호"
+            label="주소"
             value={postalCode}
             onChangeText={setPostalCode}
             placeholder="우편번호를 입력해주세요"
             keyboardType="number-pad"
-            helperText="웹의 주소 검색 UI는 RN에 아직 이식하지 않았습니다. 현재는 직접 입력만 지원합니다."
           />
           <DeliveryTextField
             label="주소"
             value={address}
             onChangeText={setAddress}
-            placeholder="기본 주소를 입력해주세요"
+            placeholder="주소를 입력해주세요"
           />
           <DeliveryTextField
             label="상세 주소"
             value={addressDetail}
             onChangeText={setAddressDetail}
-            placeholder="상세 주소를 입력해주세요"
+            placeholder="주소를 입력해주세요"
           />
         </View>
 
@@ -153,45 +180,36 @@ export default function DeliveryScreen({ navigation, route }: Props) {
           onChange={setMessage}
           onChangeCustom={setCustomMessage}
         />
-
-        {createSeedDelivery.isError ? (
-          <View style={styles.errorCard}>
-            <Text style={styles.errorTitle}>배송 요청을 완료하지 못했습니다.</Text>
-            <Text style={styles.errorDescription}>
-              `POST /api/v1/deliveries/seeds` 호출에 실패했습니다. 요청 필드 계약과 서버 상태를 다시 확인해야 합니다.
-            </Text>
-          </View>
-        ) : null}
-
-        <View style={styles.infoCard}>
-          <Text style={styles.infoTitle}>현재 연결된 범위</Text>
-          <Text style={styles.infoDescription}>
-            배송 신청은 MainFE에서 확인된 payload 구조만 사용합니다. 주소 검색, 배송 조회, 수정 기능은 이번 단계 범위 밖입니다.
-          </Text>
-        </View>
       </ScrollView>
 
       <View style={styles.footer}>
         <TouchableOpacity
+          activeOpacity={0.88}
+          onPress={() => navigation.navigate("Main", { screen: "Home" })}
           style={styles.secondaryButton}
-          activeOpacity={0.85}
-          onPress={handleBack}
         >
-          <Text style={styles.secondaryButtonText}>이전</Text>
+          <Text style={styles.secondaryButtonText}>나중에 받기</Text>
         </TouchableOpacity>
         <TouchableOpacity
+          activeOpacity={0.88}
+          disabled={!isFormValid || createSeedDelivery.isPending || unlockGarden.isPending}
+          onPress={() => void handleSubmit()}
           style={[
             styles.primaryButton,
-            !isFormValid || createSeedDelivery.isPending
+            !isFormValid || createSeedDelivery.isPending || unlockGarden.isPending
               ? styles.primaryButtonDisabled
               : null,
           ]}
-          activeOpacity={0.85}
-          disabled={!isFormValid || createSeedDelivery.isPending}
-          onPress={() => void handleSubmit()}
         >
-          <Text style={styles.primaryButtonText}>
-            {createSeedDelivery.isPending ? "전송 중..." : "배송 요청 완료"}
+          <Text
+            style={[
+              styles.primaryButtonText,
+              !isFormValid || createSeedDelivery.isPending || unlockGarden.isPending
+                ? styles.primaryButtonTextDisabled
+                : null,
+            ]}
+          >
+            {createSeedDelivery.isPending || unlockGarden.isPending ? "진행 중..." : "다음"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -202,109 +220,84 @@ export default function DeliveryScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#F7F8F4",
+    backgroundColor: "#FFFFFF",
+  },
+  progressTrack: {
+    marginHorizontal: 20,
+    marginTop: 16,
+    height: 4,
+    borderRadius: 999,
+    backgroundColor: "#F1F1F1",
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: "100%",
+    borderRadius: 999,
+    backgroundColor: "#6FCF4A",
   },
   content: {
-    padding: 20,
-    gap: 20,
+    paddingHorizontal: 20,
+    paddingTop: 48,
+    paddingBottom: 24,
+    gap: 36,
   },
-  heroCard: {
-    borderRadius: 22,
-    padding: 20,
-    backgroundColor: "#255137",
-    gap: 8,
+  headerBlock: {
+    gap: 12,
   },
-  eyebrow: {
-    fontSize: 12,
-    color: "#D7E9D8",
-  },
-  heroTitle: {
-    fontSize: 24,
-    lineHeight: 32,
+  title: {
+    fontSize: 18,
+    lineHeight: 28,
     fontWeight: "700",
-    color: "#FFFFFF",
-  },
-  heroDescription: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#E5F4E5",
+    color: "#171717",
   },
   section: {
-    gap: 12,
+    gap: 18,
   },
   sectionTitle: {
     fontSize: 18,
+    lineHeight: 27,
     fontWeight: "700",
     color: "#171717",
-  },
-  errorCard: {
-    borderRadius: 18,
-    padding: 16,
-    backgroundColor: "#FEF2F2",
-    gap: 6,
-  },
-  errorTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#B91C1C",
-  },
-  errorDescription: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#7F1D1D",
-  },
-  infoCard: {
-    borderRadius: 18,
-    padding: 16,
-    backgroundColor: "#EEF3EA",
-    gap: 8,
-  },
-  infoTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#171717",
-  },
-  infoDescription: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#4B5563",
   },
   footer: {
     flexDirection: "row",
     gap: 12,
     paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
-    backgroundColor: "#FFFFFF",
+    paddingTop: 12,
+    paddingBottom: 20,
   },
   secondaryButton: {
     flex: 1,
+    minHeight: 56,
+    borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
-    minHeight: 52,
-    borderRadius: 16,
-    backgroundColor: "#E5E7EB",
+    backgroundColor: "#EFF9EA",
   },
   secondaryButtonText: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#374151",
+    fontSize: 18,
+    lineHeight: 27,
+    fontWeight: "600",
+    color: "#46C02B",
   },
   primaryButton: {
     flex: 1,
+    minHeight: 56,
+    borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
-    minHeight: 52,
-    borderRadius: 16,
-    backgroundColor: "#2F7D32",
+    backgroundColor: "#6FCF4A",
   },
   primaryButtonDisabled: {
-    backgroundColor: "#A7D4A5",
+    backgroundColor: "#EAEAEA",
   },
   primaryButtonText: {
-    fontSize: 15,
-    fontWeight: "700",
+    fontSize: 18,
+    lineHeight: 27,
+    fontWeight: "600",
     color: "#FFFFFF",
+  },
+  primaryButtonTextDisabled: {
+    color: "#BFBFBF",
   },
 });

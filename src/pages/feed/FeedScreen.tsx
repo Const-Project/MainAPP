@@ -1,16 +1,19 @@
-import React from "react";
+import React, { useState, useCallback } from "react";
 import {
   RefreshControl,
   View,
   Text,
   TouchableOpacity,
   ScrollView,
+  ActivityIndicator,
   StyleSheet,
 } from "react-native";
+
+const FEED_PAGE_SIZE = 10;
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { MainTabScreenProps } from "@/navigation/types";
 
-import { UserPlusIcon } from "@/assets/icons/CommonIcons";
+import { RefreshIcon, UserPlusIcon } from "@/assets/icons/CommonIcons";
 import StatusView from "@/components/common/StatusView";
 import FeedList from "@/components/feed/FeedList";
 import { useFeed } from "@/hooks/feed/useFeedApi";
@@ -19,6 +22,7 @@ type Props = MainTabScreenProps<"Feed">;
 
 export default function FeedScreen({ navigation }: Props) {
   const { data: result, isLoading, isRefetching, error, refetch } = useFeed();
+  const [displayCount, setDisplayCount] = useState(FEED_PAGE_SIZE);
 
   const handleUserPlusClick = () => {
     navigation.navigate("Follow");
@@ -32,22 +36,38 @@ export default function FeedScreen({ navigation }: Props) {
     }
   };
 
-  // API 결과가 null/빈 배열이면 빈 배열로 대체
-  const dataForRender = result && result.length > 0 ? result : [];
+  const handleRefetch = useCallback(() => {
+    setDisplayCount(FEED_PAGE_SIZE);
+    void refetch();
+  }, [refetch]);
+
+  const handleScroll = useCallback(
+    ({ nativeEvent }: { nativeEvent: { layoutMeasurement: { height: number }; contentOffset: { y: number }; contentSize: { height: number } } }) => {
+      const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+      const isNearBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 200;
+      if (isNearBottom && displayCount < (result?.length ?? 0)) {
+        setDisplayCount(prev => Math.min(prev + FEED_PAGE_SIZE, result?.length ?? prev));
+      }
+    },
+    [displayCount, result?.length]
+  );
+
+  const allData = result && result.length > 0 ? result : [];
+  const dataForRender = allData.slice(0, displayCount);
+  const hasMore = displayCount < allData.length;
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      {/* Header spacing is tuned to match the centered title layout from the FE design. */}
       <View style={styles.header}>
         <TouchableOpacity
-          style={styles.headerTextButton}
-          onPress={() => void refetch()}
+          style={styles.headerIconButton}
+          onPress={handleRefetch}
           activeOpacity={0.7}
           disabled={isLoading || isRefetching}
+          accessibilityRole="button"
+          accessibilityLabel="새로고침"
         >
-          <Text style={[styles.headerTextButtonLabel, (isLoading || isRefetching) && styles.headerTextButtonDisabled]}>
-            새로고침
-          </Text>
+          <RefreshIcon size={22} color={isLoading || isRefetching ? "#9CA3AF" : "#171717"} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>둘러보기</Text>
         <TouchableOpacity
@@ -70,23 +90,27 @@ export default function FeedScreen({ navigation }: Props) {
         <ScrollView
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
+          scrollEventThrottle={400}
+          onScroll={handleScroll}
           refreshControl={
             <RefreshControl
               refreshing={isRefetching && !isLoading}
-              onRefresh={() => void refetch()}
+              onRefresh={handleRefetch}
               tintColor="#7DC960"
             />
           }
         >
-          {/* 한글 주석:
-              피드 메인에서는 빈 상태와 로딩 상태를 리스트 컴포넌트가 맡고,
-              네트워크 재시도는 상단 버튼과 pull-to-refresh 둘 다 열어 둔다. */}
           <FeedList
             feedData={{ result: dataForRender }}
             onSelectPost={handleSelectPost}
             isLoading={isLoading}
             error={null}
           />
+          {hasMore && (
+            <View style={styles.loadMoreIndicator}>
+              <ActivityIndicator size="small" color="#7DC960" />
+            </View>
+          )}
         </ScrollView>
       )}
     </SafeAreaView>
@@ -113,17 +137,10 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#171717",
   },
-  headerTextButton: {
-    minWidth: 56,
+  headerIconButton: {
+    width: 24,
+    alignItems: "center",
     justifyContent: "center",
-  },
-  headerTextButtonLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#374151",
-  },
-  headerTextButtonDisabled: {
-    color: "#9CA3AF",
   },
   headerButton: {
     width: 24,
@@ -131,5 +148,9 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+  },
+  loadMoreIndicator: {
+    paddingVertical: 16,
+    alignItems: "center",
   },
 });

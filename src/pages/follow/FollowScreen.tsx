@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+  Alert,
   Image,
   RefreshControl,
   ScrollView,
@@ -56,6 +57,28 @@ export default function FollowScreen({ navigation }: Props) {
     }
 
     void followersQuery.refetch();
+  };
+
+  const handleConfirmRemoveFriend = (targetUserId: number) => {
+    if (unfollowMutation.isPending) {
+      return;
+    }
+
+    Alert.alert(
+      "친구 삭제하기",
+      "사용자를 친구에서 삭제하시겠습니까?\n언제든 다시 추가할 수 있습니다.",
+      [
+        {
+          text: "취소",
+          style: "cancel",
+        },
+        {
+          text: "삭제",
+          style: "destructive",
+          onPress: () => void unfollowMutation.mutateAsync(targetUserId),
+        },
+      ]
+    );
   };
 
   return (
@@ -141,7 +164,7 @@ export default function FollowScreen({ navigation }: Props) {
                 <TouchableOpacity
                   activeOpacity={0.7}
                   disabled={unfollowMutation.isPending}
-                  onPress={() => void unfollowMutation.mutateAsync(user.userId)}
+                  onPress={() => handleConfirmRemoveFriend(user.userId)}
                   style={styles.removeButton}
                 >
                   <XmarkIcon color={unfollowMutation.isPending ? "#D1D5DB" : "#9CA3AF"} />

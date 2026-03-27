@@ -181,6 +181,42 @@ export function UserPlusIcon({ size = 24, color = "#171717" }: IconProps) {
   );
 }
 
+// 새로고침 아이콘
+export function RefreshIcon({ size = 24, color = "#171717" }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M20 11C19.7634 9.01281 18.7902 7.18688 17.2641 5.89258C15.738 4.59828 13.7784 3.93067 11.7799 4.02486C9.78142 4.11905 7.89389 4.96814 6.49595 6.40098C5.09802 7.83381 4.29567 9.74148 4.25 11.7427"
+        stroke={color}
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M4 8V12H8"
+        stroke={color}
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M4 13C4.23658 14.9872 5.20978 16.8131 6.7359 18.1074C8.26202 19.4017 10.2216 20.0693 12.2201 19.9751C14.2186 19.8809 16.1061 19.0319 17.5041 17.599C18.902 16.1662 19.7043 14.2585 19.75 12.2573"
+        stroke={color}
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M20 16V12H16"
+        stroke={color}
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
 // 전송 아이콘
 export function SendIcon({ size = 32 }: IconProps) {
   return (

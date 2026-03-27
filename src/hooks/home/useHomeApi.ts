@@ -39,6 +39,10 @@ export const useHomePanelApi = () =>
     queryFn: getHomePanel,
     select: data => data.result,
     refetchOnMount: "always",
+    // 한글 주석:
+    // 미션 진행률은 1분 이내 재진입 시 캐시를 그대로 사용.
+    // 가든 씬(home-summary)보다 덜 긴급해서 background fetch 우선순위를 낮춤.
+    staleTime: 60_000,
   });
 
 export const useTrackingPromptStatus = () =>

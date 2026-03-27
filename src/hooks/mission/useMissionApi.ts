@@ -21,6 +21,8 @@ import type {
   WriteDiaryRequest,
   WriteDiaryResponse,
 } from "@/types/missions";
+import type { GlobalResponse } from "@/types/common/apiResponse.type";
+import type { HomePanelPayload } from "@/types/home/panel";
 import { createTimingLogger, debugLog } from "@/utils/debug";
 
 export const useWriteDiaryImageUpload = () =>
@@ -43,8 +45,31 @@ export const useMissionQuiz = (params: GetQuizRequest) =>
 export const useAnswerQuiz = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<AnswerQuizResponse, Error, AnswerQuizRequest>({
+  return useMutation<
+    AnswerQuizResponse,
+    Error,
+    AnswerQuizRequest,
+    { previous: GlobalResponse<HomePanelPayload> | undefined }
+  >({
     mutationFn: payload => answerQuizApi(payload),
+    onMutate: async () => {
+      /*
+       * 한글 주석:
+       * 퀴즈 정답 제출 즉시 홈 패널 캐시의 isQuizCompleted를 true로 설정해
+       * 홈으로 돌아왔을 때 완료 애니메이션이 지연 없이 표시된다.
+       */
+      await queryClient.cancelQueries({ queryKey: ["home-panel"] });
+      const previous = queryClient.getQueryData<GlobalResponse<HomePanelPayload>>(["home-panel"]);
+      queryClient.setQueryData<GlobalResponse<HomePanelPayload>>(["home-panel"], old =>
+        old ? { ...old, result: { ...old.result, isQuizCompleted: true } } : old
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous !== undefined) {
+        queryClient.setQueryData(["home-panel"], context.previous);
+      }
+    },
     onSuccess: async () => {
       /*
        * 한글 주석:
@@ -64,6 +89,10 @@ export const useDailySurvey = () =>
     queryKey: ["daily-survey"],
     queryFn: getDailySurveyApi,
     select: data => data.result,
+    // 한글 주석:
+    // 감정 설문은 하루 1회만 바뀌므로 5분간 캐시 유지.
+    // 홈 재진입 시 불필요한 재요청 없이 즉시 감정 버튼 상태 표시.
+    staleTime: 5 * 60_000,
   });
 
 export const useAnswerDailySurvey = () => {

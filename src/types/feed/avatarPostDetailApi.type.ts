@@ -1,5 +1,6 @@
 export type AvatarPostCommentApi = {
   commentId: number;
+  writerId: number | null;
   profileImageUrl: string | null;
   writer: string;
   content: string;

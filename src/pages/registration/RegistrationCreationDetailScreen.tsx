@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import * as ImagePicker from "expo-image-picker";
 import {
   Alert,
@@ -12,26 +12,21 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import ScreenHeader from "@/components/common/ScreenHeader";
 import AvatarPreviewCard from "@/components/registration/AvatarPreviewCard";
 import RegistrationFooter from "@/components/registration/RegistrationFooter";
-import { useUploadCreationAvatar } from "@/hooks/avatars/useAvatarApi";
 import type { RootStackScreenProps } from "@/navigation/types";
 import useRegistrationStore from "@/stores/useRegistrationStore";
 
 type Props = RootStackScreenProps<"RegistrationCreationDetail">;
 
-export default function RegistrationCreationDetailScreen({ navigation }: Props) {
+export default function RegistrationCreationDetailScreen({ navigation, route }: Props) {
+  const entry = route.params?.entry;
   const [permissionRequested, setPermissionRequested] = useState(false);
-  const uploadCreationAvatar = useUploadCreationAvatar();
   const {
     creationDetail,
     updateCreationDetail,
-    setMode,
-    setSelectedMaster,
     setSelectedPreview,
   } = useRegistrationStore();
 
-  const previewImageUrl =
-    creationDetail.uploadedImageUrl || creationDetail.imageUri || null;
-  const canProceed = Boolean(creationDetail.uploadedImageUrl);
+  const previewImageUrl = creationDetail.imageUri || null;
 
   const handlePickImage = async () => {
     if (!permissionRequested) {
@@ -57,13 +52,6 @@ export default function RegistrationCreationDetailScreen({ navigation }: Props) 
     const asset = result.assets[0];
     const fileName = asset.fileName ?? `avatar-${Date.now()}.jpg`;
     const fileType = asset.mimeType ?? "image/jpeg";
-    const formData = new FormData();
-
-    formData.append("image", {
-      uri: asset.uri,
-      name: fileName,
-      type: fileType,
-    } as never);
 
     updateCreationDetail({
       imageUri: asset.uri,
@@ -72,104 +60,50 @@ export default function RegistrationCreationDetailScreen({ navigation }: Props) 
     setSelectedPreview({
       masterId: null,
       imageUrl: asset.uri,
-      description: "선택한 이미지를 업로드하는 중입니다.",
+      description: "선택한 이미지를 업로드합니다.",
     });
 
-    try {
-      const response = await uploadCreationAvatar.mutateAsync(formData);
-
-      updateCreationDetail({
-        imageUri: asset.uri,
-        uploadedImageUrl: response.imageUrl,
-      });
-      setMode("creation");
-      setSelectedMaster(null);
-      setSelectedPreview({
-        masterId: null,
-        imageUrl: response.imageUrl,
-        description: "업로드가 완료되었습니다. 이 이미지를 기반으로 식물을 등록합니다.",
-      });
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "이미지 업로드에 실패했습니다.";
-      Alert.alert("업로드 실패", message);
-    }
-  };
-
-  const goNext = () => {
-    if (!canProceed) {
-      return;
-    }
-
-    navigation.navigate("RegistrationPlantNickname");
+    navigation.navigate("RegistrationCreationPending", {
+      entry,
+      imageUri: asset.uri,
+      fileName,
+      fileType,
+    });
   };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <ScreenHeader
-        title="생성형 상세"
-        onBack={() => navigation.navigate("RegistrationAvatar")}
+        title="식물 데려오기"
+        onBack={() => navigation.navigate("RegistrationAvatar", { entry })}
       />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.headerBlock}>
-          <Text style={styles.title}>이미지를 업로드해주세요.</Text>
-          <Text style={styles.subtitle}>
-            선택한 이미지는 `POST /api/v1/register/upload`로 업로드되고, 응답 `imageUrl`이 최종 등록 단계로 이어집니다.
-          </Text>
+          <Text style={styles.title}>사진을 선택해주세요</Text>
+          <Text style={styles.subtitle}>사진 업로드 후 아바타 생성이 시작됩니다.</Text>
         </View>
 
         <AvatarPreviewCard
           imageUrl={previewImageUrl}
-          title="생성형 미리보기"
-          description={
-            creationDetail.uploadedImageUrl
-              ? "업로드가 완료된 이미지입니다."
-              : creationDetail.imageUri
-                ? "선택한 로컬 이미지입니다. 업로드가 완료되면 서버 imageUrl을 사용합니다."
-                : "아직 선택한 이미지가 없습니다."
-          }
+          title="사진 미리보기"
+          description="식물 사진을 선택하면 생성형 아바타를 제작합니다."
         />
 
-        <TouchableOpacity
-          style={styles.actionButton}
-          activeOpacity={0.85}
-          disabled={uploadCreationAvatar.isPending}
-          onPress={() => void handlePickImage()}
-        >
+        <TouchableOpacity style={styles.actionButton} activeOpacity={0.85} onPress={() => void handlePickImage()}>
           <Text style={styles.actionButtonText}>
-            {uploadCreationAvatar.isPending ? "업로드 중..." : creationDetail.imageUri ? "이미지 다시 선택" : "이미지 선택"}
+            {creationDetail.imageUri ? "이미지 다시 선택" : "이미지 선택"}
           </Text>
         </TouchableOpacity>
-
-        <View style={styles.infoCard}>
-          <Text style={styles.infoTitle}>현재 상태</Text>
-          <Text style={styles.infoText}>
-            {creationDetail.uploadedImageUrl
-              ? "서버 업로드가 완료되었습니다. 다음 단계에서 별명을 정한 뒤 최종 등록합니다."
-              : "이미지를 선택하면 업로드를 먼저 수행합니다."}
-          </Text>
-          {creationDetail.uploadedImageUrl ? (
-            <Text style={styles.infoUrl}>{creationDetail.uploadedImageUrl}</Text>
-          ) : null}
-        </View>
-
-        {uploadCreationAvatar.isError ? (
-          <View style={styles.errorCard}>
-            <Text style={styles.errorTitle}>이미지 업로드에 실패했습니다.</Text>
-            <Text style={styles.errorDescription}>
-              같은 이미지를 다시 선택해서 재시도할 수 있습니다.
-            </Text>
-          </View>
-        ) : null}
       </ScrollView>
 
       <RegistrationFooter
-        secondaryLabel="처음으로"
-        onSecondaryPress={() => navigation.navigate("RegistrationAvatar")}
-        primaryLabel="별명 정하러 가기"
-        onPrimaryPress={goNext}
-        primaryDisabled={!canProceed || uploadCreationAvatar.isPending}
-        primaryLoading={uploadCreationAvatar.isPending}
+        primaryLabel="나중에 만들기"
+        onPrimaryPress={() =>
+          navigation.reset({
+            index: 0,
+            routes: [{ name: "Main", params: { screen: "Home" } }],
+          })
+        }
       />
     </SafeAreaView>
   );
@@ -209,42 +143,5 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "700",
     color: "#FFFFFF",
-  },
-  infoCard: {
-    borderRadius: 18,
-    padding: 16,
-    backgroundColor: "#EEF3EA",
-    gap: 8,
-  },
-  infoTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#171717",
-  },
-  infoText: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#4B5563",
-  },
-  infoUrl: {
-    fontSize: 12,
-    lineHeight: 18,
-    color: "#2563EB",
-  },
-  errorCard: {
-    borderRadius: 18,
-    padding: 16,
-    backgroundColor: "#FEF2F2",
-    gap: 6,
-  },
-  errorTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#B91C1C",
-  },
-  errorDescription: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#7F1D1D",
   },
 });

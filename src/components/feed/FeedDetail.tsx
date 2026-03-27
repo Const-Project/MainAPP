@@ -1,5 +1,6 @@
-import React, { useCallback, useMemo, useRef, useState } from "react";
+﻿import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
+  Alert,
   FlatList,
   ListRenderItem,
   View,
@@ -24,10 +25,12 @@ import type { RootStackParamList } from "@/navigation/types";
 import { HeartIcon, ChatIcon } from "@/assets/icons/CommonIcons";
 import Comment from "@/components/common/Comment";
 import CommentComposer from "@/components/common/CommentComposer";
+import useTokenStore from "@/stores/useTokenStore";
 import type { FeedDetailResult } from "@/types/feed/detail";
 
 type Props = {
   result: FeedDetailResult;
+  reportTargetLabel?: string;
   liked?: boolean;
   likeCount?: number;
   onToggleLike?: () => void;
@@ -36,10 +39,15 @@ type Props = {
   onChangeComment?: (text: string) => void;
   onSubmitComment?: () => void;
   isCommentPending?: boolean;
+  onPressReport?: () => Promise<void> | void;
+  onPressCommentReport?: (commentId: number, writer: string) => Promise<void> | void;
+  onPressCommentDelete?: (commentId: number) => Promise<void> | void;
+  isReportPending?: boolean;
 };
 
 export default function FeedDetail({
   result,
+  reportTargetLabel = "게시물",
   liked = result.isLiked,
   likeCount = result.likeCount,
   onToggleLike,
@@ -48,26 +56,116 @@ export default function FeedDetail({
   onChangeComment,
   onSubmitComment,
   isCommentPending = false,
+  onPressReport,
+  onPressCommentReport,
+  onPressCommentDelete,
+  isReportPending = false,
 }: Props) {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const myUserId = useTokenStore(state => state.userId);
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
   const snapPoints = useMemo(() => ["60%", "90%"], []);
+  const [hiddenCommentIds, setHiddenCommentIds] = useState<number[]>([]);
 
   const comments = useMemo(
     () =>
-      result.comments.map(c => ({
-        id: c.commentId,
-        profileImageUrl: c.profileImageUrl,
-        writer: c.writer,
-        content: c.content,
-      })),
-    [result.comments]
+      result.comments
+        .filter(c => !hiddenCommentIds.includes(c.commentId))
+        .map(c => ({
+          id: c.commentId,
+          writerId: c.writerId,
+          profileImageUrl: c.profileImageUrl,
+          writer: c.writer,
+          content: c.content,
+        })),
+    [hiddenCommentIds, result.comments]
   );
+
+  const handleCommentReportPress = async (commentId: number, writer: string) => {
+    if (!onPressCommentReport || isReportPending) {
+      return;
+    }
+
+    Alert.alert("신고하기", "댓글을 신고하시겠습니까?\n신고한 댓글은 나에게 숨겨집니다.", [
+      {
+        text: "취소",
+        style: "cancel",
+      },
+      {
+        text: "신고하기",
+        style: "destructive",
+        onPress: () => {
+          Alert.alert("사용자 숨기기", "사용자의 모든 댓글을 숨기시겠습니까?\n이 작업은 취소할 수 없습니다.", [
+            {
+              text: "취소",
+              style: "cancel",
+            },
+            {
+              text: "숨기기",
+              style: "destructive",
+              onPress: async () => {
+                try {
+                  await onPressCommentReport(commentId, writer);
+                  setHiddenCommentIds(previous =>
+                    previous.includes(commentId) ? previous : [...previous, commentId]
+                  );
+                } catch {
+                  // Error handling is delegated to the caller.
+                }
+              },
+            },
+          ]);
+        },
+      },
+    ]);
+  };
 
   const renderCommentItem: ListRenderItem<(typeof comments)[number]> = ({
     item,
-  }) => <Comment comment={item} />;
+  }) => {
+    const isOwnComment = Boolean(myUserId && String(item.writerId) === myUserId);
+
+    return (
+      <Comment
+        comment={item}
+        actionLabel={isOwnComment ? "삭제하기" : "신고하기"}
+        onActionPress={
+          isOwnComment
+            ? () => {
+                if (!onPressCommentDelete || isReportPending) {
+                  return;
+                }
+
+                Alert.alert("삭제하기", "댓글을 삭제하시겠습니까?", [
+                  {
+                    text: "취소",
+                    style: "cancel",
+                  },
+                  {
+                    text: "삭제",
+                    style: "destructive",
+                    onPress: async () => {
+                      try {
+                        await onPressCommentDelete(item.id);
+                        setHiddenCommentIds(previous =>
+                          previous.includes(item.id) ? previous : [...previous, item.id]
+                        );
+                      } catch {
+                        // Error handling is delegated to the caller.
+                      }
+                    },
+                  },
+                ]);
+              }
+            : onPressCommentReport
+              ? () => void handleCommentReportPress(item.id, item.writer)
+              : undefined
+        }
+        actionDisabled={isReportPending}
+      />
+    );
+  };
 
   const getCommentKey = (item: (typeof comments)[number]) => item.id.toString();
 
@@ -82,6 +180,46 @@ export default function FeedDetail({
 
   const handleOpenComments = () => {
     bottomSheetModalRef.current?.present();
+  };
+
+  const handleReportPress = () => {
+    if (!onPressReport || isReportPending) {
+      return;
+    }
+
+    Alert.alert(
+      "신고하기",
+      `${reportTargetLabel}을 신고하시겠습니까?\n신고한 ${reportTargetLabel}은 나에게 숨겨집니다.`,
+      [
+        {
+          text: "취소",
+          style: "cancel",
+        },
+        {
+          text: "신고하기",
+          style: "destructive",
+          onPress: () => {
+            Alert.alert(
+              "사용자 숨기기",
+              `사용자의 모든 ${reportTargetLabel}을 숨기시겠습니까?\n이 작업은 취소할 수 없습니다.`,
+              [
+                {
+                  text: "취소",
+                  style: "cancel",
+                },
+                {
+                  text: "숨기기",
+                  style: "destructive",
+                  onPress: () => {
+                    void onPressReport();
+                  },
+                },
+              ]
+            );
+          },
+        },
+      ]
+    );
   };
 
   const handleCloseComments = () => {
@@ -110,9 +248,6 @@ export default function FeedDetail({
       return (
         <BottomSheetFooter {...props} bottomInset={0}>
           <View style={styles.composerContainer}>
-            {/* 한글 주석:
-                댓글 입력창은 바텀시트 본문 흐름과 분리된 footer로 렌더링해
-                댓글 수와 관계없이 항상 시트 최하단에 고정한다. */}
             <CommentComposer
               value={commentValue}
               onChangeText={onChangeComment}
@@ -129,7 +264,6 @@ export default function FeedDetail({
   return (
     <>
       <View style={styles.container}>
-        {/* 작성자 영역 */}
         <View style={styles.writerRow}>
           <TouchableOpacity
             style={styles.writerInfo}
@@ -150,23 +284,27 @@ export default function FeedDetail({
               <Text style={styles.createdAt}>{formatDate(result.createdAt)}</Text>
             </View>
           </TouchableOpacity>
-          <Text style={styles.reportButton}>신고</Text>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={handleReportPress}
+            disabled={!onPressReport || isReportPending}
+          >
+            <Text style={[styles.reportButton, isReportPending ? styles.reportButtonDisabled : null]}>
+              {isReportPending ? "신고 중..." : "신고"}
+            </Text>
+          </TouchableOpacity>
         </View>
 
-        {/* 이미지 */}
         <Image
           source={{ uri: result.imageUrl }}
           style={styles.mainImage}
           resizeMode="cover"
         />
 
-        {/* 내용 */}
         <Text style={styles.content}>{result.content}</Text>
 
-        {/* 액션 바 */}
         <View style={styles.actionBar}>
           <View style={styles.actionItems}>
-            {/* 공감 */}
             <TouchableOpacity
               style={styles.actionItem}
               activeOpacity={0.7}
@@ -182,14 +320,13 @@ export default function FeedDetail({
                 공감 {likeCount}
               </Text>
             </TouchableOpacity>
-            {/* 댓글 */}
             <TouchableOpacity
               style={styles.actionItem}
               activeOpacity={0.7}
               onPress={handleOpenComments}
             >
               <ChatIcon size={20} color="#6B7280" />
-              <Text style={styles.actionText}>댓글 {result.commentCount}</Text>
+              <Text style={styles.actionText}>댓글 {comments.length}</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.spacer} />
@@ -213,7 +350,7 @@ export default function FeedDetail({
           style={styles.sheetKeyboard}
         >
           <BottomSheetView style={styles.sheet}>
-            <Text style={styles.sheetTitle}>댓글 {result.commentCount}</Text>
+            <Text style={styles.sheetTitle}>댓글 {comments.length}</Text>
             <View style={styles.sheetContent}>
               {comments.length > 0 ? (
                 <BottomSheetFlatList<(typeof comments)[number]>
@@ -269,7 +406,6 @@ const styles = StyleSheet.create({
   },
   writerName: {
     fontSize: 14,
-    // Match the lighter author text weight from the current FE detail layout.
     fontWeight: "400",
     color: "#171717",
   },
@@ -283,6 +419,9 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#6B7280",
   },
+  reportButtonDisabled: {
+    color: "#9CA3AF",
+  },
   mainImage: {
     width: "100%",
     aspectRatio: 1,
@@ -292,7 +431,6 @@ const styles = StyleSheet.create({
   content: {
     fontSize: 14,
     color: "#171717",
-    // Slightly tighter line height keeps multi-line posts closer to the FE proportions.
     lineHeight: 20,
     marginBottom: 24,
   },

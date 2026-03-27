@@ -11,3 +11,8 @@ export const postComment = async (
   const res = await api.post("/api/v1/comments", body);
   return res.data;
 };
+
+export const deleteComment = async (commentId: number): ApiResponse<void> => {
+  const res = await api.delete(`/api/v1/comments/${commentId}`);
+  return res.data;
+};

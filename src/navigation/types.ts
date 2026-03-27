@@ -1,4 +1,4 @@
-import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
+﻿import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
 import type {
   CompositeScreenProps,
   NavigatorScreenParams,
@@ -48,20 +48,49 @@ export type RootStackParamList = {
         seedType?: number;
         seedName?: string;
         gardenId?: number;
+        gardenSlotNumber?: number;
       }
     | undefined;
   DeliveryComplete:
     | {
         seedName?: string;
         gardenId?: number;
+        gardenSlotNumber?: number;
       }
     | undefined;
-  UnlockGarden: undefined;
+  UnlockGarden:
+    | {
+        gardenId?: number;
+        gardenSlotNumber?: number;
+      }
+    | undefined;
 
   // 식물 등록 플로우
-  RegistrationAvatar: undefined;
-  RegistrationCreationDetail: undefined;
-  RegistrationSelectionDetail: undefined;
+  RegistrationAvatar:
+    | {
+        entry?: "initial" | "garden";
+      }
+    | undefined;
+  RegistrationCreationDetail:
+    | {
+        entry?: "initial" | "garden";
+      }
+    | undefined;
+  RegistrationCreationPending: {
+    entry?: "initial" | "garden";
+    imageUri: string;
+    fileName: string;
+    fileType: string;
+  };
+  RegistrationCreationComplete: {
+    entry?: "initial" | "garden";
+    imageUrl: string;
+  };
+  RegistrationSelectionDetail:
+    | {
+        entry?: "initial" | "garden";
+      }
+    | undefined;
   RegistrationPlantNickname: undefined;
 
   // 데일리 미션

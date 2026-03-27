@@ -1,59 +1,31 @@
-import { useEffect, useMemo, useState } from "react";
-import {
-  Alert,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+﻿import { useEffect, useMemo, useState } from "react";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ScreenHeader from "@/components/common/ScreenHeader";
 import StatusView from "@/components/common/StatusView";
-import GardenSlotCard from "@/components/delivery/GardenSlotCard";
 import PlantOptionCard from "@/components/delivery/PlantOptionCard";
-import { useDeliverablePlants, useUnlockGarden } from "@/hooks/delivery/useDeliveryApi";
-import useHomeApi from "@/hooks/home/useHomeApi";
+import { useDeliverablePlants } from "@/hooks/delivery/useDeliveryApi";
 import type { RootStackScreenProps } from "@/navigation/types";
 import { useHomeSummaryStore } from "@/stores/useHomeSummaryStore";
 import { getGardenLocked, getGardenUnlockable } from "@/types/home/garden";
 
 type Props = RootStackScreenProps<"UnlockGarden">;
 
-export default function UnlockGardenScreen({ navigation }: Props) {
-  const {
-    data: homeData,
-    refetch: refetchHome,
-  } = useHomeApi();
-  const {
-    data: plants,
-    error,
-    isLoading,
-    refetch,
-  } = useDeliverablePlants();
-  const unlockGarden = useUnlockGarden();
-  const { gardens, hydrate } = useHomeSummaryStore();
+export default function UnlockGardenScreen({ navigation, route }: Props) {
+  const { data: plants, error, isLoading, refetch } = useDeliverablePlants();
+  const gardens = useHomeSummaryStore(state => state.gardens);
   const [selectedSeedType, setSelectedSeedType] = useState<number | null>(null);
-  const [selectedGardenId, setSelectedGardenId] = useState<number | null>(null);
 
-  useEffect(() => {
-    if (homeData) {
-      hydrate(homeData);
+  const selectedGarden = useMemo(() => {
+    if (route.params?.gardenId) {
+      const routedGarden = gardens.find(garden => garden.gardenId === route.params?.gardenId);
+      if (routedGarden && getGardenLocked(routedGarden)) {
+        return routedGarden;
+      }
     }
-  }, [homeData, hydrate]);
 
-  const lockedGardens = useMemo(
-    () => gardens.filter(garden => getGardenLocked(garden)),
-    [gardens]
-  );
-
-  useEffect(() => {
-    if (!selectedGardenId && lockedGardens.length > 0) {
-      const initialGarden =
-        lockedGardens.find(garden => getGardenUnlockable(garden)) ?? lockedGardens[0];
-      setSelectedGardenId(initialGarden.gardenId);
-    }
-  }, [lockedGardens, selectedGardenId]);
+    return gardens.find(garden => getGardenLocked(garden) && getGardenUnlockable(garden)) ?? null;
+  }, [gardens, route.params?.gardenId]);
 
   useEffect(() => {
     if (!selectedSeedType && plants && plants.length > 0) {
@@ -61,11 +33,7 @@ export default function UnlockGardenScreen({ navigation }: Props) {
     }
   }, [plants, selectedSeedType]);
 
-  const selectedPlant =
-    plants?.find(plant => plant.seedType === selectedSeedType) ?? null;
-  const selectedGarden =
-    lockedGardens.find(garden => garden.gardenId === selectedGardenId) ?? null;
-  const canUnlock = Boolean(selectedGarden && getGardenUnlockable(selectedGarden));
+  const selectedPlant = plants?.find(plant => plant.seedType === selectedSeedType) ?? null;
 
   const handleBack = () => {
     if (navigation.canGoBack()) {
@@ -76,34 +44,11 @@ export default function UnlockGardenScreen({ navigation }: Props) {
     navigation.navigate("Main", { screen: "Home" });
   };
 
-  const handleUnlock = async () => {
-    if (!canUnlock || unlockGarden.isPending) {
-      return;
-    }
-
-    try {
-      await unlockGarden.mutateAsync();
-      await refetchHome();
-      Alert.alert("정원 해금 완료", "홈에서 변경된 정원 상태를 확인할 수 있습니다.", [
-        {
-          text: "홈으로 이동",
-          onPress: () => navigation.navigate("Main", { screen: "Home" }),
-        },
-      ]);
-    } catch (unlockError) {
-      const message =
-        unlockError instanceof Error
-          ? unlockError.message
-          : "정원 해금 중 오류가 발생했습니다.";
-      Alert.alert("정원 해금 실패", message);
-    }
-  };
-
   if (isLoading) {
     return (
       <SafeAreaView style={styles.safeArea} edges={["top"]}>
         <ScreenHeader title="텃밭 해금하기" onBack={handleBack} />
-        <StatusView title="해금 가능한 식물을 불러오는 중입니다." loading />
+        <StatusView title="배송 받을 식물을 불러오는 중입니다." loading />
       </SafeAreaView>
     );
   }
@@ -114,9 +59,20 @@ export default function UnlockGardenScreen({ navigation }: Props) {
         <ScreenHeader title="텃밭 해금하기" onBack={handleBack} />
         <StatusView
           title="식물 목록을 불러오지 못했습니다."
-          description="현재 확인된 API는 배송용 식물 목록 조회까지만 연결했습니다."
           actionLabel="다시 시도"
           onAction={() => void refetch()}
+        />
+      </SafeAreaView>
+    );
+  }
+
+  if (!selectedGarden) {
+    return (
+      <SafeAreaView style={styles.safeArea} edges={["top"]}>
+        <ScreenHeader title="텃밭 해금하기" onBack={handleBack} />
+        <StatusView
+          title="지금 열 수 있는 텃밭이 없습니다."
+          description="홈에서 해금 가능한 텃밭이 생기면 다시 진행할 수 있습니다."
         />
       </SafeAreaView>
     );
@@ -128,108 +84,80 @@ export default function UnlockGardenScreen({ navigation }: Props) {
         <ScreenHeader title="텃밭 해금하기" onBack={handleBack} />
         <StatusView
           title="선택 가능한 식물이 없습니다."
-          description="`GET /api/v1/deliveries/plants` 응답이 비어 있으면 배송 신청 단계로 넘어갈 수 없습니다."
+          description="배송 가능한 식물 목록이 내려오면 씨앗 선택을 진행할 수 있습니다."
         />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top"]}>
+    <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
       <ScreenHeader title="텃밭 해금하기" onBack={handleBack} />
+      <View style={styles.progressTrack}>
+        <View style={[styles.progressFill, { width: "33.33%" }]} />
+      </View>
+
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.heroCard}>
-          <Text style={styles.eyebrow}>정원 해금</Text>
-          <Text style={styles.heroTitle}>
-            해금 가능한 슬롯을 선택하고 정원을 열어주세요.
-          </Text>
-          <Text style={styles.heroDescription}>
-            정원 해금은 `POST /api/v1/gardens/unlock`를 body 없이 호출하고, 성공 후 홈 데이터를 다시 조회합니다.
+        <View style={styles.headerBlock}>
+          <Text style={styles.title}>원하는 식물을 선택해주세요</Text>
+          <Text style={styles.description}>
+            선택한 씨앗은 새로 열리는 텃밭 {selectedGarden.gardenSlotNumber}번으로 배송 요청됩니다.
           </Text>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>잠금 슬롯 상태</Text>
-          <Text style={styles.sectionDescription}>
-            홈 summary에 내려온 `isLocked`, `isUnlockable` 상태를 기준으로 표시합니다.
-          </Text>
-          {lockedGardens.length > 0 ? (
-            lockedGardens.map(garden => (
-              <GardenSlotCard
-                key={garden.gardenId}
-                garden={garden}
-                selected={selectedGardenId === garden.gardenId}
-                onPress={() => setSelectedGardenId(garden.gardenId)}
-              />
-            ))
-          ) : (
-            <View style={styles.infoCard}>
-              <Text style={styles.infoTitle}>잠금된 정원 슬롯이 없습니다.</Text>
-              <Text style={styles.infoDescription}>
-                홈 summary에 잠금 슬롯이 내려오면 이 화면에서 바로 확인할 수 있습니다.
-              </Text>
-            </View>
-          )}
-        </View>
+        <ScrollView
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.carousel}
+        >
+          {plants.map(plant => (
+            <PlantOptionCard
+              key={plant.seedType}
+              plant={plant}
+              selected={selectedSeedType === plant.seedType}
+              onPress={() => setSelectedSeedType(plant.seedType)}
+            />
+          ))}
+        </ScrollView>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>배송 받을 식물</Text>
-          <Text style={styles.sectionDescription}>
-            배송은 정원 해금과 독립적인 흐름이라, 필요할 때만 별도로 진행합니다.
-          </Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.horizontalList}
-          >
-            {plants.map(plant => (
-              <PlantOptionCard
-                key={plant.seedType}
-                plant={plant}
-                selected={selectedSeedType === plant.seedType}
-                onPress={() => setSelectedSeedType(plant.seedType)}
-              />
-            ))}
-          </ScrollView>
-        </View>
+        {selectedPlant ? <Text style={styles.selectedName}>{selectedPlant.name}</Text> : null}
 
-        {unlockGarden.isError ? (
-          <View style={styles.errorCard}>
-            <Text style={styles.errorTitle}>정원 해금에 실패했습니다.</Text>
-            <Text style={styles.errorDescription}>
-              서버 공통 에러 응답을 확인한 뒤 다시 시도해주세요.
-            </Text>
-          </View>
-        ) : null}
+        <View style={styles.pagination}>
+          {plants.map(plant => (
+            <View
+              key={plant.seedType}
+              style={[
+                styles.dot,
+                selectedSeedType === plant.seedType ? styles.dotActive : styles.dotInactive,
+              ]}
+            />
+          ))}
+        </View>
       </ScrollView>
 
       <View style={styles.footer}>
         <TouchableOpacity
+          activeOpacity={0.88}
+          onPress={() => navigation.navigate("Main", { screen: "Home" })}
           style={styles.secondaryButton}
-          activeOpacity={0.85}
+        >
+          <Text style={styles.secondaryButtonText}>나중에 받기</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          activeOpacity={0.88}
+          disabled={!selectedPlant}
           onPress={() =>
             navigation.navigate("Delivery", {
               seedType: selectedPlant?.seedType,
               seedName: selectedPlant?.name,
-              gardenId: selectedGardenId ?? undefined,
+              gardenId: selectedGarden.gardenId,
+              gardenSlotNumber: selectedGarden.gardenSlotNumber,
             })
           }
-          disabled={!selectedPlant}
+          style={[styles.primaryButton, !selectedPlant ? styles.primaryButtonDisabled : null]}
         >
-          <Text style={styles.secondaryButtonText}>배송 정보 입력</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.primaryButton,
-            (!canUnlock || unlockGarden.isPending) ? styles.primaryButtonDisabled : null,
-          ]}
-          activeOpacity={0.85}
-          disabled={!canUnlock || unlockGarden.isPending}
-          onPress={() => void handleUnlock()}
-        >
-          <Text style={styles.primaryButtonText}>
-            {unlockGarden.isPending ? "해금 중..." : "정원 해금하기"}
-          </Text>
+          <Text style={styles.primaryButtonText}>다음</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -239,118 +167,106 @@ export default function UnlockGardenScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#F7F8F4",
+    backgroundColor: "#FFFFFF",
+  },
+  progressTrack: {
+    marginHorizontal: 20,
+    marginTop: 16,
+    height: 4,
+    borderRadius: 999,
+    backgroundColor: "#F1F1F1",
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: "100%",
+    borderRadius: 999,
+    backgroundColor: "#6FCF4A",
   },
   content: {
-    padding: 20,
-    gap: 20,
+    paddingHorizontal: 20,
+    paddingTop: 48,
+    paddingBottom: 24,
   },
-  heroCard: {
-    borderRadius: 22,
-    padding: 20,
-    backgroundColor: "#234A2F",
-    gap: 8,
-  },
-  eyebrow: {
-    fontSize: 12,
-    color: "#D7E9D8",
-  },
-  heroTitle: {
-    fontSize: 24,
-    lineHeight: 32,
-    fontWeight: "700",
-    color: "#FFFFFF",
-  },
-  heroDescription: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#E5F4E5",
-  },
-  section: {
-    gap: 10,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#171717",
-  },
-  sectionDescription: {
-    fontSize: 13,
-    lineHeight: 18,
-    color: "#6B7280",
-  },
-  horizontalList: {
+  headerBlock: {
     gap: 12,
-    paddingRight: 20,
+    marginBottom: 40,
   },
-  infoCard: {
-    borderRadius: 18,
-    padding: 16,
-    backgroundColor: "#EEF3EA",
-    gap: 8,
-  },
-  infoTitle: {
-    fontSize: 16,
+  title: {
+    fontSize: 18,
+    lineHeight: 28,
     fontWeight: "700",
     color: "#171717",
   },
-  infoDescription: {
+  description: {
     fontSize: 14,
-    lineHeight: 20,
-    color: "#4B5563",
+    lineHeight: 22,
+    color: "#171717",
   },
-  errorCard: {
-    borderRadius: 18,
-    padding: 16,
-    backgroundColor: "#FEF2F2",
-    gap: 6,
+  carousel: {
+    gap: 18,
+    paddingHorizontal: 48,
   },
-  errorTitle: {
-    fontSize: 16,
+  selectedName: {
+    marginTop: 18,
+    textAlign: "center",
+    fontSize: 18,
+    lineHeight: 27,
     fontWeight: "700",
-    color: "#B91C1C",
+    color: "#171717",
   },
-  errorDescription: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#7F1D1D",
+  pagination: {
+    marginTop: 12,
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 8,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 999,
+  },
+  dotActive: {
+    backgroundColor: "#7A7A7A",
+  },
+  dotInactive: {
+    backgroundColor: "#E2E2E2",
   },
   footer: {
     flexDirection: "row",
     gap: 12,
     paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
-    backgroundColor: "#FFFFFF",
+    paddingTop: 12,
+    paddingBottom: 20,
   },
   secondaryButton: {
     flex: 1,
+    minHeight: 56,
+    borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
-    minHeight: 52,
-    borderRadius: 16,
-    backgroundColor: "#E5E7EB",
+    backgroundColor: "#EFF9EA",
   },
   secondaryButtonText: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#374151",
+    fontSize: 18,
+    lineHeight: 27,
+    fontWeight: "600",
+    color: "#46C02B",
   },
   primaryButton: {
     flex: 1,
+    minHeight: 56,
+    borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
-    minHeight: 52,
-    borderRadius: 16,
-    backgroundColor: "#2F7D32",
+    backgroundColor: "#6FCF4A",
   },
   primaryButtonDisabled: {
-    backgroundColor: "#A7D4A5",
+    backgroundColor: "#EAEAEA",
   },
   primaryButtonText: {
-    fontSize: 15,
-    fontWeight: "700",
+    fontSize: 18,
+    lineHeight: 27,
+    fontWeight: "600",
     color: "#FFFFFF",
   },
 });

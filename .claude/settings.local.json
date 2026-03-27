@@ -12,7 +12,10 @@
       "mcp__figma-desktop__get_screenshot",
       "mcp__plugin_figma_figma__get_screenshot",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Read(//c/MainBE/**)",
+      "Bash(xargs grep:*)",
+      "Bash(head -20 grep -n \"usePostComment\\\\|useDeleteComment\\\\|refetch\\\\|comments\" c:/MainAPP/src/pages/feed/FeedAvatarScreen.tsx)"
     ]
   }
 }

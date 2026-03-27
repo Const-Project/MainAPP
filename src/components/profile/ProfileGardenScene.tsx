@@ -6,7 +6,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const mailboxImage = require("@/assets/images/profile/letterbox.png");
 const wateringImage = require("@/assets/images/background/watering.png");
+const dropImage = require("@/assets/images/profile/drop.png");
 const ACTION_RAIL_BOTTOM_OFFSET = 128;
+const MAX_WATER_COUNT = 3;
 
 type Props = {
   background: any;
@@ -31,16 +33,22 @@ export default function ProfileGardenScene({
 }: Props) {
   const insets = useSafeAreaInsets();
   const canWater = !isMe && garden.isWateringAbleByMe && !waterDisabled;
-  const topOverlayOffset = insets.top + 92;
+  const topOverlayOffset = insets.top + 144;
 
   return (
     <ImageBackground source={background} resizeMode="cover" style={styles.sceneBackground}>
       <View style={styles.sceneShade} />
 
+      {garden.avatarInfo?.avatarName ? (
+        <Text style={[styles.scenePlantName, { top: topOverlayOffset }]}>
+          {garden.avatarInfo.avatarName}
+        </Text>
+      ) : null}
+
       {!isMe ? (
-        <View style={[styles.waterCountBadge, { top: topOverlayOffset }]}> 
-          <WaterIcon width={18} height={18} />
-          <Text style={styles.waterCountText}>{leftWaterCountForOthers}회</Text>
+        <View style={[styles.waterCountBadge, { top: topOverlayOffset }]}>
+          <Image source={dropImage} style={styles.waterDropIcon} resizeMode="contain" />
+          <Text style={styles.waterCountText}>{leftWaterCountForOthers}/{MAX_WATER_COUNT}</Text>
         </View>
       ) : null}
 
@@ -120,6 +128,23 @@ const styles = StyleSheet.create({
     gap: 4,
     zIndex: 3,
   },
+  scenePlantName: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    textAlign: "center",
+    fontSize: 28,
+    fontWeight: "600",
+    color: "#FFFFFF",
+    textShadowColor: "rgba(0, 0, 0, 0.18)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+    zIndex: 3,
+  },
+  waterDropIcon: {
+    width: 18,
+    height: 18,
+  },
   waterCountText: {
     fontSize: 16,
     fontWeight: "700",
@@ -191,32 +216,30 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: "rgba(255,255,255,0.18)",
+    backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
   },
   actionButtonDisabled: {
-    backgroundColor: "rgba(255,255,255,0.08)",
+    backgroundColor: "rgba(255,255,255,0.5)",
   },
   guestbookWrap: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingTop: 8,
   },
   guestbookButton: {
-    borderRadius: 18,
-    backgroundColor: "rgba(255,255,255,0.92)",
-    paddingVertical: 18,
+    height: 56,
+    borderRadius: 8,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#7DC960",
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    justifyContent: "center",
   },
   guestbookButtonText: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#4CAF50",
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#3AB40B",
   },
 });

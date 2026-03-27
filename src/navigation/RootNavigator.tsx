@@ -1,4 +1,4 @@
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
+﻿import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "./types";
 import useTokenStore from "@/stores/useTokenStore";
 import Splash from "@/components/common/Splash";
@@ -25,6 +25,8 @@ import DeliveryCompleteScreen from "@/pages/delivery/DeliveryCompleteScreen";
 import UnlockGardenScreen from "@/pages/delivery/UnlockGardenScreen";
 import RegistrationAvatarScreen from "@/pages/registration/RegistrationAvatarScreen";
 import RegistrationCreationDetailScreen from "@/pages/registration/RegistrationCreationDetailScreen";
+import RegistrationCreationPendingScreen from "@/pages/registration/RegistrationCreationPendingScreen";
+import RegistrationCreationCompleteScreen from "@/pages/registration/RegistrationCreationCompleteScreen";
 import RegistrationSelectionDetailScreen from "@/pages/registration/RegistrationSelectionDetailScreen";
 import RegistrationPlantNicknameScreen from "@/pages/registration/RegistrationPlantNicknameScreen";
 import DailyMissionWriteDiaryScreen from "@/pages/dailyMission/DailyMissionWriteDiaryScreen";
@@ -95,6 +97,16 @@ export default function RootNavigator() {
       <Stack.Screen
         name="RegistrationCreationDetail"
         component={RegistrationCreationDetailScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="RegistrationCreationPending"
+        component={RegistrationCreationPendingScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="RegistrationCreationComplete"
+        component={RegistrationCreationCompleteScreen}
         options={{ headerShown: false }}
       />
       <Stack.Screen

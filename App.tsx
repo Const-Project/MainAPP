@@ -16,14 +16,25 @@ import {
   isSupabaseConfigured,
 } from "@/apis/supabase";
 import { debugLog } from "@/utils/debug";
+import useTokenStore from "@/stores/useTokenStore";
+import { registerDeviceFcmToken } from "@/utils/fcm";
 
 export default function App() {
   const navigationRef = useNavigationContainerRef();
   const currentRouteNameRef = useRef<string | undefined>(undefined);
+  const { accessToken } = useTokenStore();
+  const fcmRegisteredRef = useRef(false);
 
   useEffect(() => {
     debugLog("App", "App mounted", { isSupabaseConfigured });
   }, []);
+
+  // 로그인 상태가 되면 FCM 토큰을 서버에 등록 (세션당 1회)
+  useEffect(() => {
+    if (!accessToken || fcmRegisteredRef.current) return;
+    fcmRegisteredRef.current = true;
+    void registerDeviceFcmToken();
+  }, [accessToken]);
 
   if (!isSupabaseConfigured) {
     return (

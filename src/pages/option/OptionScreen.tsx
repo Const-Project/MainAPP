@@ -10,13 +10,16 @@ import {
 import ScreenHeader from "@/components/common/ScreenHeader";
 import useTokenStore from "@/stores/useTokenStore";
 import { logout } from "@/utils/auth";
+import { useNotificationSettings, useUpdateNotificationSettings } from "@/hooks/option/useNotificationApi";
 
 type Props = MainTabScreenProps<"Option">;
 
 export default function OptionScreen({ navigation }: Props) {
-  const [pushNotification, setPushNotification] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { accessToken, userId, hasHydrated } = useTokenStore();
+  const { data: notificationSettings } = useNotificationSettings();
+  const updateSettingsMutation = useUpdateNotificationSettings();
+  const pushNotification = notificationSettings?.notificationEnabled ?? true;
 
   const handleLogout = () => {
     if (isLoggingOut || !accessToken) {
@@ -47,8 +50,11 @@ export default function OptionScreen({ navigation }: Props) {
           label="푸시 알림"
           rightSlot={
             <TouchableOpacity
-              onPress={() => setPushNotification(prev => !prev)}
+              onPress={() =>
+                updateSettingsMutation.mutate({ notificationEnabled: !pushNotification })
+              }
               activeOpacity={0.7}
+              disabled={updateSettingsMutation.isPending}
               accessibilityRole="switch"
               accessibilityState={{ checked: pushNotification }}
             >

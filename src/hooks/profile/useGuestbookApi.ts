@@ -6,6 +6,7 @@ import type {
   GuestbookEntry,
 } from "@/types/profile/guestbookApi.type";
 import { getGuestbookList, postGuestbook } from "@/apis/profile/guestbookApi";
+import { useHomeSummaryStore } from "@/stores/useHomeSummaryStore";
 
 export const useGuestbookList = (userId: string | number | undefined) =>
   useQuery<GlobalResponse<GuestbookEntry[]>, AxiosError, GuestbookEntry[]>({
@@ -18,9 +19,34 @@ export const useGuestbookList = (userId: string | number | undefined) =>
 
 export const useCreateGuestbook = (userId: string | number | undefined) => {
   const queryClient = useQueryClient();
+  const currentUsername = useHomeSummaryStore(state => state.user?.username ?? "");
 
-  return useMutation({
+  return useMutation<
+    unknown,
+    AxiosError,
+    CreateGuestbookRequest,
+    { previous: GlobalResponse<GuestbookEntry[]> | undefined; queryKey: (string | number | undefined)[] }
+  >({
     mutationFn: (body: CreateGuestbookRequest) => postGuestbook(String(userId), body),
+    onMutate: async (body: CreateGuestbookRequest) => {
+      const queryKey = ["guestbook-list", userId];
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData<GlobalResponse<GuestbookEntry[]>>(queryKey);
+      const optimisticEntry: GuestbookEntry = {
+        author: currentUsername,
+        content: body.content,
+        createdAt: new Date().toISOString(),
+      };
+      queryClient.setQueryData<GlobalResponse<GuestbookEntry[]>>(queryKey, old =>
+        old ? { ...old, result: [optimisticEntry, ...old.result] } : old
+      );
+      return { previous, queryKey };
+    },
+    onError: (_err, _body, context) => {
+      if (context?.previous !== undefined) {
+        queryClient.setQueryData(context.queryKey, context.previous);
+      }
+    },
     onSuccess: async () => {
       /*
        * 한글 주석:

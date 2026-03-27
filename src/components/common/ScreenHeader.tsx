@@ -1,4 +1,6 @@
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { RefreshIcon } from "@/assets/icons/CommonIcons";
+import LeftIcon from "@/assets/icons/common/left.svg";
 
 type Props = {
   title: string;
@@ -15,38 +17,41 @@ export default function ScreenHeader({
   onRightAction,
   rightActionDisabled = false,
 }: Props) {
-  const resolvedRightAction = onRightAction ?? onBack;
   const resolvedRightLabel = rightActionLabel ?? "완료";
+  const isRefreshAction = resolvedRightLabel === "새로고침";
 
   return (
     <View style={styles.header}>
-      {/* 왼쪽: 닫기(X) 버튼 */}
       {onBack ? (
         <TouchableOpacity
           onPress={onBack}
           activeOpacity={0.7}
           style={styles.sideButton}
         >
-          <Text style={styles.closeText}>✕</Text>
+          <LeftIcon width={24} height={24} />
         </TouchableOpacity>
       ) : (
         <View style={styles.sideButton} />
       )}
 
-      {/* 중앙: 화면 타이틀 */}
       <Text style={styles.title}>{title}</Text>
 
-      {/* 오른쪽: 완료 텍스트 버튼 */}
-      {resolvedRightAction ? (
+      {onRightAction ? (
         <TouchableOpacity
-          onPress={resolvedRightAction}
+          onPress={onRightAction}
           disabled={rightActionDisabled}
           activeOpacity={0.7}
           style={styles.sideButton}
+          accessibilityRole="button"
+          accessibilityLabel={resolvedRightLabel}
         >
-          <Text style={[styles.completeText, rightActionDisabled && styles.disabledText]}>
-            {resolvedRightLabel}
-          </Text>
+          {isRefreshAction ? (
+            <RefreshIcon size={22} color={rightActionDisabled ? "#BFBFBF" : "#171717"} />
+          ) : (
+            <Text style={[styles.completeText, rightActionDisabled && styles.disabledText]}>
+              {resolvedRightLabel}
+            </Text>
+          )}
         </TouchableOpacity>
       ) : (
         <View style={styles.sideButton} />
@@ -72,11 +77,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  closeText: {
-    fontSize: 18,
-    color: "#171717",
-  },
-  // 완료 버튼: Regular 16px 검정
   completeText: {
     fontSize: 16,
     fontWeight: "400",
@@ -86,7 +86,6 @@ const styles = StyleSheet.create({
   disabledText: {
     color: "#BFBFBF",
   },
-  // 타이틀: SemiBold 18px
   title: {
     fontSize: 18,
     fontWeight: "600",

@@ -1,11 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+﻿import { useEffect, useMemo, useState } from "react";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ScreenHeader from "@/components/common/ScreenHeader";
 import StatusView from "@/components/common/StatusView";
-import QuizOptionCard from "@/components/dailyMission/QuizOptionCard";
-import QuizResultCard from "@/components/dailyMission/QuizResultCard";
-import RegistrationFooter from "@/components/registration/RegistrationFooter";
+import OxQuizOptionCard from "@/components/dailyMission/OxQuizOptionCard";
 import { useAnswerQuiz, useMissionQuiz } from "@/hooks/mission/useMissionApi";
 import type { RootStackScreenProps } from "@/navigation/types";
 import type { AnswerQuizResult } from "@/types/missions";
@@ -20,10 +18,13 @@ export default function DailyMissionQuizOxScreen({ navigation }: Props) {
   const submitAnswer = useAnswerQuiz();
 
   const options = useMemo(
-    () => data?.quizOptions?.length ? data.quizOptions : [
-      { optionOrder: 0, optionText: "O" },
-      { optionOrder: 1, optionText: "X" },
-    ],
+    () =>
+      data?.quizOptions?.length
+        ? data.quizOptions
+        : [
+            { optionOrder: 0, optionText: "O" },
+            { optionOrder: 1, optionText: "X" },
+          ],
     [data?.quizOptions]
   );
 
@@ -33,11 +34,6 @@ export default function DailyMissionQuizOxScreen({ navigation }: Props) {
     }
   }, [data?.selectedOptionNumber]);
 
-  /*
-   * 한글 주석:
-   * OX 퀴즈도 객관식과 같은 복원 규칙을 써야 화면을 나갔다 와도
-   * 사용자가 고른 답과 해설을 다시 그대로 보여줄 수 있다.
-   */
   const persistedAnswerResult = useMemo<AnswerQuizResult | null>(() => {
     if (
       !data?.isCompleted ||
@@ -73,16 +69,22 @@ export default function DailyMissionQuizOxScreen({ navigation }: Props) {
     });
   };
 
-  const goHome = () =>
+  const goNext = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+
     navigation.reset({
       index: 0,
       routes: [{ name: "Main", params: { screen: "Home" } }],
     });
+  };
 
   if (isLoading) {
     return (
       <SafeAreaView style={styles.safeArea} edges={["top"]}>
-        <ScreenHeader title="OX 퀴즈" onBack={() => navigation.goBack()} />
+        <ScreenHeader title="퀴즈 풀기" onBack={() => navigation.goBack()} />
         <StatusView title="퀴즈를 불러오는 중입니다." loading />
       </SafeAreaView>
     );
@@ -91,7 +93,7 @@ export default function DailyMissionQuizOxScreen({ navigation }: Props) {
   if (isError) {
     return (
       <SafeAreaView style={styles.safeArea} edges={["top"]}>
-        <ScreenHeader title="OX 퀴즈" onBack={() => navigation.goBack()} />
+        <ScreenHeader title="퀴즈 풀기" onBack={() => navigation.goBack()} />
         <StatusView
           title="퀴즈를 불러오지 못했습니다."
           actionLabel="다시 시도"
@@ -104,22 +106,22 @@ export default function DailyMissionQuizOxScreen({ navigation }: Props) {
   if (!data) {
     return (
       <SafeAreaView style={styles.safeArea} edges={["top"]}>
-        <ScreenHeader title="OX 퀴즈" onBack={() => navigation.goBack()} />
+        <ScreenHeader title="퀴즈 풀기" onBack={() => navigation.goBack()} />
         <StatusView title="표시할 퀴즈가 없습니다." />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top"]}>
-      <ScreenHeader title="OX 퀴즈" onBack={() => navigation.goBack()} />
+    <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
+      <ScreenHeader title="퀴즈 풀기" onBack={() => navigation.goBack()} />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.headerBlock}>
-          <Text style={styles.eyebrow}>오늘의 퀴즈</Text>
+          <Text style={styles.title}>오늘의 퀴즈!</Text>
           <Text style={styles.question}>{data.quizQuestion}</Text>
         </View>
 
-        <View style={styles.options}>
+        <View style={styles.optionsRow}>
           {options.map(option => {
             const state =
               answerResult != null
@@ -132,15 +134,16 @@ export default function DailyMissionQuizOxScreen({ navigation }: Props) {
                     : option.optionOrder === answerResult.answerNumber
                       ? "answer"
                       : "idle"
-                : "idle";
+                : selected === option.optionOrder
+                  ? "selected"
+                  : "idle";
 
             return (
-              <QuizOptionCard
+              <OxQuizOptionCard
                 key={option.optionOrder}
-                label={option.optionText}
-                selected={selected === option.optionOrder}
-                disabled={!!answerResult}
+                label={option.optionText === "X" ? "X" : "O"}
                 state={state}
+                disabled={Boolean(answerResult)}
                 onPress={() => setSelected(option.optionOrder)}
               />
             );
@@ -148,30 +151,56 @@ export default function DailyMissionQuizOxScreen({ navigation }: Props) {
         </View>
 
         {answerResult ? (
-          <QuizResultCard
-            correct={answerResult.isCorrect}
-            description={answerResult.answerDescription}
-          />
+          <View style={styles.resultBlock}>
+            <Text
+              style={[
+                styles.resultTitle,
+                answerResult.isCorrect ? styles.resultTitleCorrect : styles.resultTitleWrong,
+              ]}
+            >
+              {answerResult.isCorrect ? "정답!" : "오답!"}
+            </Text>
+            <Text
+              style={[
+                styles.resultDescription,
+                answerResult.isCorrect ? styles.resultDescriptionCorrect : styles.resultDescriptionWrong,
+              ]}
+            >
+              {answerResult.answerDescription}
+            </Text>
+          </View>
         ) : null}
 
         {submitAnswer.isError ? (
-          <View style={styles.errorCard}>
+          <View style={styles.errorBlock}>
             <Text style={styles.errorTitle}>정답 제출에 실패했습니다.</Text>
-            <Text style={styles.errorDescription}>
-              OX 퀴즈도 객관식과 같은 답안 API를 사용합니다. 서버 응답 계약을 다시 확인해야 합니다.
-            </Text>
+            <Text style={styles.errorDescription}>잠시 후 다시 시도해주세요.</Text>
           </View>
         ) : null}
       </ScrollView>
 
-      <RegistrationFooter
-        secondaryLabel="홈으로"
-        onSecondaryPress={goHome}
-        primaryLabel={answerResult ? "홈으로" : "정답 확인하기"}
-        onPrimaryPress={answerResult ? goHome : () => void handleSubmit()}
-        primaryDisabled={answerResult ? false : selected === null || submitAnswer.isPending}
-        primaryLoading={submitAnswer.isPending}
-      />
+      <View style={styles.footer}>
+        <TouchableOpacity
+          activeOpacity={0.88}
+          disabled={!answerResult && (selected === null || submitAnswer.isPending)}
+          onPress={answerResult ? goNext : () => void handleSubmit()}
+          style={[
+            styles.primaryButton,
+            !answerResult && selected === null ? styles.primaryButtonDisabled : null,
+            answerResult ? styles.primaryButtonNext : null,
+          ]}
+        >
+          <Text
+            style={[
+              styles.primaryButtonText,
+              !answerResult && selected === null ? styles.primaryButtonTextDisabled : null,
+              answerResult ? styles.primaryButtonTextNext : null,
+            ]}
+          >
+            {answerResult ? "다음" : submitAnswer.isPending ? "확인 중..." : "정답 확인하기"}
+          </Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
@@ -179,44 +208,103 @@ export default function DailyMissionQuizOxScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#F7F8F4",
+    backgroundColor: "#FFFFFF",
   },
   content: {
-    padding: 20,
-    gap: 18,
+    paddingHorizontal: 20,
+    paddingTop: 34,
+    paddingBottom: 24,
   },
   headerBlock: {
-    gap: 8,
+    gap: 10,
+    marginBottom: 52,
   },
-  eyebrow: {
-    fontSize: 12,
-    color: "#2F7D32",
-    fontWeight: "700",
-  },
-  question: {
-    fontSize: 24,
-    lineHeight: 32,
-    fontWeight: "700",
+  title: {
+    fontSize: 20,
+    lineHeight: 28,
+    fontWeight: "600",
     color: "#171717",
   },
-  options: {
+  question: {
+    fontSize: 16,
+    lineHeight: 26,
+    fontWeight: "400",
+    color: "#171717",
+  },
+  optionsRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 34,
+  },
+  resultBlock: {
     gap: 12,
   },
-  errorCard: {
-    borderRadius: 16,
-    padding: 16,
-    backgroundColor: "#FEF2F2",
+  resultTitle: {
+    fontSize: 16,
+    lineHeight: 24,
+    fontWeight: "700",
+  },
+  resultTitleCorrect: {
+    color: "#46C02B",
+  },
+  resultTitleWrong: {
+    color: "#FF6B6B",
+  },
+  resultDescription: {
+    fontSize: 14,
+    lineHeight: 28,
+    fontWeight: "400",
+  },
+  resultDescriptionCorrect: {
+    color: "#46C02B",
+  },
+  resultDescriptionWrong: {
+    color: "#FF6B6B",
+  },
+  errorBlock: {
+    marginTop: 20,
     gap: 6,
   },
   errorTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "700",
     color: "#B91C1C",
   },
   errorDescription: {
-    fontSize: 14,
+    fontSize: 13,
     lineHeight: 20,
     color: "#7F1D1D",
   },
+  footer: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 28,
+  },
+  primaryButton: {
+    minHeight: 56,
+    borderRadius: 8,
+    backgroundColor: "#6FCF4A",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  primaryButtonDisabled: {
+    backgroundColor: "#EFEFEF",
+  },
+  primaryButtonNext: {
+    backgroundColor: "#EFF9EA",
+  },
+  primaryButtonText: {
+    fontSize: 18,
+    lineHeight: 27,
+    fontWeight: "600",
+    color: "#FFFFFF",
+  },
+  primaryButtonTextDisabled: {
+    color: "#BFBFBF",
+  },
+  primaryButtonTextNext: {
+    color: "#46C02B",
+  },
 });
+
 
