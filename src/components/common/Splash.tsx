@@ -1,4 +1,4 @@
-import { View, Text, ImageBackground, Image, StyleSheet } from "react-native";
+﻿import { View, Text, ImageBackground, Image, StyleSheet } from "react-native";
 
 const SplashBg = require("@/assets/images/onboarding/splash.png");
 const Character = require("@/assets/images/char.png");

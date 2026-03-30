@@ -1,47 +1,71 @@
-import * as Notifications from "expo-notifications";
+﻿import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import { Platform } from "react-native";
-import { postFcmToken } from "@/apis/option/notificationApi";
+import { deleteFcmToken, postFcmToken } from "@/apis/option/notificationApi";
 import { debugLog } from "@/utils/debug";
 
-export const registerDeviceFcmToken = async (): Promise<void> => {
-  // 실제 기기에서만 동작 (에뮬레이터 건너뜀)
+const ensureNotificationPermission = async (): Promise<boolean> => {
   if (!Device.isDevice) {
-    debugLog("FCM", "skipped — not a physical device");
+    debugLog("FCM", "skipped - not a physical device");
+    return false;
+  }
+
+  const { status: existing } = await Notifications.getPermissionsAsync();
+  let finalStatus = existing;
+
+  if (existing !== "granted") {
+    const { status } = await Notifications.requestPermissionsAsync();
+    finalStatus = status;
+  }
+
+  if (finalStatus !== "granted") {
+    debugLog("FCM", "notification permission denied");
+    return false;
+  }
+
+  return true;
+};
+
+const configureAndroidNotificationChannel = async () => {
+  if (Platform.OS !== "android") {
     return;
   }
 
+  await Notifications.setNotificationChannelAsync("default", {
+    name: "나풀나풀",
+    importance: Notifications.AndroidImportance.MAX,
+    vibrationPattern: [0, 250, 250, 250],
+  });
+};
+
+export const registerDeviceFcmToken = async (): Promise<boolean> => {
   try {
-    const { status: existing } = await Notifications.getPermissionsAsync();
-    let finalStatus = existing;
-
-    if (existing !== "granted") {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
+    const hasPermission = await ensureNotificationPermission();
+    if (!hasPermission) {
+      return false;
     }
 
-    if (finalStatus !== "granted") {
-      debugLog("FCM", "notification permission denied");
-      return;
-    }
+    await configureAndroidNotificationChannel();
 
-    // Android 알림 채널 설정
-    if (Platform.OS === "android") {
-      await Notifications.setNotificationChannelAsync("default", {
-        name: "나풀나풀",
-        importance: Notifications.AndroidImportance.MAX,
-        vibrationPattern: [0, 250, 250, 250],
-      });
-    }
-
-    // 네이티브 FCM 토큰 획득 (Expo 푸시 토큰이 아닌 실제 FCM 토큰)
     const { data: token } = await Notifications.getDevicePushTokenAsync();
     debugLog("FCM", "device token acquired");
 
     await postFcmToken(token);
     debugLog("FCM", "token registered with server");
+    return true;
   } catch (error) {
-    // 토큰 등록 실패는 앱 동작을 막지 않음
     debugLog("FCM", "token registration failed", { error });
+    return false;
+  }
+};
+
+export const unregisterDeviceFcmToken = async (): Promise<boolean> => {
+  try {
+    await deleteFcmToken();
+    debugLog("FCM", "token removed from server");
+    return true;
+  } catch (error) {
+    debugLog("FCM", "token removal failed", { error });
+    return false;
   }
 };

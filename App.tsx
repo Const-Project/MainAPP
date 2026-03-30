@@ -1,4 +1,4 @@
-import "./global.css";
+﻿import "./global.css";
 import { useEffect, useRef } from "react";
 import { StatusBar } from "expo-status-bar";
 import {
@@ -15,26 +15,47 @@ import {
   SUPABASE_CONFIG_ERROR_MESSAGE,
   isSupabaseConfigured,
 } from "@/apis/supabase";
+import { useNotificationSettings } from "@/hooks/option/useNotificationApi";
 import { debugLog } from "@/utils/debug";
 import useTokenStore from "@/stores/useTokenStore";
-import { registerDeviceFcmToken } from "@/utils/fcm";
+import { registerDeviceFcmToken, unregisterDeviceFcmToken } from "@/utils/fcm";
+
+function NotificationTokenSync() {
+  const { accessToken } = useTokenStore();
+  const { data: notificationSettings } = useNotificationSettings();
+  const lastSyncedStateRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!accessToken || !notificationSettings) {
+      lastSyncedStateRef.current = null;
+      return;
+    }
+
+    const syncKey = `${accessToken}:${notificationSettings.notificationEnabled}`;
+    if (lastSyncedStateRef.current === syncKey) {
+      return;
+    }
+
+    lastSyncedStateRef.current = syncKey;
+
+    if (notificationSettings.notificationEnabled) {
+      void registerDeviceFcmToken();
+      return;
+    }
+
+    void unregisterDeviceFcmToken();
+  }, [accessToken, notificationSettings]);
+
+  return null;
+}
 
 export default function App() {
   const navigationRef = useNavigationContainerRef();
   const currentRouteNameRef = useRef<string | undefined>(undefined);
-  const { accessToken } = useTokenStore();
-  const fcmRegisteredRef = useRef(false);
 
   useEffect(() => {
     debugLog("App", "App mounted", { isSupabaseConfigured });
   }, []);
-
-  // 로그인 상태가 되면 FCM 토큰을 서버에 등록 (세션당 1회)
-  useEffect(() => {
-    if (!accessToken || fcmRegisteredRef.current) return;
-    fcmRegisteredRef.current = true;
-    void registerDeviceFcmToken();
-  }, [accessToken]);
 
   if (!isSupabaseConfigured) {
     return (
@@ -53,9 +74,7 @@ export default function App() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <QueryProvider>
-          {/* 한글 주석:
-              BottomSheetModal을 앱 어디서든 안정적으로 열 수 있도록
-              네비게이션 루트를 모달 provider로 감싼다. */}
+          <NotificationTokenSync />
           <BottomSheetModalProvider>
             <NavigationContainer
               ref={navigationRef}

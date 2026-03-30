@@ -28,7 +28,8 @@ const mapIcon = require("@/assets/images/map.png");
 const emptyGardenImage = require("@/assets/images/null.webp");
 const sunlightOverlay = require("@/assets/images/background/sunlight.png");
 
-const SCENE_BOTTOM_OFFSET = -16;
+const SCENE_BOTTOM_OFFSET = 56;
+const EMPTY_SCENE_BOTTOM_OFFSET = 124;
 const ACTION_RAIL_BOTTOM_OFFSET = 128;
 const WATER_ACTION_COOLDOWN_MS = 700;
 
@@ -194,12 +195,12 @@ export default function HomeGardenScene({
                 style={styles.lockStatusIcon}
               />
               <Text style={[styles.lockedHeading, isUnlockable && styles.unlockHeading]}>
-                {isUnlockable ? "\uC9C0\uAE08 \uC5F4 \uC218 \uC788\uC5B4\uC694" : "\uD574\uAE08\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4"}
+                {isUnlockable ? "지금 열 수 있어요" : "해금되지 않았습니다"}
               </Text>
               <Text style={styles.lockedBody}>
                 {isUnlockable
-                  ? "\uC528\uC557\uC744 \uBC1B\uC544 \uC0C8\uB85C\uC6B4 \uD143\uBC2D\uC744 \uC5F4 \uC218 \uC788\uC5B4\uC694."
-                  : "\uC18C\uB9DD \uB098\uBB34\uAC00 \uCDA9\uBD84\uD788 \uC790\uB77C\uBA74 \uC0C8\uB85C\uC6B4 \uD143\uBC2D\uC744 \uC5F4 \uC218 \uC788\uC5B4\uC694."}
+                  ? "씨앗을 받아 새로운 텃밭을 열 수 있어요."
+                  : "소망 나무가 충분히 자라면 새로운 텃밭을 열 수 있어요."}
               </Text>
             </View>
 
@@ -218,7 +219,7 @@ export default function HomeGardenScene({
             </TouchableOpacity>
           </View>
         ) : (
-          <View style={styles.sceneBody}>
+          <View style={[styles.sceneBody, isEmptySlot ? styles.emptySceneBody : null]}>
             {hasAvatar ? (
               <View style={styles.actionRail}>
                 <TouchableOpacity
@@ -246,9 +247,12 @@ export default function HomeGardenScene({
 
             {isEmptySlot ? (
               <Pressable onPress={onPressEmpty} style={styles.emptySlotWrap}>
-                <View style={styles.emptyBubble}>
-                  <Text style={styles.emptyBubbleText}>새로운 식물을{"\n"}심어볼까요?</Text>
-                  <Text style={styles.emptyBubblePlus}>+</Text>
+                <View style={styles.emptyBubbleWrap}>
+                  <View style={styles.emptyBubble}>
+                    <Text style={styles.emptyBubbleText}>새로운 식물을{"\n"}심어볼까요?</Text>
+                    <Text style={styles.emptyBubblePlus}>+</Text>
+                  </View>
+                  <View style={styles.emptyBubbleTail} />
                 </View>
                 <Image source={emptyGardenImage} style={styles.emptyGardenImage} resizeMode="contain" />
               </Pressable>
@@ -335,13 +339,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 24,
-
-    /*
-     * 한글 주석:
-     * 화분과 주변 오브젝트를 화면 하단 쪽으로 더 내리되,
-     * 접힌 패널에 가려지지 않도록 최소 여백을 남긴 위치로 고정한다.
-     */
     paddingBottom: SCENE_BOTTOM_OFFSET,
+  },
+  emptySceneBody: {
+    justifyContent: "flex-end",
+    paddingBottom: EMPTY_SCENE_BOTTOM_OFFSET,
   },
   lockedSceneBody: {
     flex: 1,
@@ -415,15 +417,25 @@ const styles = StyleSheet.create({
     width: "100%",
     alignItems: "center",
     justifyContent: "center",
-    paddingBottom: 12,
+  },
+  emptyBubbleWrap: {
+    alignItems: "center",
+    marginBottom: -64,
   },
   emptyBubble: {
-    marginBottom: 12,
     borderRadius: 24,
     backgroundColor: "rgba(255,255,255,0.95)",
     paddingHorizontal: 26,
     paddingVertical: 16,
     alignItems: "center",
+  },
+  emptyBubbleTail: {
+    width: 18,
+    height: 18,
+    marginTop: -9,
+    backgroundColor: "rgba(255,255,255,0.95)",
+    transform: [{ rotate: "45deg" }],
+    borderBottomRightRadius: 4,
   },
   emptyBubbleText: {
     fontSize: 15,
@@ -439,9 +451,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   emptyGardenImage: {
-    width: 300,
-    height: 240,
+    width: 360,
+    height: 288,
   },
 });
-
-

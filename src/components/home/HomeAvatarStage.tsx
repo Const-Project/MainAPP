@@ -1,4 +1,4 @@
-import { Image, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+﻿import { Image, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useEffect, useState } from "react";
 
 import { ANSWER_COPY } from "@/components/home/HomeEmotionModal";
@@ -6,7 +6,7 @@ import type { SurveyAnswerKind } from "@/types/missions";
 
 const wateringImage = require("@/assets/images/background/watering.png");
 const birdImage = require("@/assets/images/bird.webp");
-const characterImage = require("@/assets/images/char2.webp");
+const characterImage = require("@/assets/images/char-stage.webp");
 const plantFallback = require("@/assets/images/plant.png");
 
 export default function HomeAvatarStage({
@@ -118,22 +118,10 @@ const styles = StyleSheet.create({
   avatarImage: {
     width: 320,
     height: 320,
-
-    /*
-     * 한글 주석:
-     * 화분 밑단을 더 아래로 내리기 위해 하단 여백을 줄였다.
-     * 주변 오브젝트도 같은 기준선에서 함께 내려오도록 절대 위치 값도 맞춘다.
-     */
     marginBottom: -96,
   },
   wateringImage: {
     position: "absolute",
-
-    /*
-     * 한글 주석:
-     * 물뿌리개와 물방울 연출은 식물 중앙이 아니라
-     * 식물의 왼쪽 70% 높이 부근에서 시작하도록 고정 위치를 옮긴다.
-     */
     left: "18%",
     bottom: 168,
     width: 118,
@@ -204,13 +192,13 @@ const styles = StyleSheet.create({
     marginTop: -10,
   },
   characterImage: {
-    width: 82,
-    height: 82,
+    width: 120,
+    height: 120,
   },
   birdButton: {
     position: "absolute",
-    right: 48,
-    bottom: 18,
+    right: 56,
+    bottom: 0,
   },
   notificationBadge: {
     position: "absolute",

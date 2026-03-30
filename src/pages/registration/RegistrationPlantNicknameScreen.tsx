@@ -80,7 +80,7 @@ export default function RegistrationPlantNicknameScreen({ navigation }: Props) {
 
         <View style={styles.previewCard}>
           {previewImageUrl ? (
-            <Image source={{ uri: previewImageUrl }} resizeMode="cover" style={styles.previewImage} />
+            <Image source={{ uri: previewImageUrl }} resizeMode="contain" style={styles.previewImage} />
           ) : null}
         </View>
 
@@ -163,8 +163,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   previewImage: {
-    width: 220,
-    height: 261,
+    width: 234,
+    height: 268,
   },
   inputWrap: {
     width: 353,
@@ -229,3 +229,4 @@ const styles = StyleSheet.create({
     color: "#BFBFBF",
   },
 });
+

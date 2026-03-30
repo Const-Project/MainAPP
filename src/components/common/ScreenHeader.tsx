@@ -1,6 +1,7 @@
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { RefreshIcon } from "@/assets/icons/CommonIcons";
+﻿import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import LeftIcon from "@/assets/icons/common/left.svg";
+
+const refreshIcon = require("../../../assets/refresh-icon.png");
 
 type Props = {
   title: string;
@@ -23,11 +24,7 @@ export default function ScreenHeader({
   return (
     <View style={styles.header}>
       {onBack ? (
-        <TouchableOpacity
-          onPress={onBack}
-          activeOpacity={0.7}
-          style={styles.sideButton}
-        >
+        <TouchableOpacity onPress={onBack} activeOpacity={0.7} style={styles.sideButton}>
           <LeftIcon width={24} height={24} />
         </TouchableOpacity>
       ) : (
@@ -46,7 +43,11 @@ export default function ScreenHeader({
           accessibilityLabel={resolvedRightLabel}
         >
           {isRefreshAction ? (
-            <RefreshIcon size={22} color={rightActionDisabled ? "#BFBFBF" : "#171717"} />
+            <Image
+              source={refreshIcon}
+              style={[styles.refreshIcon, rightActionDisabled && styles.refreshIconDisabled]}
+              resizeMode="contain"
+            />
           ) : (
             <Text style={[styles.completeText, rightActionDisabled && styles.disabledText]}>
               {resolvedRightLabel}
@@ -76,6 +77,13 @@ const styles = StyleSheet.create({
     height: 44,
     justifyContent: "center",
     alignItems: "center",
+  },
+  refreshIcon: {
+    width: 22,
+    height: 22,
+  },
+  refreshIconDisabled: {
+    opacity: 0.4,
   },
   completeText: {
     fontSize: 16,

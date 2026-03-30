@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+﻿import { useState, type ReactNode } from "react";
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { MainTabScreenProps } from "@/navigation/types";
@@ -8,9 +8,10 @@ import {
   ToggleOnIcon,
 } from "@/assets/icons/CommonIcons";
 import ScreenHeader from "@/components/common/ScreenHeader";
+import { useNotificationSettings, useUpdateNotificationSettings } from "@/hooks/option/useNotificationApi";
 import useTokenStore from "@/stores/useTokenStore";
 import { logout } from "@/utils/auth";
-import { useNotificationSettings, useUpdateNotificationSettings } from "@/hooks/option/useNotificationApi";
+import { registerDeviceFcmToken, unregisterDeviceFcmToken } from "@/utils/fcm";
 
 type Props = MainTabScreenProps<"Option">;
 
@@ -20,6 +21,39 @@ export default function OptionScreen({ navigation }: Props) {
   const { data: notificationSettings } = useNotificationSettings();
   const updateSettingsMutation = useUpdateNotificationSettings();
   const pushNotification = notificationSettings?.notificationEnabled ?? true;
+  const marketingConsent = notificationSettings?.marketingConsent ?? false;
+
+  const handleTogglePushNotification = async () => {
+    if (updateSettingsMutation.isPending) {
+      return;
+    }
+
+    if (!pushNotification) {
+      const registered = await registerDeviceFcmToken();
+      if (!registered) {
+        Alert.alert("알림 권한 필요", "기기 알림 권한을 허용한 뒤 다시 시도해주세요.");
+        return;
+      }
+    } else {
+      const removed = await unregisterDeviceFcmToken();
+      if (!removed) {
+        Alert.alert("알림 설정 변경 실패", "토큰 해제에 실패했습니다. 잠시 후 다시 시도해주세요.");
+        return;
+      }
+    }
+
+    updateSettingsMutation.mutate(
+      {
+        notificationEnabled: !pushNotification,
+        marketingConsent,
+      },
+      {
+        onError: () => {
+          Alert.alert("알림 설정 변경 실패", "잠시 후 다시 시도해주세요.");
+        },
+      }
+    );
+  };
 
   const handleLogout = () => {
     if (isLoggingOut || !accessToken) {
@@ -45,14 +79,11 @@ export default function OptionScreen({ navigation }: Props) {
     <SafeAreaView style={styles.container} edges={["top"]}>
       <ScreenHeader title="설정" />
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-        {/* Settings are rendered as a simple list so FE-style rows can expand without changing layout structure. */}
         <OptionRow
           label="푸시 알림"
           rightSlot={
             <TouchableOpacity
-              onPress={() =>
-                updateSettingsMutation.mutate({ notificationEnabled: !pushNotification })
-              }
+              onPress={() => void handleTogglePushNotification()}
               activeOpacity={0.7}
               disabled={updateSettingsMutation.isPending}
               accessibilityRole="switch"
@@ -96,7 +127,6 @@ function OptionRow({
   onPress?: () => void;
 }) {
   const content = (
-    // A shared row component keeps label-only, toggle, and action rows visually consistent.
     <View style={styles.row}>
       <Text
         style={[
@@ -112,6 +142,10 @@ function OptionRow({
   );
 
   if (!onPress && !rightSlot) {
+    return content;
+  }
+
+  if (!onPress) {
     return content;
   }
 

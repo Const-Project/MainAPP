@@ -1,28 +1,27 @@
-import React, { useState, useCallback } from "react";
+﻿import React, { useCallback } from "react";
 import {
   RefreshControl,
   View,
   Text,
   TouchableOpacity,
   ScrollView,
-  ActivityIndicator,
   StyleSheet,
+  Image,
 } from "react-native";
-
-const FEED_PAGE_SIZE = 10;
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { MainTabScreenProps } from "@/navigation/types";
 
-import { RefreshIcon, UserPlusIcon } from "@/assets/icons/CommonIcons";
+import { UserPlusIcon } from "@/assets/icons/CommonIcons";
 import StatusView from "@/components/common/StatusView";
 import FeedList from "@/components/feed/FeedList";
 import { useFeed } from "@/hooks/feed/useFeedApi";
+
+const refreshIcon = require("../../../assets/refresh-icon.png");
 
 type Props = MainTabScreenProps<"Feed">;
 
 export default function FeedScreen({ navigation }: Props) {
   const { data: result, isLoading, isRefetching, error, refetch } = useFeed();
-  const [displayCount, setDisplayCount] = useState(FEED_PAGE_SIZE);
 
   const handleUserPlusClick = () => {
     navigation.navigate("Follow");
@@ -37,24 +36,10 @@ export default function FeedScreen({ navigation }: Props) {
   };
 
   const handleRefetch = useCallback(() => {
-    setDisplayCount(FEED_PAGE_SIZE);
     void refetch();
   }, [refetch]);
 
-  const handleScroll = useCallback(
-    ({ nativeEvent }: { nativeEvent: { layoutMeasurement: { height: number }; contentOffset: { y: number }; contentSize: { height: number } } }) => {
-      const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
-      const isNearBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 200;
-      if (isNearBottom && displayCount < (result?.length ?? 0)) {
-        setDisplayCount(prev => Math.min(prev + FEED_PAGE_SIZE, result?.length ?? prev));
-      }
-    },
-    [displayCount, result?.length]
-  );
-
-  const allData = result && result.length > 0 ? result : [];
-  const dataForRender = allData.slice(0, displayCount);
-  const hasMore = displayCount < allData.length;
+  const dataForRender = result && result.length > 0 ? result : [];
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -67,7 +52,11 @@ export default function FeedScreen({ navigation }: Props) {
           accessibilityRole="button"
           accessibilityLabel="새로고침"
         >
-          <RefreshIcon size={22} color={isLoading || isRefetching ? "#9CA3AF" : "#171717"} />
+          <Image
+            source={refreshIcon}
+            style={[styles.refreshIcon, (isLoading || isRefetching) && styles.refreshIconDisabled]}
+            resizeMode="contain"
+          />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>둘러보기</Text>
         <TouchableOpacity
@@ -90,8 +79,6 @@ export default function FeedScreen({ navigation }: Props) {
         <ScrollView
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
-          scrollEventThrottle={400}
-          onScroll={handleScroll}
           refreshControl={
             <RefreshControl
               refreshing={isRefetching && !isLoading}
@@ -106,11 +93,6 @@ export default function FeedScreen({ navigation }: Props) {
             isLoading={isLoading}
             error={null}
           />
-          {hasMore && (
-            <View style={styles.loadMoreIndicator}>
-              <ActivityIndicator size="small" color="#7DC960" />
-            </View>
-          )}
         </ScrollView>
       )}
     </SafeAreaView>
@@ -142,15 +124,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  refreshIcon: {
+    width: 22,
+    height: 22,
+  },
+  refreshIconDisabled: {
+    opacity: 0.4,
+  },
   headerButton: {
     width: 24,
     alignItems: "center",
   },
   scrollView: {
     flex: 1,
-  },
-  loadMoreIndicator: {
-    paddingVertical: 16,
-    alignItems: "center",
   },
 });

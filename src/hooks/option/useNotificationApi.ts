@@ -1,7 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+﻿import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  deleteFcmToken,
   getNotificationSettings,
   patchNotificationSettings,
+  postFcmToken,
   type NotificationSettings,
 } from "@/apis/option/notificationApi";
 import type { GlobalResponse } from "@/types/common/apiResponse.type";
@@ -37,3 +39,13 @@ export const useUpdateNotificationSettings = () => {
     },
   });
 };
+
+export const useRegisterNotificationToken = () =>
+  useMutation({
+    mutationFn: postFcmToken,
+  });
+
+export const useDeleteNotificationToken = () =>
+  useMutation({
+    mutationFn: deleteFcmToken,
+  });

@@ -1,4 +1,5 @@
-import {
+﻿import {
+  Image,
   Modal,
   Pressable,
   ScrollView,
@@ -7,11 +8,16 @@ import {
   View,
 } from "react-native";
 
-function StageIcon({ label }: { label: string }) {
+const sproutImage = require("@/assets/images/sprout.png");
+const flowerImage = require("@/assets/images/flower.png");
+const fruitImage = require("@/assets/images/fruit.png");
+const treeImage = require("@/assets/images/tree.png");
+
+function StageIcon({ label, source }: { label: string; source: number }) {
   return (
     <View style={styles.stageIconWrap}>
-      <View style={styles.stageIconPlaceholder}>
-        <Text style={styles.stageIconText}>{label[0]}</Text>
+      <View style={styles.stageIconFrame}>
+        <Image source={source} resizeMode="contain" style={styles.stageIconImage} />
       </View>
       <Text style={styles.stageLabel}>{label}</Text>
     </View>
@@ -49,13 +55,13 @@ export default function WishTreeInfoModal({ visible, onClose }: Props) {
 
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.body}>
             <View style={styles.stagesRow}>
-              <StageIcon label={"새싹"} />
+              <StageIcon label={"새싹"} source={sproutImage} />
               <StageDash />
-              <StageIcon label={"꽃"} />
+              <StageIcon label={"꽃"} source={flowerImage} />
               <StageDash />
-              <StageIcon label={"열매"} />
+              <StageIcon label={"열매"} source={fruitImage} />
               <StageDash />
-              <StageIcon label={"나무"} />
+              <StageIcon label={"나무"} source={treeImage} />
             </View>
 
             <Text style={styles.description}>
@@ -126,18 +132,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
   },
-  stageIconPlaceholder: {
+  stageIconFrame: {
     width: 52,
     height: 52,
-    borderRadius: 26,
-    backgroundColor: "#F0F4EC",
     alignItems: "center",
     justifyContent: "center",
   },
-  stageIconText: {
-    fontSize: 20,
-    color: "#4CAF50",
-    fontWeight: "700",
+  stageIconImage: {
+    width: 52,
+    height: 52,
   },
   stageLabel: {
     fontSize: 13,
@@ -169,3 +172,5 @@ const styles = StyleSheet.create({
     color: "#6B7280",
   },
 });
+
+

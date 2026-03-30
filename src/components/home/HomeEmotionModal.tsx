@@ -17,7 +17,7 @@ import {
 } from "@/types/missions";
 import { createTimingLogger, debugLog } from "@/utils/debug";
 
-const characterImage = require("@/assets/images/char.webp");
+const characterImage = require("@/assets/images/char-emotion.webp");
 
 const ANSWER_COPY: Record<SurveyAnswerKind, string> = {
   YES: "좋은 기분으로 오늘 하루 계속 이어가요!",
@@ -72,10 +72,6 @@ export default function HomeEmotionModal({
         answer: SURVEY_ANSWER_VALUE_MAP[answer],
       });
 
-      /*
-       * Close the modal as soon as submit succeeds.
-       * Home state is updated immediately and query refresh continues in the background.
-       */
       onAnswered(answer);
       onClose();
       finishSubmitTiming({ closedImmediately: true });
@@ -226,5 +222,3 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 });
-
-

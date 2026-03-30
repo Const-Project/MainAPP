@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+﻿import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  Image,
   Modal,
   Pressable,
   ScrollView,
@@ -11,6 +12,8 @@ import {
 import { useGuestbookList, useNotifications, useReadNotifications } from "@/hooks/home/useHomeApi";
 import type { GuestbookEntry, NotificationItem } from "@/types/home/alerts";
 import { createTimingLogger } from "@/utils/debug";
+
+const birdImage = require("@/assets/images/bird.webp");
 
 function isNotificationRead(item: NotificationItem) {
   return item.isRead ?? item.read ?? false;
@@ -120,70 +123,74 @@ export default function HomeAlertsModal({
     <Modal transparent animationType="fade" visible={visible} onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-        <View style={styles.card}>
-          <View style={styles.header}>
-            <View style={styles.headerSpacer} />
-            <Text style={styles.title}>받은 소식</Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Text style={styles.closeText}>닫기</Text>
-            </TouchableOpacity>
-          </View>
+        <View style={styles.cardFrame}>
+          <Image source={birdImage} resizeMode="contain" style={styles.decorativeBird} />
 
-          <View style={styles.tabRow}>
-            <TabButton
-              label="받은 방명록"
-              active={activeTab === "GUESTBOOK"}
-              onPress={() => setActiveTab("GUESTBOOK")}
-            />
-            <TabButton
-              label="기록"
-              active={activeTab === "RECORD"}
-              onPress={() => setActiveTab("RECORD")}
-            />
-          </View>
+          <View style={styles.card}>
+            <View style={styles.header}>
+              <View style={styles.headerSpacer} />
+              <Text style={styles.title}>받은 소식</Text>
+              <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+                <Text style={styles.closeText}>닫기</Text>
+              </TouchableOpacity>
+            </View>
 
-          <ScrollView
-            style={styles.content}
-            contentContainerStyle={styles.contentContainer}
-            showsVerticalScrollIndicator={false}
-          >
-            {activeState.isLoading ? (
-              <Text style={styles.messageText}>불러오는 중입니다.</Text>
-            ) : activeState.isError ? (
-              <Text style={styles.messageText}>
-                {activeTab === "GUESTBOOK"
-                  ? "받은 방명록을 불러오지 못했습니다."
-                  : "알림을 불러오지 못했습니다."}
-              </Text>
-            ) : activeState.items.length === 0 ? (
-              <Text style={styles.messageText}>
-                {activeTab === "GUESTBOOK"
-                  ? "아직 받은 방명록이 없어요."
-                  : "아직 기록이 없어요."}
-              </Text>
-            ) : activeTab === "GUESTBOOK" ? (
-              (activeState.items as GuestbookEntry[]).map((item, index) => (
-                <View key={`${item.author}-${item.createdAt}-${index}`} style={styles.listCard}>
-                  <View style={styles.listHeader}>
-                    <Text style={styles.primaryText}>{item.author}</Text>
-                    <Text style={styles.metaText}>{formatDateTime(item.createdAt)}</Text>
+            <View style={styles.tabRow}>
+              <TabButton
+                label="받은 방명록"
+                active={activeTab === "GUESTBOOK"}
+                onPress={() => setActiveTab("GUESTBOOK")}
+              />
+              <TabButton
+                label="기록"
+                active={activeTab === "RECORD"}
+                onPress={() => setActiveTab("RECORD")}
+              />
+            </View>
+
+            <ScrollView
+              style={styles.content}
+              contentContainerStyle={styles.contentContainer}
+              showsVerticalScrollIndicator={false}
+            >
+              {activeState.isLoading ? (
+                <Text style={styles.messageText}>불러오는 중입니다.</Text>
+              ) : activeState.isError ? (
+                <Text style={styles.messageText}>
+                  {activeTab === "GUESTBOOK"
+                    ? "받은 방명록을 불러오지 못했습니다."
+                    : "알림을 불러오지 못했습니다."}
+                </Text>
+              ) : activeState.items.length === 0 ? (
+                <Text style={styles.messageText}>
+                  {activeTab === "GUESTBOOK"
+                    ? "아직 받은 방명록이 없어요."
+                    : "아직 기록이 없어요."}
+                </Text>
+              ) : activeTab === "GUESTBOOK" ? (
+                (activeState.items as GuestbookEntry[]).map((item, index) => (
+                  <View key={`${item.author}-${item.createdAt}-${index}`} style={styles.listCard}>
+                    <View style={styles.listHeader}>
+                      <Text style={styles.primaryText}>{item.author}</Text>
+                      <Text style={styles.metaText}>{formatDateTime(item.createdAt)}</Text>
+                    </View>
+                    <Text style={styles.secondaryText}>{item.content}</Text>
                   </View>
-                  <Text style={styles.secondaryText}>{item.content}</Text>
-                </View>
-              ))
-            ) : (
-              (activeState.items as NotificationItem[]).map(item => (
-                <View key={item.id} style={styles.listCard}>
-                  <View style={styles.listHeader}>
-                    <Text style={styles.primaryText}>{getNotificationLabel(item.notificationType)}</Text>
-                    <Text style={styles.metaText}>{formatDateTime(item.createdAt)}</Text>
+                ))
+              ) : (
+                (activeState.items as NotificationItem[]).map(item => (
+                  <View key={item.id} style={styles.listCard}>
+                    <View style={styles.listHeader}>
+                      <Text style={styles.primaryText}>{getNotificationLabel(item.notificationType)}</Text>
+                      <Text style={styles.metaText}>{formatDateTime(item.createdAt)}</Text>
+                    </View>
+                    <Text style={styles.secondaryText}>{item.content}</Text>
+                    {!isNotificationRead(item) ? <View style={styles.unreadDot} /> : null}
                   </View>
-                  <Text style={styles.secondaryText}>{item.content}</Text>
-                  {!isNotificationRead(item) ? <View style={styles.unreadDot} /> : null}
-                </View>
-              ))
-            )}
-          </ScrollView>
+                ))
+              )}
+            </ScrollView>
+          </View>
         </View>
       </View>
     </Modal>
@@ -246,21 +253,37 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 24,
   },
-  card: {
+  cardFrame: {
     width: "100%",
     maxWidth: 360,
     maxHeight: "80%",
+    position: "relative",
+    overflow: "visible",
+  },
+  card: {
+    width: "100%",
+    maxHeight: "100%",
     borderRadius: 28,
     backgroundColor: "#FFFFFF",
     paddingHorizontal: 20,
     paddingTop: 22,
     paddingBottom: 18,
+    overflow: "hidden",
+  },
+  decorativeBird: {
+    position: "absolute",
+    top: -34,
+    left: 8,
+    width: 58,
+    height: 58,
+    zIndex: 3,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 12,
+    zIndex: 1,
   },
   headerSpacer: {
     width: 44,
@@ -283,6 +306,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 10,
     marginBottom: 14,
+    zIndex: 1,
   },
   tabButton: {
     flex: 1,

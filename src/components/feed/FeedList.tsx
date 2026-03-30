@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import {
   View,
   Text,
@@ -70,7 +70,7 @@ export default function FeedList({
       <Image
         source={{ uri: item.imageUrl }}
         style={styles.image}
-        resizeMode="cover"
+        resizeMode="contain"
       />
     </TouchableOpacity>
   );
@@ -122,9 +122,12 @@ const styles = StyleSheet.create({
     width: ITEM_SIZE,
     height: ITEM_SIZE,
     backgroundColor: "#F3F4F6",
+    padding: 6,
   },
   image: {
     width: "100%",
     height: "100%",
+    borderRadius: 8,
   },
 });
+

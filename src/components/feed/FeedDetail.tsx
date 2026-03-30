@@ -275,7 +275,7 @@ export default function FeedDetail({
                 <Image
                   source={{ uri: result.profileImageUrl }}
                   style={styles.profileImage}
-                  resizeMode="cover"
+                  resizeMode="contain"
                 />
               )}
             </View>
@@ -298,7 +298,7 @@ export default function FeedDetail({
         <Image
           source={{ uri: result.imageUrl }}
           style={styles.mainImage}
-          resizeMode="cover"
+          resizeMode="contain"
         />
 
         <Text style={styles.content}>{result.content}</Text>
@@ -396,6 +396,8 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: "#E5E7EB",
     overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
   },
   profileImage: {
     width: "100%",
@@ -427,12 +429,14 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     borderRadius: 12,
     marginBottom: 24,
+    backgroundColor: "#F3F4F6",
   },
   content: {
     fontSize: 14,
     color: "#171717",
     lineHeight: 20,
     marginBottom: 24,
+    backgroundColor: "#F3F4F6",
   },
   actionBar: {
     flexDirection: "row",
@@ -477,6 +481,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#FFFFFF",
     overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
   },
   sheetHandle: {
     width: 44,
@@ -515,3 +521,4 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
   },
 });
+

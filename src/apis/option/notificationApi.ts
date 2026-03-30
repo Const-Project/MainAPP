@@ -1,4 +1,4 @@
-import api from "@/apis/instance";
+﻿import api from "@/apis/instance";
 import type { ApiResponse, NoResponse } from "@/types/common/apiResponse.type";
 
 export type NotificationSettings = {
@@ -20,5 +20,10 @@ export const patchNotificationSettings = async (
 
 export const postFcmToken = async (token: string): ApiResponse<NoResponse> => {
   const res = await api.post("/api/v1/notifications/token", { token });
+  return res.data;
+};
+
+export const deleteFcmToken = async (): ApiResponse<NoResponse> => {
+  const res = await api.delete("/api/v1/notifications/token");
   return res.data;
 };
