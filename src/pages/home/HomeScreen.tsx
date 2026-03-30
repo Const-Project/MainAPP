@@ -246,16 +246,18 @@ export default function HomeScreen({ navigation }: Props) {
         ))}
       </PagerView>
 
-      <SafeAreaView pointerEvents="box-none" style={styles.overlaySafeArea} edges={["top"]}>
-        <View style={styles.pagination}>
-          {scenes.map((scene, index) => (
-            <View
-              key={scene.key}
-              style={[styles.dot, currentPage === index ? styles.dotActive : styles.dotInactive]}
-            />
-          ))}
+      {!isCurrentGardenLocked ? (
+        <View pointerEvents="none" style={styles.paginationWrap}>
+          <View style={styles.pagination}>
+            {scenes.map((scene, index) => (
+              <View
+                key={scene.key}
+                style={[styles.dot, currentPage === index ? styles.dotActive : styles.dotInactive]}
+              />
+            ))}
+          </View>
         </View>
-      </SafeAreaView>
+      ) : null}
 
       {!isCurrentGardenLocked ? (
         <HomeBottomSheet
@@ -332,20 +334,17 @@ const styles = StyleSheet.create({
   page: {
     flex: 1,
   },
-  overlaySafeArea: {
+  paginationWrap: {
     position: "absolute",
-    top: 0,
     left: 0,
     right: 0,
-    bottom: 0,
-    justifyContent: "space-between",
+    bottom: 156,
+    alignItems: "center",
   },
   pagination: {
-    marginTop: 84,
-    alignSelf: "center",
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 10,
   },
   dot: {
     width: 8,
@@ -353,15 +352,15 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   dotActive: {
-    width: 22,
     backgroundColor: "#FFFFFF",
   },
   dotInactive: {
-    backgroundColor: "rgba(255,255,255,0.45)",
+    backgroundColor: "rgba(124,124,124,0.7)",
   },
   loadingContainer: {
     flex: 1,
     backgroundColor: "#F4F7F0",
   },
 });
+
 

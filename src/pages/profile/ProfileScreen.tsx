@@ -4,6 +4,7 @@ import type { AxiosError } from "axios";
 import PagerView from "react-native-pager-view";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { RootStackScreenProps } from "@/navigation/types";
+import ConfirmModal from "@/components/common/ConfirmModal";
 import StatusView from "@/components/common/StatusView";
 import HomeToast from "@/components/home/HomeToast";
 import ProfileGardenScene from "@/components/profile/ProfileGardenScene";
@@ -16,6 +17,14 @@ import { createTimingLogger, debugLog } from "@/utils/debug";
 import { FollowStatus } from "@/types/profile/profileApi.type";
 
 type Props = RootStackScreenProps<"Profile">;
+
+type BlockConfirmState = {
+  title: string;
+  description: string;
+  confirmLabel: string;
+  destructive?: boolean;
+  onConfirm: () => Promise<void> | void;
+} | null;
 
 const FRIEND_WATER_ACTION_COOLDOWN_MS = 700;
 
@@ -66,6 +75,7 @@ export default function ProfileScreen({ navigation, route }: Props) {
   const [isFriendWaterCooldownActive, setIsFriendWaterCooldownActive] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isBlockedUser, setIsBlockedUser] = useState(false);
+  const [blockConfirmState, setBlockConfirmState] = useState<BlockConfirmState>(null);
   const initialLoadTimingRef = useRef<ReturnType<typeof createTimingLogger> | null>(null);
 
   const isMe = String(userId) === myUserId;
@@ -170,40 +180,48 @@ export default function ProfileScreen({ navigation, route }: Props) {
     }
 
     if (isBlockedUser) {
-      Alert.alert("차단 해제", "이 사용자의 차단을 해제할까요?", [
-        { text: "취소", style: "cancel" },
-        {
-          text: "차단 해제",
-          onPress: async () => {
-            try {
-              await unblockMutation.mutateAsync(userId);
-              setIsBlockedUser(false);
-              setToastMessage("사용자 차단을 해제했습니다.");
-            } catch (error) {
-              Alert.alert("차단 해제 실패", getActionErrorMessage(error, "잠시 후 다시 시도해주세요."));
-            }
-          },
+      setBlockConfirmState({
+        title: "차단 해제",
+        description: "이 사용자의 차단을 해제할까요?",
+        confirmLabel: "차단 해제",
+        onConfirm: async () => {
+          try {
+            await unblockMutation.mutateAsync(userId);
+            setIsBlockedUser(false);
+            setToastMessage("사용자 차단을 해제했습니다.");
+          } catch (error) {
+            Alert.alert("차단 해제 실패", getActionErrorMessage(error, "잠시 후 다시 시도해주세요."));
+          }
         },
-      ]);
+      });
       return;
     }
 
-    Alert.alert("차단", "이 사용자를 차단할까요? 서로 팔로우가 해제되고 콘텐츠가 숨겨집니다.", [
-      { text: "취소", style: "cancel" },
-      {
-        text: "차단",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await blockMutation.mutateAsync(userId);
-            setIsBlockedUser(true);
-            setToastMessage("사용자를 차단했습니다.");
-          } catch (error) {
-            Alert.alert("차단 실패", getActionErrorMessage(error, "잠시 후 다시 시도해주세요."));
-          }
-        },
+    setBlockConfirmState({
+      title: "차단",
+      description: "이 사용자를 차단할까요?\n서로 팔로우가 해제되고 콘텐츠가 숨겨집니다.",
+      confirmLabel: "차단",
+      destructive: true,
+      onConfirm: async () => {
+        try {
+          await blockMutation.mutateAsync(userId);
+          setIsBlockedUser(true);
+          setToastMessage("사용자를 차단했습니다.");
+        } catch (error) {
+          Alert.alert("차단 실패", getActionErrorMessage(error, "잠시 후 다시 시도해주세요."));
+        }
       },
-    ]);
+    });
+  };
+
+  const handleConfirmBlock = async () => {
+    if (!blockConfirmState || isBlockActionPending) {
+      return;
+    }
+
+    const currentConfirm = blockConfirmState;
+    setBlockConfirmState(null);
+    await currentConfirm.onConfirm();
   };
 
   const followAction = useMemo(() => {
@@ -335,6 +353,17 @@ export default function ProfileScreen({ navigation, route }: Props) {
             </View>
           </ScrollView>
         </SafeAreaView>
+
+        <ConfirmModal
+          visible={blockConfirmState !== null}
+          title={blockConfirmState?.title ?? ""}
+          description={blockConfirmState?.description ?? ""}
+          confirmLabel={blockConfirmState?.confirmLabel ?? "확인"}
+          confirmDestructive={blockConfirmState?.destructive ?? false}
+          confirmDisabled={isBlockActionPending}
+          onCancel={() => setBlockConfirmState(null)}
+          onConfirm={() => void handleConfirmBlock()}
+        />
       </View>
     );
   }
@@ -381,6 +410,17 @@ export default function ProfileScreen({ navigation, route }: Props) {
       </SafeAreaView>
 
       {toastMessage ? <HomeToast message={toastMessage} onClose={() => setToastMessage(null)} /> : null}
+
+      <ConfirmModal
+        visible={blockConfirmState !== null}
+        title={blockConfirmState?.title ?? ""}
+        description={blockConfirmState?.description ?? ""}
+        confirmLabel={blockConfirmState?.confirmLabel ?? "확인"}
+        confirmDestructive={blockConfirmState?.destructive ?? false}
+        confirmDisabled={isBlockActionPending}
+        onCancel={() => setBlockConfirmState(null)}
+        onConfirm={() => void handleConfirmBlock()}
+      />
     </View>
   );
 }

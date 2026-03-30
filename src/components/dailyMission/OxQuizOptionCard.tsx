@@ -18,14 +18,10 @@ export default function OxQuizOptionCard({
   onPress,
 }: Props) {
   const Icon = label === "O" ? OIcon : XIcon;
-  const iconColor =
-    state === "correct" || state === "answer"
-      ? "#6FCF4A"
-      : state === "wrong"
-        ? "#FF6B6B"
-        : state === "selected"
-          ? "#4A4A4A"
-          : "#BFBFBF";
+  const isCorrect = state === "correct" || state === "answer";
+  const isWrong = state === "wrong";
+  const isSelected = state === "selected";
+  const iconColor = isCorrect ? "#3AB40B" : isWrong ? "#F76868" : isSelected ? "#171717" : "#BFBFBF";
 
   return (
     <TouchableOpacity
@@ -34,13 +30,13 @@ export default function OxQuizOptionCard({
       onPress={onPress}
       style={[
         styles.card,
-        state === "selected" ? styles.cardSelected : null,
-        state === "correct" || state === "answer" ? styles.cardCorrect : null,
-        state === "wrong" ? styles.cardWrong : null,
+        isSelected ? styles.cardSelected : null,
+        isCorrect ? styles.cardCorrect : null,
+        isWrong ? styles.cardWrong : null,
       ]}
     >
       <View style={styles.iconWrap}>
-        <Icon width={40} height={40} color={iconColor} />
+        <Icon width={52} height={52} color={iconColor} />
       </View>
     </TouchableOpacity>
   );
@@ -49,7 +45,7 @@ export default function OxQuizOptionCard({
 const styles = StyleSheet.create({
   card: {
     flex: 1,
-    height: 150,
+    height: 160,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: "#EFEFEF",
@@ -62,12 +58,12 @@ const styles = StyleSheet.create({
     borderColor: "#BFBFBF",
   },
   cardCorrect: {
-    backgroundColor: "#EFF9EA",
-    borderColor: "#6FCF4A",
+    backgroundColor: "#EEF9EA",
+    borderColor: "#72D14E",
   },
   cardWrong: {
-    backgroundColor: "#FFF1F1",
-    borderColor: "#FF6B6B",
+    backgroundColor: "#FFEFEF",
+    borderColor: "#F76868",
   },
   iconWrap: {
     alignItems: "center",

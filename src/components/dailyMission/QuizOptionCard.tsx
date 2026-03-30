@@ -1,4 +1,4 @@
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+﻿import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import CheckIcon from "@/assets/icons/Check.svg";
 import Check2Icon from "@/assets/icons/Check2.svg";
 
@@ -17,24 +17,19 @@ export default function QuizOptionCard({
   state = "idle",
   onPress,
 }: Props) {
-  const BadgeIcon =
-    state === "correct" || state === "answer" || selected ? CheckIcon : Check2Icon;
-  const badgeText =
-    state === "correct" || state === "answer"
-      ? "\uC815\uB2F5"
-      : state === "wrong"
-        ? "\uC624\uB2F5"
-        : selected
-          ? "\uC120\uD0DD\uB428"
-          : null;
+  const isCorrect = state === "correct" || state === "answer";
+  const isWrong = state === "wrong";
+  const isSelected = selected && !isCorrect && !isWrong;
+  const BadgeIcon = isCorrect || isSelected ? CheckIcon : Check2Icon;
+  const badgeText = isCorrect ? "정답!" : isWrong ? "오답!" : null;
 
   return (
     <TouchableOpacity
       style={[
         styles.card,
-        selected ? styles.cardSelected : null,
-        state === "correct" || state === "answer" ? styles.cardCorrect : null,
-        state === "wrong" ? styles.cardWrong : null,
+        isSelected ? styles.cardSelected : null,
+        isCorrect ? styles.cardCorrect : null,
+        isWrong ? styles.cardWrong : null,
       ]}
       disabled={disabled}
       activeOpacity={0.86}
@@ -42,18 +37,13 @@ export default function QuizOptionCard({
     >
       <Text style={styles.text}>{label}</Text>
       <View style={styles.badgeWrap}>
-        <BadgeIcon width={20} height={20} />
         {badgeText ? (
-          <Text
-            style={[
-              styles.badgeText,
-              state === "correct" || state === "answer" ? styles.badgeTextCorrect : null,
-              state === "wrong" ? styles.badgeTextWrong : null,
-            ]}
-          >
+          <Text style={[styles.badgeText, isCorrect ? styles.badgeTextCorrect : styles.badgeTextWrong]}>
             {badgeText}
           </Text>
-        ) : null}
+        ) : (
+          <BadgeIcon width={32} height={32} />
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -61,10 +51,13 @@ export default function QuizOptionCard({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 14,
+    minHeight: 60,
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#D1D5DB",
-    padding: 16,
+    borderColor: "#EFEFEF",
+    paddingLeft: 24,
+    paddingRight: 16,
+    paddingVertical: 16,
     backgroundColor: "#FFFFFF",
     flexDirection: "row",
     alignItems: "center",
@@ -72,39 +65,38 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   cardSelected: {
-    backgroundColor: "#F3F4F6",
-    borderColor: "#9CA3AF",
+    backgroundColor: "#EFEFEF",
+    borderColor: "#BFBFBF",
   },
   cardCorrect: {
-    backgroundColor: "#EDF7ED",
-    borderColor: "#2F7D32",
+    backgroundColor: "#EEF9EA",
+    borderColor: "#72D14E",
   },
   cardWrong: {
-    backgroundColor: "#FEF2F2",
-    borderColor: "#DC2626",
+    backgroundColor: "#FFEFEF",
+    borderColor: "#F76868",
   },
   text: {
     flex: 1,
-    fontSize: 15,
-    lineHeight: 22,
-    color: "#171717",
+    fontSize: 16,
+    lineHeight: 26,
+    color: "#282828",
+    fontWeight: "400",
   },
   badgeWrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    minWidth: 54,
-    justifyContent: "flex-end",
+    minWidth: 60,
+    alignItems: "flex-end",
+    justifyContent: "center",
   },
   badgeText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#4B5563",
+    fontSize: 18,
+    lineHeight: 27,
+    fontWeight: "600",
   },
   badgeTextCorrect: {
-    color: "#2F7D32",
+    color: "#3AB40B",
   },
   badgeTextWrong: {
-    color: "#DC2626",
+    color: "#F76868",
   },
 });

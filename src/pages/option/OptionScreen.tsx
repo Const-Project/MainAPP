@@ -7,6 +7,7 @@ import {
   ToggleOffIcon,
   ToggleOnIcon,
 } from "@/assets/icons/CommonIcons";
+import ConfirmModal from "@/components/common/ConfirmModal";
 import ScreenHeader from "@/components/common/ScreenHeader";
 import { useNotificationSettings, useUpdateNotificationSettings } from "@/hooks/option/useNotificationApi";
 import useTokenStore from "@/stores/useTokenStore";
@@ -17,6 +18,7 @@ type Props = MainTabScreenProps<"Option">;
 
 export default function OptionScreen({ navigation }: Props) {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isLogoutConfirmVisible, setIsLogoutConfirmVisible] = useState(false);
   const { accessToken, userId, hasHydrated } = useTokenStore();
   const { data: notificationSettings } = useNotificationSettings();
   const updateSettingsMutation = useUpdateNotificationSettings();
@@ -60,17 +62,17 @@ export default function OptionScreen({ navigation }: Props) {
       return;
     }
 
-    Alert.alert("로그아웃", "현재 계정에서 로그아웃할까요?", [
-      { text: "취소", style: "cancel" },
-      {
-        text: "로그아웃",
-        style: "destructive",
-        onPress: async () => {
-          setIsLoggingOut(true);
-          await logout();
-        },
-      },
-    ]);
+    setIsLogoutConfirmVisible(true);
+  };
+
+  const handleConfirmLogout = async () => {
+    if (isLoggingOut || !accessToken) {
+      return;
+    }
+
+    setIsLogoutConfirmVisible(false);
+    setIsLoggingOut(true);
+    await logout();
   };
 
   const loginStatus = !hasHydrated ? "세션 확인 중" : accessToken ? "로그인 상태" : "로그아웃 상태";
@@ -109,6 +111,17 @@ export default function OptionScreen({ navigation }: Props) {
           <Text style={styles.metaText}>{userId ? `사용자 ID ${userId}` : "사용자 ID 없음"}</Text>
         </View>
       </ScrollView>
+
+      <ConfirmModal
+        visible={isLogoutConfirmVisible}
+        title="로그아웃"
+        description="현재 계정에서 로그아웃할까요?"
+        confirmLabel="로그아웃"
+        confirmDestructive
+        confirmDisabled={isLoggingOut}
+        onCancel={() => setIsLogoutConfirmVisible(false)}
+        onConfirm={() => void handleConfirmLogout()}
+      />
     </SafeAreaView>
   );
 }

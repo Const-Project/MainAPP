@@ -179,10 +179,18 @@ export default function HomeGardenScene({
 
       <View style={styles.sceneContent}>
         <View style={styles.sceneHeader}>
-          <TouchableOpacity activeOpacity={0.8} onPress={onPressMap} style={styles.mapButton}>
-            <Image source={mapIcon} style={styles.mapIcon} resizeMode="contain" />
-          </TouchableOpacity>
-          <Text style={styles.sceneTitle}>{title ?? `${userName ?? "나풀나풀"}의 정원`}</Text>
+          {isLocked ? (
+            <View style={styles.sceneHeaderSpacer} />
+          ) : (
+            <TouchableOpacity activeOpacity={0.8} onPress={onPressMap} style={styles.mapButton}>
+              <Image source={mapIcon} style={styles.mapIcon} resizeMode="contain" />
+            </TouchableOpacity>
+          )}
+          {!isLocked ? (
+            <Text style={styles.sceneTitle}>{title ?? `${userName ?? "나풀나풀"}의 정원`}</Text>
+          ) : (
+            <View style={styles.sceneTitleSpacer} />
+          )}
           <View style={styles.sceneHeaderSpacer} />
         </View>
 
@@ -195,12 +203,12 @@ export default function HomeGardenScene({
                 style={styles.lockStatusIcon}
               />
               <Text style={[styles.lockedHeading, isUnlockable && styles.unlockHeading]}>
-                {isUnlockable ? "지금 열 수 있어요" : "해금되지 않았습니다"}
+                {isUnlockable ? "지금 열 수 있어요!" : "해금되지 않았습니다"}
               </Text>
               <Text style={styles.lockedBody}>
                 {isUnlockable
-                  ? "씨앗을 받아 새로운 텃밭을 열 수 있어요."
-                  : "소망 나무가 충분히 자라면 새로운 텃밭을 열 수 있어요."}
+                  ? "아래 버튼을 눌러 씨앗을 배송받고,\n새로운 곳에서 식물을 키워보세요."
+                  : "성장 나무가 성장한 뒤에\n새로운 식물을 키울 수 있어요."}
               </Text>
             </View>
 
@@ -213,8 +221,13 @@ export default function HomeGardenScene({
                 isUnlockable ? styles.lockedFooterButtonActive : styles.lockedFooterButtonDisabled,
               ]}
             >
-              <Text style={styles.lockedFooterButtonText}>
-                {isUnlockable ? "씨앗 받고 해금하기" : "아직 감자가 충분히 모이지 않았어요"}
+              <Text
+                style={[
+                  styles.lockedFooterButtonText,
+                  isUnlockable ? styles.lockedFooterButtonTextActive : styles.lockedFooterButtonTextDisabled,
+                ]}
+              >
+                {isUnlockable ? "씨앗 받고 해금하기!" : "아직 감자가 충분히 모이지 않았어요"}
               </Text>
             </TouchableOpacity>
           </View>
@@ -330,6 +343,9 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
   },
+  sceneTitleSpacer: {
+    flex: 1,
+  },
   sceneHeaderSpacer: {
     width: 48,
     height: 48,
@@ -349,7 +365,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "space-between",
     paddingHorizontal: 20,
-    paddingBottom: 28,
+    paddingBottom: 0,
     zIndex: 2,
   },
   actionRail: {
@@ -379,39 +395,46 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   lockedHeading: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#D64545",
+    fontSize: 18,
+    lineHeight: 27,
+    fontWeight: "600",
+    color: "#F76868",
     textAlign: "center",
   },
   unlockHeading: {
-    color: "#59A647",
+    color: "#45B01B",
   },
   lockedBody: {
-    fontSize: 15,
-    lineHeight: 22,
+    fontSize: 16,
+    lineHeight: 26,
     color: "#171717",
     textAlign: "center",
   },
   lockedFooterButton: {
-    width: "100%",
-    minHeight: 58,
-    borderRadius: 18,
+    alignSelf: "stretch",
+    marginHorizontal: -20,
+    height: 72,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 20,
   },
   lockedFooterButtonActive: {
-    backgroundColor: "#59A647",
+    backgroundColor: "#72D14E",
   },
   lockedFooterButtonDisabled: {
-    backgroundColor: "#BFC6BC",
+    backgroundColor: "#EFEFEF",
   },
   lockedFooterButtonText: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#FFFFFF",
+    fontSize: 18,
+    lineHeight: 27,
+    fontWeight: "600",
     textAlign: "center",
+  },
+  lockedFooterButtonTextActive: {
+    color: "#FFFFFF",
+  },
+  lockedFooterButtonTextDisabled: {
+    color: "#BFBFBF",
   },
   emptySlotWrap: {
     width: "100%",
@@ -455,3 +478,5 @@ const styles = StyleSheet.create({
     height: 288,
   },
 });
+
+

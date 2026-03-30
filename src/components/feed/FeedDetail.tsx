@@ -1,15 +1,14 @@
 ﻿import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
-  Alert,
   FlatList,
-  ListRenderItem,
-  View,
-  Text,
   Image,
   KeyboardAvoidingView,
+  ListRenderItem,
   Platform,
-  TouchableOpacity,
   StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -25,6 +24,7 @@ import type { RootStackParamList } from "@/navigation/types";
 import { HeartIcon, ChatIcon } from "@/assets/icons/CommonIcons";
 import Comment from "@/components/common/Comment";
 import CommentComposer from "@/components/common/CommentComposer";
+import ConfirmModal from "@/components/common/ConfirmModal";
 import useTokenStore from "@/stores/useTokenStore";
 import type { FeedDetailResult } from "@/types/feed/detail";
 
@@ -43,6 +43,14 @@ type Props = {
   onPressCommentReport?: (commentId: number, writer: string) => Promise<void> | void;
   onPressCommentDelete?: (commentId: number) => Promise<void> | void;
   isReportPending?: boolean;
+};
+
+type ConfirmModalState = {
+  title: string;
+  description: string;
+  confirmLabel: string;
+  destructive?: boolean;
+  onConfirm: () => Promise<ConfirmModalState | void> | ConfirmModalState | void;
 };
 
 export default function FeedDetail({
@@ -67,6 +75,8 @@ export default function FeedDetail({
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
   const snapPoints = useMemo(() => ["60%", "90%"], []);
   const [hiddenCommentIds, setHiddenCommentIds] = useState<number[]>([]);
+  const [confirmModalState, setConfirmModalState] = useState<ConfirmModalState | null>(null);
+  const [isConfirmPending, setIsConfirmPending] = useState(false);
 
   const comments = useMemo(
     () =>
@@ -87,38 +97,28 @@ export default function FeedDetail({
       return;
     }
 
-    Alert.alert("신고하기", "댓글을 신고하시겠습니까?\n신고한 댓글은 나에게 숨겨집니다.", [
-      {
-        text: "취소",
-        style: "cancel",
-      },
-      {
-        text: "신고하기",
-        style: "destructive",
-        onPress: () => {
-          Alert.alert("사용자 숨기기", "사용자의 모든 댓글을 숨기시겠습니까?\n이 작업은 취소할 수 없습니다.", [
-            {
-              text: "취소",
-              style: "cancel",
-            },
-            {
-              text: "숨기기",
-              style: "destructive",
-              onPress: async () => {
-                try {
-                  await onPressCommentReport(commentId, writer);
-                  setHiddenCommentIds(previous =>
-                    previous.includes(commentId) ? previous : [...previous, commentId]
-                  );
-                } catch {
-                  // Error handling is delegated to the caller.
-                }
-              },
-            },
-          ]);
+    setConfirmModalState({
+      title: "신고하기",
+      description: "댓글을 신고하시겠습니까?\n신고한 댓글은 나에게 숨겨집니다.",
+      confirmLabel: "신고하기",
+      destructive: true,
+      onConfirm: () => ({
+        title: "사용자 숨기기",
+        description: "사용자의 모든 댓글을 숨기시겠습니까?\n이 작업은 취소할 수 없습니다.",
+        confirmLabel: "숨기기",
+        destructive: true,
+        onConfirm: async () => {
+          try {
+            await onPressCommentReport(commentId, writer);
+            setHiddenCommentIds(previous =>
+              previous.includes(commentId) ? previous : [...previous, commentId]
+            );
+          } catch {
+            // Error handling is delegated to the caller.
+          }
         },
-      },
-    ]);
+      }),
+    });
   };
 
   const renderCommentItem: ListRenderItem<(typeof comments)[number]> = ({
@@ -137,26 +137,22 @@ export default function FeedDetail({
                   return;
                 }
 
-                Alert.alert("삭제하기", "댓글을 삭제하시겠습니까?", [
-                  {
-                    text: "취소",
-                    style: "cancel",
+                setConfirmModalState({
+                  title: "삭제하기",
+                  description: "댓글을 삭제하시겠습니까?",
+                  confirmLabel: "삭제",
+                  destructive: true,
+                  onConfirm: async () => {
+                    try {
+                      await onPressCommentDelete(item.id);
+                      setHiddenCommentIds(previous =>
+                        previous.includes(item.id) ? previous : [...previous, item.id]
+                      );
+                    } catch {
+                      // Error handling is delegated to the caller.
+                    }
                   },
-                  {
-                    text: "삭제",
-                    style: "destructive",
-                    onPress: async () => {
-                      try {
-                        await onPressCommentDelete(item.id);
-                        setHiddenCommentIds(previous =>
-                          previous.includes(item.id) ? previous : [...previous, item.id]
-                        );
-                      } catch {
-                        // Error handling is delegated to the caller.
-                      }
-                    },
-                  },
-                ]);
+                });
               }
             : onPressCommentReport
               ? () => void handleCommentReportPress(item.id, item.writer)
@@ -187,39 +183,37 @@ export default function FeedDetail({
       return;
     }
 
-    Alert.alert(
-      "신고하기",
-      `${reportTargetLabel}을 신고하시겠습니까?\n신고한 ${reportTargetLabel}은 나에게 숨겨집니다.`,
-      [
-        {
-          text: "취소",
-          style: "cancel",
+    setConfirmModalState({
+      title: "신고하기",
+      description: `${reportTargetLabel}을 신고하시겠습니까?\n신고한 ${reportTargetLabel}은 나에게 숨겨집니다.`,
+      confirmLabel: "신고하기",
+      destructive: true,
+      onConfirm: () => ({
+        title: "사용자 숨기기",
+        description: `사용자의 모든 ${reportTargetLabel}을 숨기시겠습니까?\n이 작업은 취소할 수 없습니다.`,
+        confirmLabel: "숨기기",
+        destructive: true,
+        onConfirm: async () => {
+          void onPressReport();
         },
-        {
-          text: "신고하기",
-          style: "destructive",
-          onPress: () => {
-            Alert.alert(
-              "사용자 숨기기",
-              `사용자의 모든 ${reportTargetLabel}을 숨기시겠습니까?\n이 작업은 취소할 수 없습니다.`,
-              [
-                {
-                  text: "취소",
-                  style: "cancel",
-                },
-                {
-                  text: "숨기기",
-                  style: "destructive",
-                  onPress: () => {
-                    void onPressReport();
-                  },
-                },
-              ]
-            );
-          },
-        },
-      ]
-    );
+      }),
+    });
+  };
+
+  const handleConfirmModal = async () => {
+    if (!confirmModalState || isConfirmPending) {
+      return;
+    }
+
+    const activeState = confirmModalState;
+    setIsConfirmPending(true);
+
+    try {
+      const nextState = await activeState.onConfirm();
+      setConfirmModalState(nextState ?? null);
+    } finally {
+      setIsConfirmPending(false);
+    }
   };
 
   const handleCloseComments = () => {
@@ -370,6 +364,17 @@ export default function FeedDetail({
           </BottomSheetView>
         </KeyboardAvoidingView>
       </BottomSheetModal>
+
+      <ConfirmModal
+        visible={confirmModalState !== null}
+        title={confirmModalState?.title ?? ""}
+        description={confirmModalState?.description ?? ""}
+        confirmLabel={confirmModalState?.confirmLabel ?? "확인"}
+        confirmDestructive={confirmModalState?.destructive ?? false}
+        confirmDisabled={isConfirmPending || isReportPending}
+        onCancel={() => setConfirmModalState(null)}
+        onConfirm={() => void handleConfirmModal()}
+      />
     </>
   );
 }

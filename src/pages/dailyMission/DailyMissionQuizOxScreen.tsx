@@ -115,7 +115,7 @@ export default function DailyMissionQuizOxScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
       <ScreenHeader title="퀴즈 풀기" onBack={() => navigation.goBack()} />
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.headerBlock}>
           <Text style={styles.title}>오늘의 퀴즈!</Text>
           <Text style={styles.question}>{data.quizQuestion}</Text>
@@ -123,20 +123,21 @@ export default function DailyMissionQuizOxScreen({ navigation }: Props) {
 
         <View style={styles.optionsRow}>
           {options.map(option => {
-            const state =
-              answerResult != null
-                ? answerResult.isCorrect
-                  ? option.optionOrder === answerResult.answerNumber
-                    ? "correct"
-                    : "idle"
-                  : option.optionOrder === answerResult.selectedOptionNumber
-                    ? "wrong"
-                    : option.optionOrder === answerResult.answerNumber
-                      ? "answer"
-                      : "idle"
-                : selected === option.optionOrder
-                  ? "selected"
-                  : "idle";
+            const isCorrectAnswer = option.optionOrder === answerResult?.answerNumber;
+            const isWrongSelected =
+              option.optionOrder === answerResult?.selectedOptionNumber &&
+              answerResult != null &&
+              !answerResult.isCorrect;
+
+            const state = answerResult
+              ? isWrongSelected
+                ? "wrong"
+                : isCorrectAnswer
+                  ? "correct"
+                  : "idle"
+              : selected === option.optionOrder
+                ? "selected"
+                : "idle";
 
             return (
               <OxQuizOptionCard
@@ -186,15 +187,15 @@ export default function DailyMissionQuizOxScreen({ navigation }: Props) {
           onPress={answerResult ? goNext : () => void handleSubmit()}
           style={[
             styles.primaryButton,
-            !answerResult && selected === null ? styles.primaryButtonDisabled : null,
-            answerResult ? styles.primaryButtonNext : null,
+            !answerResult && (selected === null || submitAnswer.isPending) ? styles.primaryButtonDisabled : null,
+            answerResult ? styles.primaryButtonResult : null,
           ]}
         >
           <Text
             style={[
               styles.primaryButtonText,
-              !answerResult && selected === null ? styles.primaryButtonTextDisabled : null,
-              answerResult ? styles.primaryButtonTextNext : null,
+              !answerResult && (selected === null || submitAnswer.isPending) ? styles.primaryButtonTextDisabled : null,
+              answerResult ? styles.primaryButtonTextResult : null,
             ]}
           >
             {answerResult ? "다음" : submitAnswer.isPending ? "확인 중..." : "정답 확인하기"}
@@ -216,7 +217,7 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   headerBlock: {
-    gap: 10,
+    gap: 8,
     marginBottom: 52,
   },
   title: {
@@ -234,32 +235,32 @@ const styles = StyleSheet.create({
   optionsRow: {
     flexDirection: "row",
     gap: 12,
-    marginBottom: 34,
+    marginBottom: 32,
   },
   resultBlock: {
-    gap: 12,
+    gap: 8,
   },
   resultTitle: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontWeight: "700",
+    fontSize: 18,
+    lineHeight: 27,
+    fontWeight: "600",
   },
   resultTitleCorrect: {
-    color: "#46C02B",
+    color: "#3AB40B",
   },
   resultTitleWrong: {
-    color: "#FF6B6B",
+    color: "#F76868",
   },
   resultDescription: {
     fontSize: 14,
-    lineHeight: 28,
+    lineHeight: 22,
     fontWeight: "400",
   },
   resultDescriptionCorrect: {
-    color: "#46C02B",
+    color: "#3AB40B",
   },
   resultDescriptionWrong: {
-    color: "#FF6B6B",
+    color: "#F76868",
   },
   errorBlock: {
     marginTop: 20,
@@ -277,21 +278,22 @@ const styles = StyleSheet.create({
   },
   footer: {
     paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 28,
+    paddingTop: 12,
+    paddingBottom: 16,
+    backgroundColor: "#FFFFFF",
   },
   primaryButton: {
     minHeight: 56,
     borderRadius: 8,
-    backgroundColor: "#6FCF4A",
+    backgroundColor: "#72D14E",
     alignItems: "center",
     justifyContent: "center",
   },
   primaryButtonDisabled: {
     backgroundColor: "#EFEFEF",
   },
-  primaryButtonNext: {
-    backgroundColor: "#EFF9EA",
+  primaryButtonResult: {
+    backgroundColor: "#EEF9EA",
   },
   primaryButtonText: {
     fontSize: 18,
@@ -302,9 +304,7 @@ const styles = StyleSheet.create({
   primaryButtonTextDisabled: {
     color: "#BFBFBF",
   },
-  primaryButtonTextNext: {
-    color: "#46C02B",
+  primaryButtonTextResult: {
+    color: "#3AB40B",
   },
 });
-
-

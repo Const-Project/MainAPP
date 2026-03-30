@@ -1,6 +1,5 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import {
-  Alert,
   Image,
   RefreshControl,
   ScrollView,
@@ -12,6 +11,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { RootStackScreenProps } from "@/navigation/types";
 import { XmarkIcon } from "@/assets/icons/CommonIcons";
+import ConfirmModal from "@/components/common/ConfirmModal";
 import ScreenHeader from "@/components/common/ScreenHeader";
 import StatusView from "@/components/common/StatusView";
 import {
@@ -26,6 +26,7 @@ type Tab = "added" | "followed";
 
 export default function FollowScreen({ navigation }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>("added");
+  const [pendingRemoveUserId, setPendingRemoveUserId] = useState<number | null>(null);
   const userId = useTokenStore(state => state.userId);
   const followingQuery = useFollowing(userId);
   const followersQuery = useFollowers(userId);
@@ -64,21 +65,17 @@ export default function FollowScreen({ navigation }: Props) {
       return;
     }
 
-    Alert.alert(
-      "친구 삭제하기",
-      "사용자를 친구에서 삭제하시겠습니까?\n언제든 다시 추가할 수 있습니다.",
-      [
-        {
-          text: "취소",
-          style: "cancel",
-        },
-        {
-          text: "삭제",
-          style: "destructive",
-          onPress: () => void unfollowMutation.mutateAsync(targetUserId),
-        },
-      ]
-    );
+    setPendingRemoveUserId(targetUserId);
+  };
+
+  const handleRemoveFriend = async () => {
+    if (pendingRemoveUserId === null || unfollowMutation.isPending) {
+      return;
+    }
+
+    const targetUserId = pendingRemoveUserId;
+    setPendingRemoveUserId(null);
+    await unfollowMutation.mutateAsync(targetUserId);
   };
 
   return (
@@ -91,7 +88,6 @@ export default function FollowScreen({ navigation }: Props) {
         rightActionDisabled={isLoading || isRefetching}
       />
 
-      {/* Tabs are renamed to match the app copy while still mapping to following/follower queries. */}
       <View style={styles.tabRow}>
         <TouchableOpacity
           style={[styles.tabButton, activeTab === "added" && styles.tabButtonActive]}
@@ -142,11 +138,7 @@ export default function FollowScreen({ navigation }: Props) {
             />
           }
         >
-          {/* 한글 주석:
-              팔로우 탭은 활성 탭 쿼리만 다시 읽으면 되므로,
-              헤더 새로고침과 pull-to-refresh 모두 같은 handleRetry로 묶는다. */}
           {users.map(user => (
-            // The custom row matches the FE design more closely than the previous generic card.
             <View key={user.userId} style={styles.userRow}>
               <TouchableOpacity
                 style={styles.userInfo}
@@ -176,6 +168,17 @@ export default function FollowScreen({ navigation }: Props) {
           ))}
         </ScrollView>
       )}
+
+      <ConfirmModal
+        visible={pendingRemoveUserId !== null}
+        title="친구 삭제하기"
+        description={"사용자를 친구에서 삭제하시겠습니까?\n언제든 다시 추가할 수 있습니다."}
+        confirmLabel="삭제"
+        confirmDestructive
+        confirmDisabled={unfollowMutation.isPending}
+        onCancel={() => setPendingRemoveUserId(null)}
+        onConfirm={() => void handleRemoveFriend()}
+      />
     </SafeAreaView>
   );
 }
