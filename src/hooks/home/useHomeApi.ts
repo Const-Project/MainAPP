@@ -6,7 +6,7 @@ import {
   getHomeSummary,
   getNotifications,
   getTrackingPromptStatus,
-  patchNotificationRead,
+  patchAllNotificationsRead,
   postGardenMyWater,
   postGardenSunlight,
   postTrackingPromptConfirm,
@@ -81,55 +81,64 @@ export const useReadNotifications = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (notificationIds: number[]) => {
-      await Promise.all(
-        notificationIds.map(notificationId => patchNotificationRead(notificationId))
-      );
-    },
-    onSuccess: async (_, notificationIds) => {
+    mutationFn: patchAllNotificationsRead,
+    onMutate: async () => {
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: ["notifications"] }),
+        queryClient.cancelQueries({ queryKey: ["home-summary"] }),
+      ]);
+
+      const previousNotifications =
+        queryClient.getQueryData<GlobalResponse<NotificationItem[]>>(["notifications"]);
+      const previousHomeSummary =
+        queryClient.getQueryData<GlobalResponse<HomeSummaryPayload>>(["home-summary"]);
+
       queryClient.setQueryData<GlobalResponse<NotificationItem[]>>(
         ["notifications"],
         previous =>
           previous
             ? {
                 ...previous,
-                result: previous.result.map(item =>
-                  notificationIds.includes(item.id)
-                    ? { ...item, isRead: true, read: true }
-                    : item
-                ),
+                result: previous.result.map(item => ({
+                  ...item,
+                  isRead: true,
+                  read: true,
+                })),
               }
             : previous
       );
 
       queryClient.setQueryData<GlobalResponse<HomeSummaryPayload>>(
         ["home-summary"],
-        previous => {
-          if (!previous) {
-            return previous;
-          }
-
-          const unreadDelta = previous.result.userInfo.unreadNotificationCount;
-          const nextUnreadCount = Math.max(
-            0,
-            unreadDelta - notificationIds.length
-          );
-
-          return {
-            ...previous,
-            result: {
-              ...previous.result,
-              userInfo: {
-                ...previous.result.userInfo,
-                unreadNotificationCount: nextUnreadCount,
-              },
-            },
-          };
-        }
+        previous =>
+          previous
+            ? {
+                ...previous,
+                result: {
+                  ...previous.result,
+                  userInfo: {
+                    ...previous.result.userInfo,
+                    unreadNotificationCount: 0,
+                  },
+                },
+              }
+            : previous
       );
 
-      await queryClient.invalidateQueries({ queryKey: ["notifications"] });
-      await queryClient.invalidateQueries({ queryKey: ["home-summary"] });
+      return { previousNotifications, previousHomeSummary };
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previousNotifications) {
+        queryClient.setQueryData(["notifications"], context.previousNotifications);
+      }
+
+      if (context?.previousHomeSummary) {
+        queryClient.setQueryData(["home-summary"], context.previousHomeSummary);
+      }
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      void queryClient.invalidateQueries({ queryKey: ["home-summary"] });
     },
   });
 };

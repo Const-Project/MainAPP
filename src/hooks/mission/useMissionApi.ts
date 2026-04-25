@@ -4,6 +4,7 @@ import {
   answerQuizApi,
   getDailySurveyApi,
   getQuizApi,
+  getTodayKeywordApi,
   uploadDiaryImageApi,
   writeDiaryApi,
 } from "@/apis/missions/missionApi";
@@ -17,7 +18,9 @@ import type {
   GetDailySurveyResponse,
   GetQuizRequest,
   GetQuizResponse,
+  GetTodayKeywordResponse,
   MissionQuiz,
+  TodayKeyword,
   WriteDiaryRequest,
   WriteDiaryResponse,
 } from "@/types/missions";
@@ -33,6 +36,14 @@ export const useWriteDiaryImageUpload = () =>
 export const useWriteDiarySubmit = () =>
   useMutation<WriteDiaryResponse, Error, WriteDiaryRequest>({
     mutationFn: payload => writeDiaryApi(payload),
+  });
+
+export const useTodayKeyword = () =>
+  useQuery<GetTodayKeywordResponse, Error, TodayKeyword>({
+    queryKey: ["today-keyword"],
+    queryFn: getTodayKeywordApi,
+    select: data => data.result,
+    staleTime: 5 * 60_000,
   });
 
 export const useMissionQuiz = (params: GetQuizRequest) =>

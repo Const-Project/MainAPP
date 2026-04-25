@@ -7,17 +7,18 @@ import ScreenHeader from "@/components/common/ScreenHeader";
 import CheckIcon from "@/assets/icons/Check.svg";
 import Check2Icon from "@/assets/icons/Check2.svg";
 import ImageAttachmentCard from "@/components/dailyMission/ImageAttachmentCard";
-import { useWriteDiaryImageUpload, useWriteDiarySubmit } from "@/hooks/mission/useMissionApi";
+import {
+  useTodayKeyword,
+  useWriteDiaryImageUpload,
+  useWriteDiarySubmit,
+} from "@/hooks/mission/useMissionApi";
 import type { RootStackScreenProps } from "@/navigation/types";
 
 type Props = RootStackScreenProps<"DailyMissionWriteDiary">;
 
-// 임시 하드코딩 힌트 문구 (추후 백엔드 API 연결 예정)
-const HINT_KEYWORD = "내 식물의 겨울나기";
-const HINT_SUFFIX = "에 대해서\n이야기해보는 건 어때요?";
-
 export default function DailyMissionWriteDiaryScreen({ navigation }: Props) {
   const queryClient = useQueryClient();
+  const { data: todayKeyword } = useTodayKeyword();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [isPublic, setIsPublic] = useState(false);
@@ -127,6 +128,11 @@ export default function DailyMissionWriteDiaryScreen({ navigation }: Props) {
     month: "long",
     day: "numeric",
   });
+  const keyword = todayKeyword?.keyword.trim();
+  const contentPlaceholder =
+    keyword && !keyword.includes("없습니다") && !keyword.includes("실패")
+      ? `${keyword}에 대해 이야기 해보는 건 어때요?`
+      : "오늘 식물에게 있었던 일을 적어주세요";
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
@@ -168,18 +174,12 @@ export default function DailyMissionWriteDiaryScreen({ navigation }: Props) {
         <TextInput
           value={content}
           onChangeText={setContent}
-          placeholder="오늘 식물에게 있었던 일을 적어주세요"
+          placeholder={contentPlaceholder}
           placeholderTextColor="#BFBFBF"
           multiline
           textAlignVertical="top"
           style={styles.contentInput}
         />
-
-        {/* AI 글쓰기 힌트 문구 (추후 백엔드 API 연결 예정) */}
-        <Text style={styles.hintText}>
-          <Text style={styles.hintKeyword}>{HINT_KEYWORD}</Text>
-          {HINT_SUFFIX}
-        </Text>
 
         {/* 공개 여부 선택 */}
         <View style={styles.visibilityRow}>
@@ -250,19 +250,6 @@ const styles = StyleSheet.create({
     minHeight: 80,
     paddingVertical: 0,
     paddingHorizontal: 0,
-  },
-  // AI 힌트 문구 영역
-  hintText: {
-    fontSize: 16,
-    fontWeight: "400",
-    color: "#9B9B9B",
-    lineHeight: 16 * 1.6,
-  },
-  // 힌트 키워드 강조 (SemiBold 18px)
-  hintKeyword: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#9B9B9B",
   },
   // 공개 여부 선택 행
   visibilityRow: {

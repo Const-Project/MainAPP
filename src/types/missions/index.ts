@@ -35,6 +35,17 @@ export interface WriteDiaryResponse {
   result: string;
 }
 
+export interface TodayKeyword {
+  keyword: string;
+}
+
+export interface GetTodayKeywordResponse {
+  isSuccess: boolean;
+  code: string;
+  message: string;
+  result: TodayKeyword;
+}
+
 export interface QuizOption {
   optionOrder: number;
   optionText: string;

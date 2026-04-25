@@ -128,6 +128,21 @@ export default function ProfileScreen({ navigation, route }: Props) {
       return;
     }
 
+    if (!data || data.followStatus !== FollowStatus.FOLLOWING) {
+      setToastMessage("친구 추가 후 물을 줄 수 있어요.");
+      return;
+    }
+
+    const targetGarden = data.userGardens.find(garden => garden.gardenId === gardenId);
+    if (!targetGarden?.isWateringAbleByMe) {
+      setToastMessage(
+        data.leftWaterCountForOthers <= 0
+          ? "오늘 줄 수 있는 친구 물주기를 모두 사용했어요."
+          : "오늘은 이미 물을 주었습니다."
+      );
+      return;
+    }
+
     const finishActionTiming = createTimingLogger("ProfileScreen", "friend water action", {
       userId,
       gardenId,

@@ -52,6 +52,11 @@ export const patchNotificationRead = async (notificationId: number) => {
   return res.data;
 };
 
+export const patchAllNotificationsRead = async () => {
+  const res = await api.patch("/api/v1/notifications/read-all");
+  return res.data;
+};
+
 export const getGuestbookList = async (
   userId: number
 ): ApiResponse<GuestbookEntry[]> => {

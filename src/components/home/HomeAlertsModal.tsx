@@ -31,7 +31,10 @@ export default function HomeAlertsModal({
   onClose: () => void;
 }) {
   const [activeTab, setActiveTab] = useState<AlertTab>("GUESTBOOK");
-  const [hasMarkedRecordAsReadThisOpen, setHasMarkedRecordAsReadThisOpen] = useState(false);
+  const [
+    hasMarkedNotificationsAsReadThisOpen,
+    setHasMarkedNotificationsAsReadThisOpen,
+  ] = useState(false);
   const openTimingRef = useRef<ReturnType<typeof createTimingLogger> | null>(null);
   const notificationsQuery = useNotifications(visible);
   const guestbookQuery = useGuestbookList(userId, visible);
@@ -63,35 +66,19 @@ export default function HomeAlertsModal({
 
   useEffect(() => {
     if (!visible) {
-      setHasMarkedRecordAsReadThisOpen(false);
+      setHasMarkedNotificationsAsReadThisOpen(false);
       openTimingRef.current = null;
       return;
     }
 
-    if (activeTab !== "RECORD" || hasMarkedRecordAsReadThisOpen) {
+    if (hasMarkedNotificationsAsReadThisOpen) {
       return;
     }
 
-    if (notificationsQuery.isLoading || !notificationsQuery.data) {
-      return;
-    }
-
-    const unreadNotificationIds = notificationsQuery.data
-      .filter(item => !isNotificationRead(item))
-      .map(item => item.id);
-
-    setHasMarkedRecordAsReadThisOpen(true);
-
-    if (unreadNotificationIds.length === 0) {
-      return;
-    }
-
-    void readNotificationsMutation.mutateAsync(unreadNotificationIds);
+    setHasMarkedNotificationsAsReadThisOpen(true);
+    void readNotificationsMutation.mutateAsync();
   }, [
-    activeTab,
-    hasMarkedRecordAsReadThisOpen,
-    notificationsQuery.data,
-    notificationsQuery.isLoading,
+    hasMarkedNotificationsAsReadThisOpen,
     readNotificationsMutation,
     visible,
   ]);

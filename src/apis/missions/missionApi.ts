@@ -8,6 +8,7 @@ import type {
   GetDailySurveyResponse,
   GetQuizRequest,
   GetQuizResponse,
+  GetTodayKeywordResponse,
   WriteDiaryRequest,
   WriteDiaryResponse,
 } from "@/types/missions";
@@ -28,6 +29,11 @@ export const writeDiaryApi = async (
   payload: WriteDiaryRequest
 ): Promise<WriteDiaryResponse> => {
   const res = await api.post("/api/v1/diaries", payload);
+  return res.data;
+};
+
+export const getTodayKeywordApi = async (): Promise<GetTodayKeywordResponse> => {
+  const res = await api.get("/api/v1/keywords/today");
   return res.data;
 };
 
