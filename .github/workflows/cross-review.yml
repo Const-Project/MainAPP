@@ -1,0 +1,25 @@
+name: Cross-Model Review
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  codex-review:
+    if: contains(github.event.pull_request.labels.*.name, 'claude-generated')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Codex review against plan.md
+        run: |
+          codex review \
+            --plan plan.md \
+            --diff "$(git diff origin/main)" \
+            --output review.md \
+            --criteria "Sprint Contract 만족 / 자동 체크 통과 / plan.md 외 변경사항"
+      - name: Block merge if issues found
+        run: |
+          if grep -q "ISSUE FOUND" review.md; then
+            gh pr comment ${{ github.event.pull_request.number }} \
+              --body-file review.md
+            exit 1
+          fi
