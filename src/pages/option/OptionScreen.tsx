@@ -10,6 +10,7 @@ import {
 import ConfirmModal from "@/components/common/ConfirmModal";
 import ScreenHeader from "@/components/common/ScreenHeader";
 import { useNotificationSettings, useUpdateNotificationSettings } from "@/hooks/option/useNotificationApi";
+import { useDeleteAccount } from "@/hooks/option/useDeleteAccount";
 import useTokenStore from "@/stores/useTokenStore";
 import { logout } from "@/utils/auth";
 import { registerDeviceFcmToken, unregisterDeviceFcmToken } from "@/utils/fcm";
@@ -19,9 +20,11 @@ type Props = MainTabScreenProps<"Option">;
 export default function OptionScreen({ navigation }: Props) {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isLogoutConfirmVisible, setIsLogoutConfirmVisible] = useState(false);
+  const [isDeleteConfirmVisible, setIsDeleteConfirmVisible] = useState(false);
   const { accessToken, userId, hasHydrated } = useTokenStore();
   const { data: notificationSettings } = useNotificationSettings();
   const updateSettingsMutation = useUpdateNotificationSettings();
+  const deleteAccountMutation = useDeleteAccount();
   const pushNotification = notificationSettings?.notificationEnabled ?? true;
   const marketingConsent = notificationSettings?.marketingConsent ?? false;
 
@@ -65,6 +68,27 @@ export default function OptionScreen({ navigation }: Props) {
     setIsLogoutConfirmVisible(true);
   };
 
+  const handleDeleteAccount = () => {
+    if (deleteAccountMutation.isPending || !accessToken) {
+      return;
+    }
+
+    setIsDeleteConfirmVisible(true);
+  };
+
+  const handleConfirmDeleteAccount = () => {
+    if (deleteAccountMutation.isPending || !accessToken) {
+      return;
+    }
+
+    setIsDeleteConfirmVisible(false);
+    deleteAccountMutation.mutate(undefined, {
+      onError: () => {
+        Alert.alert("회원 탈퇴 실패", "회원 탈퇴에 실패했습니다. 잠시 후 다시 시도해주세요.");
+      },
+    });
+  };
+
   const handleConfirmLogout = async () => {
     if (isLoggingOut || !accessToken) {
       return;
@@ -105,6 +129,12 @@ export default function OptionScreen({ navigation }: Props) {
           disabled={!hasHydrated || !accessToken || isLoggingOut}
           onPress={handleLogout}
         />
+        <OptionRow
+          label={deleteAccountMutation.isPending ? "탈퇴 처리 중..." : "회원 탈퇴"}
+          danger
+          disabled={!hasHydrated || !accessToken || deleteAccountMutation.isPending}
+          onPress={handleDeleteAccount}
+        />
 
         <View style={styles.metaBlock}>
           <Text style={styles.metaText}>{loginStatus}</Text>
@@ -121,6 +151,16 @@ export default function OptionScreen({ navigation }: Props) {
         confirmDisabled={isLoggingOut}
         onCancel={() => setIsLogoutConfirmVisible(false)}
         onConfirm={() => void handleConfirmLogout()}
+      />
+      <ConfirmModal
+        visible={isDeleteConfirmVisible}
+        title="회원 탈퇴"
+        description={"탈퇴하면 모든 데이터가 삭제되며 복구할 수 없습니다.\n정말 탈퇴하시겠습니까?"}
+        confirmLabel="탈퇴하기"
+        confirmDestructive
+        confirmDisabled={deleteAccountMutation.isPending}
+        onCancel={() => setIsDeleteConfirmVisible(false)}
+        onConfirm={handleConfirmDeleteAccount}
       />
     </SafeAreaView>
   );
