@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import {
   View,
   Text,
@@ -50,6 +50,17 @@ export default function FeedList({
     );
   }
 
+  if (!feedData.result.length) {
+    return (
+      <View style={styles.centerContainer}>
+        <Text style={styles.emptyTitle}>아직 올라온 게시글이 없습니다.</Text>
+        <Text style={styles.emptyDescription}>
+          피드 데이터가 준비되면 이 화면에서 바로 상세로 이동할 수 있습니다.
+        </Text>
+      </View>
+    );
+  }
+
   const renderItem = ({ item }: { item: FeedPost }) => (
     <TouchableOpacity
       style={styles.gridItem}
@@ -59,7 +70,7 @@ export default function FeedList({
       <Image
         source={{ uri: item.imageUrl }}
         style={styles.image}
-        resizeMode="cover"
+        resizeMode="contain"
       />
     </TouchableOpacity>
   );
@@ -92,6 +103,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#EF4444",
   },
+  emptyTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#171717",
+  },
+  emptyDescription: {
+    marginTop: 4,
+    fontSize: 13,
+    lineHeight: 18,
+    color: "#6B7280",
+    textAlign: "center",
+  },
   listContainer: {
     flexGrow: 1,
   },
@@ -99,9 +122,12 @@ const styles = StyleSheet.create({
     width: ITEM_SIZE,
     height: ITEM_SIZE,
     backgroundColor: "#F3F4F6",
+    padding: 6,
   },
   image: {
     width: "100%",
     height: "100%",
+    borderRadius: 8,
   },
 });
+

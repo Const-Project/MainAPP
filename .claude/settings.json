@@ -1,0 +1,62 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/USER/.claude/**)",
+      "Bash(bash /c/MainAPP/.claude/hooks/force-advisor-check.sh)",
+      "Bash(echo \"exit=$?\")",
+      "Bash(codex --version)",
+      "Bash(npx @openai/codex --version)",
+      "Bash(npm show *)",
+      "Edit(/.claude/skills/advisor/**)"
+    ],
+    "additionalDirectories": [
+      "c:\\MainAPP\\.claude\\skills"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/block-dangerous.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/track-failures.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/auto-format.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/force-advisor-check.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "enabledPlugins": {
+    "codex@openai-codex": true
+  }
+}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,7 +9,9 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useQueryClient } from "@tanstack/react-query";
 import type { RootStackParamList } from "@/navigation/types";
+import { getDiaries } from "@/apis/log/diariesApi";
 import LogCalendar from "@/components/log/LogCalendar";
 import MyDiary from "@/components/log/MyDiary";
 
@@ -19,6 +21,22 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 export default function LogScreen() {
   const [activeTab, setActiveTab] = useState<Tab>("mission");
   const navigation = useNavigation<NavigationProp>();
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    /*
+     * 한글 주석:
+     * 로그 화면 진입 시 현재 탭과 무관하게 일기 데이터를 미리 가져온다.
+     * 탭 전환 즉시 데이터가 준비돼 있어 로딩 지연이 없다.
+     */
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
+    void queryClient.prefetchQuery({
+      queryKey: ["diaries", year, month],
+      queryFn: () => getDiaries(year, month),
+    });
+  }, [queryClient]);
 
   const handleDiarySelect = (diaryId: number) => {
     navigation.navigate("LogDetail", { id: diaryId });

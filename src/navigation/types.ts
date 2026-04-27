@@ -1,4 +1,4 @@
-import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
+﻿import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
 import type {
   CompositeScreenProps,
   NavigatorScreenParams,
@@ -15,9 +15,22 @@ export type RootStackParamList = {
   // 인증/온보딩
   Onboarding: undefined;
   Register: undefined;
+  SocialNickname: { initialNickname?: string } | undefined;
 
   // 프로필
   Profile: { userId: number };
+  Guestbook: { userId: number; userNickname?: string };
+
+  // 설정
+  UserNicknameEdit: undefined;
+  AvatarNicknameEdit: undefined;
+  AvatarNicknameEditStep2: {
+    avatarId: number;
+    avatarName: string;
+    avatarImageUrl: string;
+  };
+  Policy: undefined;
+  ServiceGuide: undefined;
 
   // 팔로우
   Follow: undefined;
@@ -30,20 +43,61 @@ export type RootStackParamList = {
   LogDetail: { id: number };
 
   // 배송
-  Delivery: undefined;
-  DeliveryComplete: undefined;
-  UnlockGarden: undefined;
+  Delivery:
+    | {
+        seedType?: number;
+        seedName?: string;
+        gardenId?: number;
+        gardenSlotNumber?: number;
+      }
+    | undefined;
+  DeliveryComplete:
+    | {
+        seedName?: string;
+        gardenId?: number;
+        gardenSlotNumber?: number;
+      }
+    | undefined;
+  UnlockGarden:
+    | {
+        gardenId?: number;
+        gardenSlotNumber?: number;
+      }
+    | undefined;
 
   // 식물 등록 플로우
-  RegistrationAvatar: undefined;
-  RegistrationCreationDetail: undefined;
-  RegistrationSelectionDetail: undefined;
+  RegistrationAvatar:
+    | {
+        entry?: "initial" | "garden";
+      }
+    | undefined;
+  RegistrationCreationDetail:
+    | {
+        entry?: "initial" | "garden";
+      }
+    | undefined;
+  RegistrationCreationPending: {
+    entry?: "initial" | "garden";
+    imageUri: string;
+    fileName: string;
+    fileType: string;
+  };
+  RegistrationCreationComplete: {
+    entry?: "initial" | "garden";
+    imageUrl: string;
+  };
+  RegistrationSelectionDetail:
+    | {
+        entry?: "initial" | "garden";
+      }
+    | undefined;
   RegistrationPlantNickname: undefined;
 
   // 데일리 미션
   DailyMissionWriteDiary: undefined;
   DailyMissionQuizMultipleChoice: undefined;
   DailyMissionQuizOx: undefined;
+  DailyMissionChecking: undefined;
 };
 
 /**

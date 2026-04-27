@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(update-config)",
+      "mcp__figma-desktop__get_design_context",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\(''''mcpServers'''', {}\\), indent=2\\)\\)\")",
+      "Bash(claude mcp:*)",
+      "mcp__plugin_figma_figma__whoami",
+      "mcp__plugin_figma_figma__get_design_context",
+      "mcp__plugin_figma_figma__get_metadata",
+      "Bash(python3:*)",
+      "mcp__figma-desktop__get_screenshot",
+      "mcp__plugin_figma_figma__get_screenshot",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Read(//c/MainBE/**)",
+      "Bash(xargs grep:*)",
+      "Bash(head -20 grep -n \"usePostComment\\\\|useDeleteComment\\\\|refetch\\\\|comments\" c:/MainAPP/src/pages/feed/FeedAvatarScreen.tsx)",
+      "Bash(grep -r fastapi /c/MainBE --include=*.yml --include=*.yaml --include=*.properties --include=*.env)"
+    ]
+  }
+}

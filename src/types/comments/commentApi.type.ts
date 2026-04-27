@@ -6,6 +6,7 @@ export type PostCommentRequest = {
 
 export type PostCommentResponse = {
   id: number;
+  writerId: number;
   writer: string;
   content: string;
   targetId: number;

@@ -1,13 +1,11 @@
+import { useEffect } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import type { MainTabParamList } from "./types";
 
-// 스크린 임포트
 import HomeScreen from "@/pages/home/HomeScreen";
 import FeedScreen from "@/pages/feed/FeedScreen";
 import LogScreen from "@/pages/log/LogScreen";
 import OptionScreen from "@/pages/option/OptionScreen";
-
-// 아이콘 임포트
 import {
   HomeIcon,
   CalendarIcon,
@@ -16,10 +14,15 @@ import {
   ACTIVE_COLOR,
   INACTIVE_COLOR,
 } from "@/assets/icons/TabIcons";
+import { debugLog } from "@/utils/debug";
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 export default function MainTabNavigator() {
+  useEffect(() => {
+    debugLog("MainTabNavigator", "mounted");
+  }, []);
+
   return (
     <Tab.Navigator
       initialRouteName="Home"

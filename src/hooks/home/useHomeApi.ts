@@ -1,0 +1,210 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { AxiosError } from "axios";
+import {
+  getGuestbookList,
+  getHomePanel,
+  getHomeSummary,
+  getNotifications,
+  getTrackingPromptStatus,
+  patchAllNotificationsRead,
+  postGardenMyWater,
+  postGardenSunlight,
+  postTrackingPromptConfirm,
+} from "@/apis/home/homeApi";
+import type { GlobalResponse } from "@/types/common/apiResponse.type";
+import type { GuestbookEntry, NotificationItem } from "@/types/home/alerts";
+import type { HomeSummaryPayload } from "@/types/home/garden";
+import type { HomePanelPayload } from "@/types/home/panel";
+import type {
+  TrackingPromptConfirmRequest,
+  TrackingPromptStatusPayload,
+} from "@/types/home/tracking";
+import { createTimingLogger, debugLog } from "@/utils/debug";
+
+export const useHomeApi = () =>
+  useQuery<
+    GlobalResponse<HomeSummaryPayload>,
+    AxiosError,
+    HomeSummaryPayload
+  >({
+    queryKey: ["home-summary"],
+    queryFn: getHomeSummary,
+    select: data => data.result,
+    refetchOnMount: "always",
+  });
+
+export const useHomePanelApi = () =>
+  useQuery<GlobalResponse<HomePanelPayload>, AxiosError, HomePanelPayload>({
+    queryKey: ["home-panel"],
+    queryFn: getHomePanel,
+    select: data => data.result,
+    refetchOnMount: "always",
+    // 한글 주석:
+    // 미션 진행률은 1분 이내 재진입 시 캐시를 그대로 사용.
+    // 가든 씬(home-summary)보다 덜 긴급해서 background fetch 우선순위를 낮춤.
+    staleTime: 60_000,
+  });
+
+export const useTrackingPromptStatus = () =>
+  useQuery<
+    GlobalResponse<TrackingPromptStatusPayload>,
+    AxiosError,
+    TrackingPromptStatusPayload
+  >({
+    // 한글 주석:
+    // 홈 진입, 홈 복귀, 액션 성공 뒤 모두 같은 키를 invalidate/refetch 해서
+    // tracking 리포트 노출 여부를 한 군데 기준으로 맞춘다.
+    queryKey: ["tracking-report-status"],
+    queryFn: getTrackingPromptStatus,
+    select: data => data.result,
+    refetchOnMount: "always",
+  });
+
+export const useTrackingPromptConfirm = () =>
+  useMutation<
+    GlobalResponse<Record<string, never>>,
+    AxiosError,
+    TrackingPromptConfirmRequest
+  >({
+    mutationFn: postTrackingPromptConfirm,
+  });
+
+export const useNotifications = (enabled: boolean) =>
+  useQuery<GlobalResponse<NotificationItem[]>, AxiosError, NotificationItem[]>({
+    queryKey: ["notifications"],
+    queryFn: getNotifications,
+    select: data => data.result,
+    enabled,
+  });
+
+export const useReadNotifications = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: patchAllNotificationsRead,
+    onMutate: async () => {
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: ["notifications"] }),
+        queryClient.cancelQueries({ queryKey: ["home-summary"] }),
+      ]);
+
+      const previousNotifications =
+        queryClient.getQueryData<GlobalResponse<NotificationItem[]>>(["notifications"]);
+      const previousHomeSummary =
+        queryClient.getQueryData<GlobalResponse<HomeSummaryPayload>>(["home-summary"]);
+
+      queryClient.setQueryData<GlobalResponse<NotificationItem[]>>(
+        ["notifications"],
+        previous =>
+          previous
+            ? {
+                ...previous,
+                result: previous.result.map(item => ({
+                  ...item,
+                  isRead: true,
+                  read: true,
+                })),
+              }
+            : previous
+      );
+
+      queryClient.setQueryData<GlobalResponse<HomeSummaryPayload>>(
+        ["home-summary"],
+        previous =>
+          previous
+            ? {
+                ...previous,
+                result: {
+                  ...previous.result,
+                  userInfo: {
+                    ...previous.result.userInfo,
+                    unreadNotificationCount: 0,
+                  },
+                },
+              }
+            : previous
+      );
+
+      return { previousNotifications, previousHomeSummary };
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previousNotifications) {
+        queryClient.setQueryData(["notifications"], context.previousNotifications);
+      }
+
+      if (context?.previousHomeSummary) {
+        queryClient.setQueryData(["home-summary"], context.previousHomeSummary);
+      }
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      void queryClient.invalidateQueries({ queryKey: ["home-summary"] });
+    },
+  });
+};
+
+export const useGuestbookList = (userId: number | null, enabled: boolean) =>
+  useQuery<GlobalResponse<GuestbookEntry[]>, AxiosError, GuestbookEntry[]>({
+    queryKey: ["guestbook-list", userId],
+    queryFn: () => getGuestbookList(userId as number),
+    select: data => data.result,
+    enabled: enabled && userId !== null,
+  });
+
+export const useGardenSunlightAction = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (gardenId: number) => postGardenSunlight(gardenId),
+    onSuccess: () => {
+      const finishRefreshTiming = createTimingLogger(
+        "useGardenSunlightAction",
+        "post-action background refresh"
+      );
+
+      void Promise.allSettled([
+        queryClient.invalidateQueries({ queryKey: ["home-summary"] }),
+        queryClient.invalidateQueries({ queryKey: ["home-panel"] }),
+        queryClient.invalidateQueries({ queryKey: ["tracking-report-status"] }),
+      ]).then(results => {
+        const rejectedCount = results.filter(result => result.status === "rejected").length;
+
+        finishRefreshTiming({ rejectedCount });
+
+        if (rejectedCount > 0) {
+          debugLog("useGardenSunlightAction", "background refresh had failures", { results });
+        }
+      });
+    },
+  });
+};
+
+export const useGardenWaterAction = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (gardenId: number) => postGardenMyWater(gardenId),
+    onSuccess: () => {
+      const finishRefreshTiming = createTimingLogger(
+        "useGardenWaterAction",
+        "post-action background refresh"
+      );
+
+      void Promise.allSettled([
+        queryClient.invalidateQueries({ queryKey: ["home-summary"] }),
+        queryClient.invalidateQueries({ queryKey: ["home-panel"] }),
+        queryClient.invalidateQueries({ queryKey: ["tracking-report-status"] }),
+      ]).then(results => {
+        const rejectedCount = results.filter(result => result.status === "rejected").length;
+
+        finishRefreshTiming({ rejectedCount });
+
+        if (rejectedCount > 0) {
+          debugLog("useGardenWaterAction", "background refresh had failures", { results });
+        }
+      });
+    },
+  });
+};
+
+export default useHomeApi;

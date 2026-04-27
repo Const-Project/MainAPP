@@ -7,7 +7,7 @@ import { registerApi } from "@/apis/register/registerApi";
 // useRegisterApi는 TanStack Query의 useMutation을 정의해서 반환
 
 export const useRegisterApi = () => {
-  const { setAccessToken, setRefreshToken, setUserId } = useTokenStore();
+  const { setAuth } = useTokenStore();
 
   const postRegisterMutation = useMutation<
     GlobalResponse<PostRegisterResponse>,
@@ -16,9 +16,11 @@ export const useRegisterApi = () => {
   >({
     mutationFn: (nickname: string) => registerApi(nickname),
     onSuccess: res => {
-      setAccessToken(res.result.accessToken);
-      setRefreshToken(res.result.refreshToken);
-      setUserId(String(res.result.userId));
+      setAuth({
+        accessToken: res.result.accessToken,
+        refreshToken: res.result.refreshToken,
+        userId: String(res.result.userId),
+      });
     },
   });
 

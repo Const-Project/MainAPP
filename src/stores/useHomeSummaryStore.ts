@@ -12,6 +12,7 @@ type HomeSummaryState = {
   user: UserInfo | null;
   gardens: GardenSummary[];
   missions: TodayMission[];
+  todayDiaryId: number | null;
 
   hydrate: (payload: HomeSummaryPayload) => void;
   updateGarden: (gardenId: number, patch: Partial<GardenSummary>) => void;
@@ -33,6 +34,7 @@ const initialState: Omit<
   user: null,
   gardens: [],
   missions: [],
+  todayDiaryId: null,
 };
 
 export const useHomeSummaryStore = create<HomeSummaryState>()(
@@ -45,6 +47,7 @@ export const useHomeSummaryStore = create<HomeSummaryState>()(
           user: payload.userInfo,
           gardens: payload.gardenSummaries,
           missions: payload.todayMissions,
+          todayDiaryId: payload.todayDiaryId ?? null,
         })),
 
       updateGarden: (gardenId, patch) =>
@@ -69,6 +72,7 @@ export const useHomeSummaryStore = create<HomeSummaryState>()(
         user: state.user,
         gardens: state.gardens,
         missions: state.missions,
+        todayDiaryId: state.todayDiaryId,
       }),
     }
   )

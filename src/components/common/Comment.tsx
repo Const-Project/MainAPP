@@ -1,12 +1,20 @@
 import React from "react";
-import { View, Text, Image, StyleSheet } from "react-native";
+import { View, Text, Image, StyleSheet, TouchableOpacity } from "react-native";
 import type { CommentItem } from "@/types/log/diary";
 
 type Props = {
   comment: CommentItem;
+  actionLabel?: string;
+  onActionPress?: () => void;
+  actionDisabled?: boolean;
 };
 
-export default function Comment({ comment }: Props) {
+export default function Comment({
+  comment,
+  actionLabel,
+  onActionPress,
+  actionDisabled = false,
+}: Props) {
   return (
     <View style={styles.container}>
       {/* 프로필 이미지 */}
@@ -28,6 +36,17 @@ export default function Comment({ comment }: Props) {
       <View style={styles.contentContainer}>
         <View style={styles.writerRow}>
           <Text style={styles.writerName}>{comment.writer}</Text>
+          {actionLabel && onActionPress ? (
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={onActionPress}
+              disabled={actionDisabled}
+            >
+              <Text style={[styles.reportText, actionDisabled ? styles.reportTextDisabled : null]}>
+                {actionLabel}
+              </Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
 
         {/* 댓글 내용 */}
@@ -81,6 +100,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: "#171717",
+  },
+  reportText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#6B7280",
+  },
+  reportTextDisabled: {
+    color: "#9CA3AF",
   },
   commentContent: {
     fontSize: 14,
