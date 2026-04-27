@@ -29,7 +29,6 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-dev-client",
       "expo-secure-store",
       "expo-web-browser",
       [
@@ -38,7 +37,8 @@
           "icon": "./assets/icon.png",
           "color": "#3AB40B"
         }
-      ]
+      ],
+      "expo-font"
     ],
     "extra": {
       "eas": {

@@ -10,15 +10,15 @@ const ensureNotificationPermission = async (): Promise<boolean> => {
     return false;
   }
 
-  const { status: existing } = await Notifications.getPermissionsAsync();
-  let finalStatus = existing;
+  const { granted: existing } = await Notifications.getPermissionsAsync();
 
-  if (existing !== "granted") {
-    const { status } = await Notifications.requestPermissionsAsync();
-    finalStatus = status;
+  if (existing) {
+    return true;
   }
 
-  if (finalStatus !== "granted") {
+  const { granted } = await Notifications.requestPermissionsAsync();
+
+  if (!granted) {
     debugLog("FCM", "notification permission denied");
     return false;
   }

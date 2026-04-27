@@ -19,14 +19,14 @@ React Native (Expo) 기반 모바일 애플리케이션
 ### 1. 사전 요구사항
 
 ```bash
-# Node.js 버전 확인 (18.x 이상 권장)
+# Node.js 버전 확인 (20.19.x 이상 권장)
 node -v
 
 # npm 버전 확인
 npm -v
 ```
 
-Node.js가 설치되어 있지 않다면 [nodejs.org](https://nodejs.org)에서 LTS 버전을 설치하세요.
+Node.js 20.19.x 이상을 권장합니다. [nodejs.org](https://nodejs.org)에서 LTS 버전(20 또는 22)을 설치하세요.
 
 ---
 
@@ -45,31 +45,37 @@ npm install
 
 ### 3. 개발 서버 실행
 
-이거 권장 -> WIFI 같지 않아도 됨. (규영)
-npx expo start --clear --tunnel
-
+#### Expo Go 경로 (Apple Developer 계정 불필요)
 
 ```bash
-npx expo start
+# 터널 모드: PC와 iPhone이 같은 Wi-Fi가 아니어도 연결됩니다
+npx expo start --tunnel --clear
 ```
 
-실행 후 터미널에 QR 코드가 표시됩니다.
+#### Development Build 경로 (native 모듈 개발 시)
+
+`expo-dev-client` 가 제거된 상태입니다. `expo run:android / expo run:ios` 개발 빌드가 필요한 경우
+`npx expo install expo-dev-client` 후 `app.json` plugins에 `"expo-dev-client"` 를 다시 추가하세요.
 
 ---
 
 ### 4. 앱 실행 방법
 
-#### 방법 A: 실제 기기 (권장)
+#### 방법 A: 실제 기기 — Expo Go (권장, 계정 불필요)
 
 1. **Expo Go 앱 설치**
    - Android: [Play Store](https://play.google.com/store/apps/details?id=host.exp.exponent)
    - iOS: [App Store](https://apps.apple.com/app/expo-go/id982107779)
 
-2. **QR 코드 스캔**
+2. **서버 실행 후 QR 코드 스캔**
+   ```bash
+   npx expo start --tunnel --clear
+   ```
    - Android: Expo Go 앱 내에서 직접 스캔
    - iOS: 기본 카메라 앱으로 스캔 후 링크 터치
 
-> **주의**: PC와 휴대폰이 **같은 Wi-Fi 네트워크**에 연결되어 있어야 합니다.
+> **터널 모드**: PC와 iPhone이 **같은 Wi-Fi가 아니어도** 연결됩니다.
+> Expo Go에서 `Project is incompatible`가 뜨면 프로젝트 SDK와 스토어 Expo Go 지원 SDK가 맞는지 확인하세요.
 
 #### 방법 B: 에뮬레이터 (선택사항)
 
