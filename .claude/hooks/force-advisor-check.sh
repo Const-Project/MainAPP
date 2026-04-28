@@ -22,6 +22,12 @@ STOP_HOOK_ACTIVE=$(echo "$INPUT" | jq -r '.stop_hook_active // false' 2>/dev/nul
 # transcript 끝부분 읽기 실패 시 통과
 RECENT=$(tail -c 20000 "$TRANSCRIPT" 2>/dev/null) || exit 0
 
+# 변경된 파일이 없으면 통과 (코드 변경 없는 정보 제공 세션)
+if [ -z "$(git -C "$(git rev-parse --show-toplevel 2>/dev/null)" diff --name-only HEAD 2>/dev/null)" ] && \
+   [ -z "$(git -C "$(git rev-parse --show-toplevel 2>/dev/null)" diff --cached --name-only 2>/dev/null)" ]; then
+  exit 0
+fi
+
 # Completion check 이미 했으면 통과
 echo "$RECENT" | grep -q "Completion check" && exit 0
 

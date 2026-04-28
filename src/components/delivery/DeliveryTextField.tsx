@@ -14,6 +14,7 @@ type Props = {
   keyboardType?: KeyboardTypeOptions;
   multiline?: boolean;
   helperText?: string;
+  editable?: boolean;
 };
 
 export default function DeliveryTextField({
@@ -24,6 +25,7 @@ export default function DeliveryTextField({
   keyboardType = "default",
   multiline = false,
   helperText,
+  editable = true,
 }: Props) {
   return (
     <View style={styles.container}>
@@ -35,7 +37,8 @@ export default function DeliveryTextField({
         placeholderTextColor="#9CA3AF"
         keyboardType={keyboardType}
         multiline={multiline}
-        style={[styles.input, multiline ? styles.multiline : null]}
+        editable={editable}
+        style={[styles.input, multiline ? styles.multiline : null, !editable ? styles.inputDisabled : null]}
         textAlignVertical={multiline ? "top" : "center"}
       />
       {helperText ? <Text style={styles.helperText}>{helperText}</Text> : null}
@@ -65,6 +68,10 @@ const styles = StyleSheet.create({
   multiline: {
     minHeight: 92,
     paddingVertical: 14,
+  },
+  inputDisabled: {
+    color: "#374151",
+    backgroundColor: "#F9FAFB",
   },
   helperText: {
     fontSize: 12,

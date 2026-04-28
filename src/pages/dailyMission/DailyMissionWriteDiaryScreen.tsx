@@ -13,6 +13,7 @@ import {
   useWriteDiarySubmit,
 } from "@/hooks/mission/useMissionApi";
 import type { RootStackScreenProps } from "@/navigation/types";
+import { prepareUploadImage } from "@/utils/images/prepareUploadImage";
 
 type Props = RootStackScreenProps<"DailyMissionWriteDiary">;
 
@@ -61,20 +62,19 @@ export default function DailyMissionWriteDiaryScreen({ navigation }: Props) {
     }
 
     const asset = result.assets[0];
-    const fileName = asset.fileName ?? `diary-${Date.now()}.jpg`;
-    const fileType = asset.mimeType ?? "image/jpeg";
+    const preparedImage = await prepareUploadImage(asset, "diary");
     const formData = new FormData();
 
     formData.append(
       "file",
       {
-        uri: asset.uri,
-        name: fileName,
-        type: fileType,
+        uri: preparedImage.uri,
+        name: preparedImage.fileName,
+        type: preparedImage.mimeType,
       } as never
     );
 
-    setSelectedImageUri(asset.uri);
+    setSelectedImageUri(preparedImage.uri);
     setUploadedImage(null);
 
     try {

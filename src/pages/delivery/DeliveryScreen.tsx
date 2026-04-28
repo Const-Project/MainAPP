@@ -3,6 +3,7 @@ import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "rea
 import { SafeAreaView } from "react-native-safe-area-context";
 import ScreenHeader from "@/components/common/ScreenHeader";
 import StatusView from "@/components/common/StatusView";
+import AddressSearchModal, { type SelectedAddress } from "@/components/delivery/AddressSearchModal";
 import DeliveryRequestSelector from "@/components/delivery/DeliveryRequestSelector";
 import DeliveryTextField from "@/components/delivery/DeliveryTextField";
 import { useCreateSeedDelivery, useUnlockGarden } from "@/hooks/delivery/useDeliveryApi";
@@ -24,6 +25,7 @@ export default function DeliveryScreen({ navigation, route }: Props) {
   const [postalCode, setPostalCode] = useState("");
   const [address, setAddress] = useState("");
   const [addressDetail, setAddressDetail] = useState("");
+  const [isAddressSearchOpen, setIsAddressSearchOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [customMessage, setCustomMessage] = useState("");
 
@@ -60,6 +62,12 @@ export default function DeliveryScreen({ navigation, route }: Props) {
       gardenId,
       gardenSlotNumber,
     });
+  };
+
+  const handleSelectAddress = (selectedAddress: SelectedAddress) => {
+    setPostalCode(selectedAddress.postalCode);
+    setAddress(selectedAddress.address);
+    setAddressDetail("");
   };
 
   const handleSubmit = async () => {
@@ -153,19 +161,34 @@ export default function DeliveryScreen({ navigation, route }: Props) {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>배송지 정보</Text>
-          <DeliveryTextField
-            label="주소"
-            value={postalCode}
-            onChangeText={setPostalCode}
-            placeholder="우편번호를 입력해주세요"
-            keyboardType="number-pad"
-          />
-          <DeliveryTextField
-            label="주소"
-            value={address}
-            onChangeText={setAddress}
-            placeholder="주소를 입력해주세요"
-          />
+          <View style={styles.addressSearchRow}>
+            <View style={styles.postalCodeField}>
+              <DeliveryTextField
+                label="우편번호"
+                value={postalCode}
+                onChangeText={setPostalCode}
+                placeholder="주소 검색"
+                keyboardType="number-pad"
+              />
+            </View>
+            <TouchableOpacity
+              activeOpacity={0.86}
+              onPress={() => setIsAddressSearchOpen(true)}
+              style={styles.addressSearchButton}
+            >
+              <Text style={styles.addressSearchButtonText}>검색</Text>
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity activeOpacity={0.9} onPress={() => setIsAddressSearchOpen(true)}>
+            <DeliveryTextField
+              label="주소"
+              value={address}
+              onChangeText={setAddress}
+              placeholder="도로명 주소를 검색해주세요"
+              editable={false}
+              helperText="검색 버튼으로 도로명 주소와 우편번호를 자동 입력할 수 있습니다."
+            />
+          </TouchableOpacity>
           <DeliveryTextField
             label="상세 주소"
             value={addressDetail}
@@ -213,6 +236,12 @@ export default function DeliveryScreen({ navigation, route }: Props) {
           </Text>
         </TouchableOpacity>
       </View>
+
+      <AddressSearchModal
+        visible={isAddressSearchOpen}
+        onClose={() => setIsAddressSearchOpen(false)}
+        onSelect={handleSelectAddress}
+      />
     </SafeAreaView>
   );
 }
@@ -258,6 +287,30 @@ const styles = StyleSheet.create({
     lineHeight: 27,
     fontWeight: "700",
     color: "#171717",
+  },
+  addressSearchRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 10,
+  },
+  postalCodeField: {
+    flex: 1,
+  },
+  addressSearchButton: {
+    height: 52,
+    minWidth: 82,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#EFF9EA",
+    borderWidth: 1,
+    borderColor: "#BFE8B0",
+  },
+  addressSearchButtonText: {
+    fontSize: 15,
+    lineHeight: 22,
+    fontWeight: "700",
+    color: "#46C02B",
   },
   footer: {
     flexDirection: "row",

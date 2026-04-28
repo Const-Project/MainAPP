@@ -1,4 +1,5 @@
 ﻿import type { AxiosError } from "axios";
+import { useQueryClient } from "@tanstack/react-query";
 import { Alert, StyleSheet, Text, View } from "react-native";
 import { useState } from "react";
 import FeedDetail from "@/components/feed/FeedDetail";
@@ -7,6 +8,7 @@ import { useDeleteComment } from "@/hooks/comments/useCommentApi";
 import { useCreateReport } from "@/hooks/report/useReportApi";
 import type { FeedDetailResult } from "@/types/feed/detail";
 import type { RandomFeedPostType } from "@/types/feed/randomFeedApi.type";
+import { removeReportedFeedCache } from "@/utils/feed/removeReportedFeedCache";
 
 type Props = {
   result: FeedDetailResult;
@@ -30,6 +32,7 @@ export default function FeedSeedDetailCard({
   onSubmitComment,
   isCommentPending,
 }: Props) {
+  const queryClient = useQueryClient();
   const reportMutation = useCreateReport();
   const deleteCommentMutation = useDeleteComment(() => void onRefetch());
   const [isHidden, setIsHidden] = useState(false);
@@ -48,6 +51,11 @@ export default function FeedSeedDetailCard({
         targetId: result.id,
         reason: "부적절한 콘텐츠",
         additionalComment: "",
+      });
+      removeReportedFeedCache(queryClient, {
+        postId: result.id,
+        postType,
+        writerId: result.writerId,
       });
       setIsHidden(true);
       Alert.alert("신고 완료", "신고가 접수되었습니다.");

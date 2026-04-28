@@ -1,4 +1,5 @@
 ﻿import type { AxiosError } from "axios";
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { ActivityIndicator, Alert, StyleSheet, Text, View } from "react-native";
 import FeedDetail from "@/components/feed/FeedDetail";
@@ -7,12 +8,14 @@ import useFeedLikeToggle from "@/hooks/feed/useFeedLikeToggle";
 import { useCreateReport } from "@/hooks/report/useReportApi";
 import { useDiaryDetail } from "@/hooks/log/useDiaryDetailApi";
 import type { FeedDetailResult } from "@/types/feed/detail";
+import { removeReportedFeedCache } from "@/utils/feed/removeReportedFeedCache";
 
 type Props = {
   postId: number;
 };
 
 export default function FeedDiaryDetailCard({ postId }: Props) {
+  const queryClient = useQueryClient();
   const { data, isLoading, error, refetch } = useDiaryDetail(postId);
   const [content, setContent] = useState("");
   const [isHidden, setIsHidden] = useState(false);
@@ -47,6 +50,11 @@ export default function FeedDiaryDetailCard({ postId }: Props) {
         targetId: postId,
         reason: "부적절한 콘텐츠",
         additionalComment: "",
+      });
+      removeReportedFeedCache(queryClient, {
+        postId,
+        postType: "DIARY",
+        writerId: data?.writerId,
       });
       setIsHidden(true);
       Alert.alert("신고 완료", "신고가 접수되었습니다.");

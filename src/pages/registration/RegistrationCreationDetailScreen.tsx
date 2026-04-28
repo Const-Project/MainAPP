@@ -14,6 +14,7 @@ import AvatarPreviewCard from "@/components/registration/AvatarPreviewCard";
 import RegistrationFooter from "@/components/registration/RegistrationFooter";
 import type { RootStackScreenProps } from "@/navigation/types";
 import useRegistrationStore from "@/stores/useRegistrationStore";
+import { prepareUploadImage } from "@/utils/images/prepareUploadImage";
 
 type Props = RootStackScreenProps<"RegistrationCreationDetail">;
 
@@ -50,24 +51,23 @@ export default function RegistrationCreationDetailScreen({ navigation, route }: 
     }
 
     const asset = result.assets[0];
-    const fileName = asset.fileName ?? `avatar-${Date.now()}.jpg`;
-    const fileType = asset.mimeType ?? "image/jpeg";
+    const preparedImage = await prepareUploadImage(asset, "avatar");
 
     updateCreationDetail({
-      imageUri: asset.uri,
+      imageUri: preparedImage.uri,
       uploadedImageUrl: "",
     });
     setSelectedPreview({
       masterId: null,
-      imageUrl: asset.uri,
+      imageUrl: preparedImage.uri,
       description: "선택한 이미지를 업로드합니다.",
     });
 
     navigation.navigate("RegistrationCreationPending", {
       entry,
-      imageUri: asset.uri,
-      fileName,
-      fileType,
+      imageUri: preparedImage.uri,
+      fileName: preparedImage.fileName,
+      fileType: preparedImage.mimeType,
     });
   };
 

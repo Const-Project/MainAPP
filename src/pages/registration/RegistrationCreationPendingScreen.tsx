@@ -6,8 +6,11 @@ import PendingCharacter from "@/assets/images/creationAvatar/PendingImage.svg";
 import { useUploadCreationAvatar } from "@/hooks/avatars/useAvatarApi";
 import type { RootStackScreenProps } from "@/navigation/types";
 import useRegistrationStore from "@/stores/useRegistrationStore";
+import type { UploadCreationAvatarResponse } from "@/types/avatars";
 
 type Props = RootStackScreenProps<"RegistrationCreationPending">;
+
+const uploadPromises = new Map<string, Promise<UploadCreationAvatarResponse>>();
 
 export default function RegistrationCreationPendingScreen({ navigation, route }: Props) {
   const uploadCreationAvatar = useUploadCreationAvatar();
@@ -33,8 +36,17 @@ export default function RegistrationCreationPendingScreen({ navigation, route }:
       type: fileType,
     } as never);
 
-    void uploadCreationAvatar
-      .mutateAsync(formData)
+    const uploadKey = `${imageUri}:${fileName}`;
+    let uploadPromise = uploadPromises.get(uploadKey);
+
+    if (!uploadPromise) {
+      uploadPromise = uploadCreationAvatar
+        .mutateAsync(formData)
+        .finally(() => uploadPromises.delete(uploadKey));
+      uploadPromises.set(uploadKey, uploadPromise);
+    }
+
+    void uploadPromise
       .then(response => {
         updateCreationDetail({
           imageUri,
