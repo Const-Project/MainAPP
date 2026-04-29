@@ -7,6 +7,7 @@ type Props = {
   actionLabel?: string;
   onActionPress?: () => void;
   actionDisabled?: boolean;
+  onAuthorPress?: () => void;
 };
 
 export default function Comment({
@@ -14,12 +15,20 @@ export default function Comment({
   actionLabel,
   onActionPress,
   actionDisabled = false,
+  onAuthorPress,
 }: Props) {
+  const writer = comment.writer?.trim() || "익명";
+  const content = comment.content?.trim() || "내용을 불러오지 못했습니다.";
+  const AuthorWrap = onAuthorPress ? TouchableOpacity : View;
+
   return (
     <View style={styles.container}>
       {/* 프로필 이미지 */}
       <View style={styles.profileContainer}>
-        <View style={styles.profileImageWrapper}>
+        <AuthorWrap
+          {...(onAuthorPress ? { activeOpacity: 0.75, onPress: onAuthorPress } : {})}
+          style={styles.profileImageWrapper}
+        >
           {comment.profileImageUrl ? (
             <Image
               source={{ uri: comment.profileImageUrl }}
@@ -29,13 +38,17 @@ export default function Comment({
           ) : (
             <View style={styles.profilePlaceholder} />
           )}
-        </View>
+        </AuthorWrap>
       </View>
 
       {/* 댓글 내용 */}
       <View style={styles.contentContainer}>
         <View style={styles.writerRow}>
-          <Text style={styles.writerName}>{comment.writer}</Text>
+          <AuthorWrap
+            {...(onAuthorPress ? { activeOpacity: 0.75, onPress: onAuthorPress } : {})}
+          >
+            <Text style={styles.writerName}>{writer}</Text>
+          </AuthorWrap>
           {actionLabel && onActionPress ? (
             <TouchableOpacity
               activeOpacity={0.7}
@@ -50,7 +63,7 @@ export default function Comment({
         </View>
 
         {/* 댓글 내용 */}
-        <Text style={styles.commentContent}>{comment.content}</Text>
+        <Text style={styles.commentContent}>{content}</Text>
       </View>
     </View>
   );

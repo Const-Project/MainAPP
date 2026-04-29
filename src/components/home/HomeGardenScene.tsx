@@ -167,7 +167,7 @@ export default function HomeGardenScene({
 
   return (
     <ImageBackground source={background} resizeMode="cover" style={styles.sceneBackground}>
-      {isLocked ? <Image source={background} resizeMode="cover" blurRadius={18} style={styles.lockedBackgroundBlur} /> : null}
+      {isLocked ? <Image source={background} resizeMode="cover" blurRadius={8} style={styles.lockedBackgroundBlur} /> : null}
 
       <Image
         source={sunlightOverlay}
@@ -241,7 +241,7 @@ export default function HomeGardenScene({
                   style={styles.actionButton}
                   disabled={sunlightMutation.isPending}
                 >
-                  <SunIcon width={60} height={60} opacity={sunlightMutation.isPending ? 0.55 : 1} style={{ marginTop: 2, marginLeft: 1 }} />
+                  <SunIcon width={54} height={54} opacity={sunlightMutation.isPending ? 0.55 : 1} />
                 </TouchableOpacity>
                 <TouchableOpacity
                   activeOpacity={0.85}
@@ -250,8 +250,8 @@ export default function HomeGardenScene({
                   disabled={waterMutation.isPending || isWaterCooldownActive}
                 >
                   <WaterIcon
-                    width={60}
-                    height={60}
+                    width={54}
+                    height={54}
                     opacity={waterMutation.isPending || isWaterCooldownActive ? 0.55 : 1}
                   />
                 </TouchableOpacity>
@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
   },
   lockedScreenFog: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(242, 246, 241, 0.58)",
+    backgroundColor: "rgba(242, 246, 241, 0.42)",
   },
   sceneContent: {
     flex: 1,

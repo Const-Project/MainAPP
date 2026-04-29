@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { MainTabParamList } from "./types";
 
 import HomeScreen from "@/pages/home/HomeScreen";
@@ -19,6 +20,8 @@ import { debugLog } from "@/utils/debug";
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 export default function MainTabNavigator() {
+  const insets = useSafeAreaInsets();
+
   useEffect(() => {
     debugLog("MainTabNavigator", "mounted");
   }, []);
@@ -32,8 +35,8 @@ export default function MainTabNavigator() {
           backgroundColor: "#FFFFFF",
           borderTopWidth: 1,
           borderTopColor: "#E5E5E5",
-          height: 60,
-          paddingBottom: 8,
+          height: 64 + insets.bottom,
+          paddingBottom: Math.max(insets.bottom, 10),
           paddingTop: 8,
         },
         tabBarActiveTintColor: ACTIVE_COLOR,

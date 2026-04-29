@@ -12,7 +12,7 @@ const selectionImage = require("@/assets/images/creationAvatar/SelectionDefultIm
 const creationImage = require("@/assets/images/creationAvatar/CreationDefultImg.png");
 
 export default function RegistrationAvatarScreen({ navigation, route }: Props) {
-  const { setMode } = useRegistrationStore();
+  const { setMode, resetCreationDetail } = useRegistrationStore();
   const entry: EntryMode = route.params?.entry ?? "initial";
   const isGardenEntry = entry === "garden";
 
@@ -22,6 +22,7 @@ export default function RegistrationAvatarScreen({ navigation, route }: Props) {
   };
 
   const goCreation = () => {
+    resetCreationDetail();
     setMode("creation");
     navigation.navigate("RegistrationCreationDetail", { entry });
   };
@@ -37,7 +38,7 @@ export default function RegistrationAvatarScreen({ navigation, route }: Props) {
         <View style={styles.card}>
           <View style={styles.copyWrap}>
             <Text style={styles.cardTitle}>아바타 선택</Text>
-            <Text style={styles.cardDescription}>00종의 아바타 중에서{"\n"}선택할 수 있어요</Text>
+            <Text style={styles.cardDescription}>10종의 아바타 중에서{"\n"}선택할 수 있어요</Text>
             <TouchableOpacity style={styles.cardActionButton} activeOpacity={0.88} onPress={goSelection}>
               <Text style={styles.cardActionLabel}>선택하러 가기</Text>
             </TouchableOpacity>

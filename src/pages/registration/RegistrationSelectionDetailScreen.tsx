@@ -324,22 +324,6 @@ export default function RegistrationSelectionDetailScreen({
             })}
           </ScrollView>
 
-          <View style={styles.pagination}>
-            {paginationSlots.map((tone, index) => (
-              <View key={`slot-${index}`} style={styles.paginationSlot}>
-                <Animated.View
-                  style={[
-                    styles.paginationDot,
-                    {
-                      opacity: dotOpacity[index],
-                      transform: [{ scale: dotScale[index] }],
-                      backgroundColor: getDotColor(tone),
-                    },
-                  ]}
-                />
-              </View>
-            ))}
-          </View>
         </View>
       </View>
 
@@ -433,25 +417,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#171717",
     textAlign: "center",
-  },
-  pagination: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 180,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  paginationSlot: {
-    width: DOT_SIZE + DOT_SPACING * 2,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  paginationDot: {
-    width: DOT_SIZE,
-    height: DOT_SIZE,
-    borderRadius: 999,
   },
   footer: {
     paddingHorizontal: 20,

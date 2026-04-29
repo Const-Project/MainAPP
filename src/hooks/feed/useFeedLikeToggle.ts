@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import {
   likeFeedTarget,
@@ -22,6 +22,7 @@ export default function useFeedLikeToggle({
   initialLikeCount,
   onSuccessRefetch,
 }: Params) {
+  const queryClient = useQueryClient();
   const [liked, setLiked] = useState(initialLiked);
   const [likeCount, setLikeCount] = useState(initialLikeCount);
 
@@ -57,6 +58,9 @@ export default function useFeedLikeToggle({
       setLikeCount(context.previousLikeCount);
     },
     onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["diaries"] });
+      void queryClient.invalidateQueries({ queryKey: ["feed"] });
+      void queryClient.invalidateQueries({ queryKey: ["random-feed-session"] });
       void onSuccessRefetch?.();
     },
   });

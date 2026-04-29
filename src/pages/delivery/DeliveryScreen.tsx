@@ -180,14 +180,16 @@ export default function DeliveryScreen({ navigation, route }: Props) {
             </TouchableOpacity>
           </View>
           <TouchableOpacity activeOpacity={0.9} onPress={() => setIsAddressSearchOpen(true)}>
-            <DeliveryTextField
-              label="주소"
-              value={address}
-              onChangeText={setAddress}
-              placeholder="도로명 주소를 검색해주세요"
-              editable={false}
-              helperText="검색 버튼으로 도로명 주소와 우편번호를 자동 입력할 수 있습니다."
-            />
+            <View pointerEvents="none">
+              <DeliveryTextField
+                label="주소"
+                value={address}
+                onChangeText={setAddress}
+                placeholder="도로명 주소를 검색해주세요"
+                editable={false}
+                helperText="검색 버튼으로 도로명 주소와 우편번호를 자동 입력할 수 있습니다."
+              />
+            </View>
           </TouchableOpacity>
           <DeliveryTextField
             label="상세 주소"

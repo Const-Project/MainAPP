@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Alert,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -22,6 +21,7 @@ export default function OnboardingScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { performOAuth, isLoading, isExpoGo } = useSupabaseOAuth();
   const resetRegistration = useRegistrationStore(state => state.reset);
+  const [loadingProvider, setLoadingProvider] = useState<"kakao" | "google" | null>(null);
 
   useEffect(() => {
     debugScreenMounted("OnboardingScreen");
@@ -38,18 +38,14 @@ export default function OnboardingScreen() {
   };
 
   const handleOAuthLogin = async (provider: "kakao" | "google") => {
-    debugLog("OnboardingScreen", "OAuth button pressed", { provider });
-
-    if (provider === "kakao" && isExpoGo) {
-      debugLog("OnboardingScreen", "Blocked Kakao login in Expo Go");
-      Alert.alert(
-        "카카오 로그인은 Expo Go에서 지원하지 않아요",
-        "카카오톡 앱 전환 때문에 인증이 초기화될 수 있어요. 카카오 로그인은 development build에서 테스트해주세요."
-      );
+    if (isLoading || loadingProvider) {
       return;
     }
 
+    debugLog("OnboardingScreen", "OAuth button pressed", { provider });
+    setLoadingProvider(provider);
     const result = await performOAuth(provider);
+    setLoadingProvider(null);
     debugLog("OnboardingScreen", "OAuth result received", {
       provider,
       success: result?.success,
@@ -85,33 +81,33 @@ export default function OnboardingScreen() {
             style={[
               styles.socialButton,
               styles.kakaoButton,
-              (isLoading || isExpoGo) && styles.buttonDisabled,
+              (isLoading || loadingProvider) && styles.buttonDisabled,
             ]}
             onPress={() => handleOAuthLogin("kakao")}
-            disabled={isLoading || isExpoGo}
+            disabled={isLoading || Boolean(loadingProvider)}
           >
             <Text style={styles.kakaoButtonText}>
-              {isLoading ? "처리 중..." : "카카오로 시작하기"}
+              {loadingProvider === "kakao" ? "처리 중..." : "카카오로 시작하기"}
             </Text>
           </TouchableOpacity>
 
           {isExpoGo ? (
             <Text style={styles.helperText}>
-              Expo Go에서는 카카오 로그인 대신 구글 로그인 또는 development build를 사용해주세요.
+              카카오 로그인은 development build에서 가장 안정적으로 동작합니다.
             </Text>
           ) : null}
 
           <TouchableOpacity
-            style={[styles.socialButton, styles.googleButton, isLoading && styles.buttonDisabled]}
+            style={[styles.socialButton, styles.googleButton, (isLoading || loadingProvider) && styles.googleDisabled]}
             onPress={() => handleOAuthLogin("google")}
-            disabled={isLoading}
+            disabled={isLoading || Boolean(loadingProvider)}
           >
             <Text style={styles.googleButtonText}>
-              {isLoading ? "처리 중..." : "구글로 시작하기"}
+              {loadingProvider === "google" ? "처리 중..." : "구글로 시작하기"}
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.guestButton} onPress={handleStart} disabled={isLoading}>
+          <TouchableOpacity style={styles.guestButton} onPress={handleStart} disabled={isLoading || Boolean(loadingProvider)}>
             <Text style={styles.guestButtonText}>비회원으로 화단 만들기</Text>
           </TouchableOpacity>
         </View>
@@ -156,7 +152,10 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   buttonDisabled: {
-    backgroundColor: "#E5E7EB",
+    opacity: 0.55,
+  },
+  googleDisabled: {
+    opacity: 0.55,
   },
   guestButton: {
     paddingVertical: 16,

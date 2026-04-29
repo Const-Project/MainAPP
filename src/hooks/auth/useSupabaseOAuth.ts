@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { AppState, type AppStateStatus } from "react-native";
 import * as WebBrowser from "expo-web-browser";
 import * as Linking from "expo-linking";
 import { supabase } from "@/apis/supabase";
@@ -18,9 +17,6 @@ type OAuthResult = {
   requiresNicknameSetup?: boolean;
   nickname?: string;
 };
-
-const REDIRECT_TIMEOUT_MS = 120000;
-const DISMISS_REDIRECT_GRACE_MS = 15000;
 
 function extractSessionTokens(url: string) {
   const urlObj = new URL(url);
@@ -100,82 +96,6 @@ export const useSupabaseOAuth = () => {
     };
   };
 
-  const waitForRedirect = (expectedRedirectUri: string) =>
-    new Promise<string>((resolve, reject) => {
-      let settled = false;
-
-      const cleanup = () => {
-        urlSubscription.remove();
-        appStateSubscription.remove();
-        clearTimeout(timeoutId);
-      };
-
-      const resolveIfMatches = async (candidateUrl: string | null | undefined, source: string) => {
-        if (settled || !candidateUrl) {
-          return;
-        }
-
-        debugLog("SupabaseOAuth", "Redirect candidate detected", {
-          source,
-          url: candidateUrl,
-        });
-
-        if (!candidateUrl.startsWith(expectedRedirectUri)) {
-          debugLog("SupabaseOAuth", "Ignoring unrelated redirect URL", {
-            expectedRedirectUri,
-            actualUrl: candidateUrl,
-            source,
-          });
-          return;
-        }
-
-        settled = true;
-        cleanup();
-        void WebBrowser.dismissBrowser();
-        debugLog("SupabaseOAuth", "Redirect matched expected URI", { source });
-        resolve(candidateUrl);
-      };
-
-      const urlSubscription = Linking.addEventListener("url", event => {
-        void resolveIfMatches(event.url, "url_event");
-      });
-
-      const appStateSubscription = AppState.addEventListener("change", (state: AppStateStatus) => {
-        if (state !== "active" || settled) {
-          return;
-        }
-
-        debugLog("SupabaseOAuth", "App became active while waiting for redirect");
-
-        void Linking.getInitialURL()
-          .then(url => resolveIfMatches(url, "app_active_initial_url"))
-          .catch(error => {
-            debugLog("SupabaseOAuth", "Failed to read initial URL on app resume", {
-              error: error instanceof Error ? error.message : String(error),
-            });
-          });
-      });
-
-      void Linking.getInitialURL()
-        .then(url => resolveIfMatches(url, "initial_url"))
-        .catch(error => {
-          debugLog("SupabaseOAuth", "Failed to read initial URL before auth", {
-            error: error instanceof Error ? error.message : String(error),
-          });
-        });
-
-      const timeoutId = setTimeout(() => {
-        if (settled) {
-          return;
-        }
-
-        settled = true;
-        cleanup();
-        debugLog("SupabaseOAuth", "Redirect wait timed out", { expectedRedirectUri });
-        reject(new Error("OAuth redirect timed out"));
-      }, REDIRECT_TIMEOUT_MS);
-    });
-
   const performOAuth = async (provider: OAuthProvider): Promise<OAuthResult> => {
     setIsLoading(true);
     debugLog("SupabaseOAuth", "performOAuth started", { provider, redirectUri });
@@ -201,16 +121,17 @@ export const useSupabaseOAuth = () => {
 
       debugLog("SupabaseOAuth", "Opening auth browser", { url: data.url });
 
-      const redirectPromise = waitForRedirect(redirectUri);
-
-      void WebBrowser.openBrowserAsync(data.url).then(result => {
-        debugLog("SupabaseOAuth", "Browser result received", {
-          type: result.type,
-          url: "url" in result ? result.url : undefined,
-        });
+      const browserResult = await WebBrowser.openAuthSessionAsync(data.url, redirectUri);
+      debugLog("SupabaseOAuth", "Browser result received", {
+        type: browserResult.type,
+        url: "url" in browserResult ? browserResult.url : undefined,
       });
 
-      const redirectedUrl = await redirectPromise;
+      if (browserResult.type !== "success" || !("url" in browserResult)) {
+        return { success: false, cancelled: true };
+      }
+
+      const redirectedUrl = browserResult.url;
       debugLog("SupabaseOAuth", "Redirect event resolved", { url: redirectedUrl });
       const result = await completeLogin(redirectedUrl);
       debugLog("SupabaseOAuth", "OAuth flow completed", result);

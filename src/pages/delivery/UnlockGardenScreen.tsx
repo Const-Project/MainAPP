@@ -101,7 +101,7 @@ export default function UnlockGardenScreen({ navigation, route }: Props) {
         <View style={styles.headerBlock}>
           <Text style={styles.title}>원하는 식물을 선택해주세요</Text>
           <Text style={styles.description}>
-            선택한 씨앗은 새로 열리는 텃밭 {selectedGarden.gardenSlotNumber}번으로 배송 요청됩니다.
+            선택한 씨앗은 새로 열리는 텃밭으로 배송 요청됩니다.
           </Text>
         </View>
 

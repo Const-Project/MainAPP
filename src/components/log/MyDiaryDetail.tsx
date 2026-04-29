@@ -1,13 +1,14 @@
-import { Image, StyleSheet, Text, View } from "react-native";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { ChatIcon, EditIcon, HeartIcon } from "@/assets/icons/CommonIcons";
 import Comment from "@/components/common/Comment";
 import type { GETDiaryDetailResponse } from "@/types/log/diaryDetailApi.type";
 
 type Props = {
   detail: GETDiaryDetailResponse;
+  onEdit?: () => void;
 };
 
-export default function MyDiaryDetail({ detail }: Props) {
+export default function MyDiaryDetail({ detail, onEdit }: Props) {
   const formatDate = (iso: string) => {
     const date = new Date(iso);
     return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일`;
@@ -39,10 +40,15 @@ export default function MyDiaryDetail({ detail }: Props) {
             <Text style={styles.actionText}>댓글 {detail.commentCount}</Text>
           </View>
         </View>
-        <View style={styles.editItem}>
+        <TouchableOpacity
+          activeOpacity={0.75}
+          onPress={onEdit}
+          disabled={!onEdit}
+          style={styles.editItem}
+        >
           <EditIcon size={18} color="#6B7280" />
-          <Text style={styles.editText}>수정 기능 보류</Text>
-        </View>
+          <Text style={styles.editText}>수정</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.commentSection}>
@@ -52,9 +58,10 @@ export default function MyDiaryDetail({ detail }: Props) {
               key={comment.commentId}
               comment={{
                 id: comment.commentId,
+                writerId: comment.writerId,
                 profileImageUrl: comment.profileImageUrl,
-                writer: comment.writer,
-                content: comment.content,
+                writer: comment.writer?.trim() || "익명",
+                content: comment.content ?? "",
               }}
             />
           ))

@@ -70,6 +70,9 @@ export const usePostComment = (onSuccessRefetch?: () => void) => {
       }
     },
     onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["diaries"] });
+      void queryClient.invalidateQueries({ queryKey: ["feed"] });
+      void queryClient.invalidateQueries({ queryKey: ["random-feed-session"] });
       onSuccessRefetch?.();
     },
   });
@@ -106,6 +109,9 @@ export const useDeleteComment = (onSuccessRefetch?: () => void) => {
       }
     },
     onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["diaries"] });
+      void queryClient.invalidateQueries({ queryKey: ["feed"] });
+      void queryClient.invalidateQueries({ queryKey: ["random-feed-session"] });
       onSuccessRefetch?.();
     },
   });

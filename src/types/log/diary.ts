@@ -16,6 +16,7 @@ export interface DiaryResponse {
 // 댓글 타입
 export interface CommentItem {
   id: number;
+  writerId?: number | null;
   profileImageUrl: string | null;
   writer: string;
   content: string;

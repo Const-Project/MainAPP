@@ -199,7 +199,7 @@ export default function HomeBottomSheet({
               <Text style={styles.progressMetaLabel}>다음 성장까지</Text>
               <Text style={styles.progressMetaValue}>
                 {remainingGrowthPoints}
-                <Text style={styles.progressMetaUnit}> 남음</Text>
+                <Text style={styles.progressMetaUnit}> 걸음</Text>
               </Text>
             </View>
           </View>

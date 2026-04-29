@@ -86,8 +86,8 @@ export default function FeedDetail({
           id: c.commentId,
           writerId: c.writerId,
           profileImageUrl: c.profileImageUrl,
-          writer: c.writer,
-          content: c.content,
+          writer: c.writer?.trim() || "익명",
+          content: c.content ?? "",
         })),
     [hiddenCommentIds, result.comments]
   );
@@ -159,6 +159,7 @@ export default function FeedDetail({
               : undefined
         }
         actionDisabled={isReportPending}
+        onAuthorPress={item.writerId ? () => handleCommentAuthorPress(item.writerId) : undefined}
       />
     );
   };
@@ -172,6 +173,14 @@ export default function FeedDetail({
 
   const handleProfilePress = () => {
     navigation.navigate("Profile", { userId: result.writerId });
+  };
+
+  const handleCommentAuthorPress = (writerId?: number | null) => {
+    if (!writerId) {
+      return;
+    }
+
+    navigation.navigate("Profile", { userId: writerId });
   };
 
   const handleOpenComments = () => {

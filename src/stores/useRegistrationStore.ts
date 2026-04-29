@@ -17,6 +17,7 @@ type RegistrationState = {
 
   setMode: (mode: RegistrationMode | null) => void;
   updateCreationDetail: (patch: Partial<RegistrationCreationDetail>) => void;
+  resetCreationDetail: () => void;
   setSelectedMaster: (master: AvatarMaster | null) => void;
   setSelectedPreview: (preview: RegistrationAvatarPreview | null) => void;
   setNickname: (nickname: string) => void;
@@ -44,6 +45,11 @@ const useRegistrationStore = create<RegistrationState>()(
       updateCreationDetail: patch =>
         set(state => ({
           creationDetail: { ...state.creationDetail, ...patch },
+        })),
+      resetCreationDetail: () =>
+        set(() => ({
+          creationDetail: initialCreationDetail,
+          selectedPreview: null,
         })),
       setSelectedMaster: master => set(() => ({ selectedMaster: master })),
       setSelectedPreview: preview => set(() => ({ selectedPreview: preview })),

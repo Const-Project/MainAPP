@@ -62,7 +62,6 @@ export default function FeedSeedDetailCard({
     } catch (error) {
       const axiosError = error as AxiosError<{ message?: string }>;
       Alert.alert("신고 실패", axiosError.response?.data?.message ?? "잠시 후 다시 시도해주세요.");
-      throw error;
     }
   };
 
@@ -78,7 +77,6 @@ export default function FeedSeedDetailCard({
     } catch (error) {
       const axiosError = error as AxiosError<{ message?: string }>;
       Alert.alert("신고 실패", axiosError.response?.data?.message ?? "잠시 후 다시 시도해주세요.");
-      throw error;
     }
   };
 
@@ -89,7 +87,6 @@ export default function FeedSeedDetailCard({
     } catch (error) {
       const axiosError = error as AxiosError<{ message?: string }>;
       Alert.alert("삭제 실패", axiosError.response?.data?.message ?? "잠시 후 다시 시도해주세요.");
-      throw error;
     }
   };
 
