@@ -14,7 +14,7 @@ type Props = {
   onSeedRefetch?: () => void | Promise<unknown>;
   commentValue?: string;
   onChangeComment?: (value: string) => void;
-  onSubmitComment?: () => void;
+  onSubmitComment?: (value: string) => Promise<void> | void;
   isCommentPending?: boolean;
 };
 

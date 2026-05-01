@@ -57,14 +57,15 @@ export default function FeedRandomSessionDetailCard({ item }: Props) {
     initialLikeCount: item.likeCount,
   });
 
-  const handleSendComment = async () => {
-    if (!content.trim()) {
+  const handleSendComment = async (commentText: string) => {
+    const trimmedComment = commentText.trim();
+    if (!trimmedComment) {
       return;
     }
 
     try {
       const response = await mutateAsync({
-        content,
+        content: trimmedComment,
         targetId: item.postId,
         targetType: item.postType,
       });
@@ -126,7 +127,7 @@ export default function FeedRandomSessionDetailCard({ item }: Props) {
       isLikePending={isLikePending}
       commentValue={content}
       onChangeComment={setContent}
-      onSubmitComment={() => void handleSendComment()}
+      onSubmitComment={handleSendComment}
       isCommentPending={isPending}
       onPressReport={handleReportPost}
       isReportPending={reportMutation.isPending}

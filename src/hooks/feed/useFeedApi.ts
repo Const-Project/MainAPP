@@ -5,7 +5,7 @@ import type { FeedPost, GetFeedResponse } from "@/types/feed/feedApi.type";
 
 import { getFeed } from "@/apis/feed/feedApi";
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 12;
 
 export const useFeed = () =>
   useInfiniteQuery({

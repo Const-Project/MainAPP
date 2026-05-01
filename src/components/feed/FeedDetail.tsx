@@ -37,7 +37,7 @@ type Props = {
   isLikePending?: boolean;
   commentValue?: string;
   onChangeComment?: (text: string) => void;
-  onSubmitComment?: () => void;
+  onSubmitComment?: (text: string) => Promise<void> | void;
   isCommentPending?: boolean;
   onPressReport?: () => Promise<void> | void;
   onPressCommentReport?: (commentId: number, writer: string) => Promise<void> | void;
@@ -77,6 +77,7 @@ export default function FeedDetail({
   const [hiddenCommentIds, setHiddenCommentIds] = useState<number[]>([]);
   const [confirmModalState, setConfirmModalState] = useState<ConfirmModalState | null>(null);
   const [isConfirmPending, setIsConfirmPending] = useState(false);
+  const [draftComment, setDraftComment] = useState(commentValue);
 
   const comments = useMemo(
     () =>
@@ -102,22 +103,12 @@ export default function FeedDetail({
       description: "댓글을 신고하시겠습니까?\n신고한 댓글은 나에게 숨겨집니다.",
       confirmLabel: "신고하기",
       destructive: true,
-      onConfirm: () => ({
-        title: "사용자 숨기기",
-        description: "사용자의 모든 댓글을 숨기시겠습니까?\n이 작업은 취소할 수 없습니다.",
-        confirmLabel: "숨기기",
-        destructive: true,
-        onConfirm: async () => {
-          try {
-            await onPressCommentReport(commentId, writer);
-            setHiddenCommentIds(previous =>
-              previous.includes(commentId) ? previous : [...previous, commentId]
-            );
-          } catch {
-            // Error handling is delegated to the caller.
-          }
-        },
-      }),
+      onConfirm: async () => {
+        await onPressCommentReport(commentId, writer);
+        setHiddenCommentIds(previous =>
+          previous.includes(commentId) ? previous : [...previous, commentId]
+        );
+      },
     });
   };
 
@@ -172,6 +163,7 @@ export default function FeedDetail({
   };
 
   const handleProfilePress = () => {
+    bottomSheetModalRef.current?.dismiss();
     navigation.navigate("Profile", { userId: result.writerId });
   };
 
@@ -180,7 +172,10 @@ export default function FeedDetail({
       return;
     }
 
-    navigation.navigate("Profile", { userId: writerId });
+    bottomSheetModalRef.current?.dismiss();
+    requestAnimationFrame(() => {
+      navigation.navigate("Profile", { userId: writerId });
+    });
   };
 
   const handleOpenComments = () => {
@@ -197,15 +192,7 @@ export default function FeedDetail({
       description: `${reportTargetLabel}을 신고하시겠습니까?\n신고한 ${reportTargetLabel}은 나에게 숨겨집니다.`,
       confirmLabel: "신고하기",
       destructive: true,
-      onConfirm: () => ({
-        title: "사용자 숨기기",
-        description: `사용자의 모든 ${reportTargetLabel}을 숨기시겠습니까?\n이 작업은 취소할 수 없습니다.`,
-        confirmLabel: "숨기기",
-        destructive: true,
-        onConfirm: async () => {
-          void onPressReport();
-        },
-      }),
+      onConfirm: onPressReport,
     });
   };
 
@@ -228,6 +215,24 @@ export default function FeedDetail({
   const handleCloseComments = () => {
     bottomSheetModalRef.current?.dismiss();
   };
+
+  const handleChangeComment = useCallback(
+    (text: string) => {
+      setDraftComment(text);
+    },
+    []
+  );
+
+  const handleSubmitComment = useCallback(async () => {
+    if (!draftComment.trim() || isCommentPending) {
+      return;
+    }
+
+    const submittedComment = draftComment;
+    await onSubmitComment?.(submittedComment);
+    setDraftComment("");
+    onChangeComment?.("");
+  }, [draftComment, isCommentPending, onChangeComment, onSubmitComment]);
 
   const renderBackdrop = useCallback(
     (props: React.ComponentProps<typeof BottomSheetBackdrop>) => (
@@ -252,16 +257,16 @@ export default function FeedDetail({
         <BottomSheetFooter {...props} bottomInset={0}>
           <View style={styles.composerContainer}>
             <CommentComposer
-              value={commentValue}
-              onChangeText={onChangeComment}
-              onSubmit={onSubmitComment}
+              value={draftComment}
+              onChangeText={handleChangeComment}
+              onSubmit={handleSubmitComment}
               disabled={isCommentPending}
             />
           </View>
         </BottomSheetFooter>
       );
     },
-    [commentValue, isCommentPending, onChangeComment, onSubmitComment]
+    [draftComment, handleChangeComment, handleSubmitComment, isCommentPending, onChangeComment, onSubmitComment]
   );
 
   return (

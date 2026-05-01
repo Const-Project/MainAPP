@@ -30,13 +30,14 @@ export default function FeedDiaryDetailCard({ postId }: Props) {
     onSuccessRefetch: refetch,
   });
 
-  const handleSendComment = async () => {
-    if (!content.trim()) {
+  const handleSendComment = async (commentText: string) => {
+    const trimmedComment = commentText.trim();
+    if (!trimmedComment) {
       return;
     }
 
     try {
-      await mutateAsync({ content, targetId: postId, targetType: "DIARY" });
+      await mutateAsync({ content: trimmedComment, targetId: postId, targetType: "DIARY" });
       setContent("");
     } catch (commentError) {
       console.error("[FeedDiaryDetailCard] Failed to post comment:", commentError);
@@ -141,7 +142,7 @@ export default function FeedDiaryDetailCard({ postId }: Props) {
       isLikePending={isLikePending}
       commentValue={content}
       onChangeComment={setContent}
-      onSubmitComment={() => void handleSendComment()}
+      onSubmitComment={handleSendComment}
       isCommentPending={isPending}
       onPressReport={handleReportPost}
       onPressCommentReport={handleReportComment}

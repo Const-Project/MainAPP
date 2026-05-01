@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo, useState } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Dimensions,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import type { FeedPost } from "@/types/feed/feedApi.type";
 
@@ -36,6 +37,31 @@ function SkeletonGrid() {
     </View>
   );
 }
+
+type FeedGridItemProps = {
+  item: FeedPost;
+  onSelectPost?: (postId: number, postType: string) => void;
+};
+
+const FeedGridItem = memo(function FeedGridItem({ item, onSelectPost }: FeedGridItemProps) {
+  const [imageLoaded, setImageLoaded] = useState(false);
+
+  return (
+    <TouchableOpacity
+      style={styles.gridItem}
+      onPress={() => onSelectPost?.(item.postId, item.postType)}
+      activeOpacity={0.8}
+    >
+      {!imageLoaded ? <View style={styles.imagePlaceholder} /> : null}
+      <Image
+        source={{ uri: item.imageUrl }}
+        style={[styles.image, !imageLoaded && styles.imageLoading]}
+        resizeMode="cover"
+        onLoadEnd={() => setImageLoaded(true)}
+      />
+    </TouchableOpacity>
+  );
+});
 
 export default function FeedList({
   posts,
@@ -72,17 +98,7 @@ export default function FeedList({
   }
 
   const renderItem = ({ item }: { item: FeedPost }) => (
-    <TouchableOpacity
-      style={styles.gridItem}
-      onPress={() => onSelectPost?.(item.postId, item.postType)}
-      activeOpacity={0.8}
-    >
-      <Image
-        source={{ uri: item.imageUrl }}
-        style={styles.image}
-        resizeMode="cover"
-      />
-    </TouchableOpacity>
+    <FeedGridItem item={item} onSelectPost={onSelectPost} />
   );
 
   const renderFooter = () => {
@@ -107,6 +123,11 @@ export default function FeedList({
       ListFooterComponent={renderFooter}
       refreshing={isRefreshing}
       onRefresh={onRefresh}
+      initialNumToRender={9}
+      maxToRenderPerBatch={6}
+      updateCellsBatchingPeriod={50}
+      windowSize={7}
+      removeClippedSubviews={Platform.OS === "android"}
       contentContainerStyle={styles.listContainer}
       showsVerticalScrollIndicator={false}
     />
@@ -157,10 +178,19 @@ const styles = StyleSheet.create({
     backgroundColor: "#F3F4F6",
     padding: 3,
   },
+  imagePlaceholder: {
+    ...StyleSheet.absoluteFillObject,
+    margin: 3,
+    borderRadius: 4,
+    backgroundColor: "#E5E7EB",
+  },
   image: {
     width: "100%",
     height: "100%",
     borderRadius: 4,
+  },
+  imageLoading: {
+    opacity: 0,
   },
   footerLoader: {
     paddingVertical: 16,

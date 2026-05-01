@@ -1,6 +1,6 @@
 import type { InfiniteData, QueryClient } from "@tanstack/react-query";
 import type { GlobalResponse } from "@/types/common/apiResponse.type";
-import type { FeedPost, GetFeedResponse, PostType } from "@/types/feed/feedApi.type";
+import type { GetFeedResponse, PostType } from "@/types/feed/feedApi.type";
 import type { RandomFeedSessionPayload } from "@/types/feed/randomFeedApi.type";
 
 type RemoveReportedFeedParams = {
@@ -10,22 +10,22 @@ type RemoveReportedFeedParams = {
 };
 
 type RandomFeedPage = GlobalResponse<RandomFeedSessionPayload>;
-
-const removePostFromFeed = (
-  posts: FeedPost[],
-  postId: number,
-  postType: PostType
-) => posts.filter(post => post.postId !== postId || post.postType !== postType);
+type FeedPage = GlobalResponse<GetFeedResponse>;
 
 export const removeReportedFeedCache = (
   queryClient: QueryClient,
   { postId, postType, writerId }: RemoveReportedFeedParams
 ) => {
-  queryClient.setQueryData<GlobalResponse<GetFeedResponse>>(["feed"], previous =>
+  queryClient.setQueryData<InfiniteData<FeedPage>>(["feed"], previous =>
     previous
       ? {
           ...previous,
-          result: removePostFromFeed(previous.result, postId, postType),
+          pages: previous.pages.map(page => ({
+            ...page,
+            result: page.result.filter(
+              post => post.postId !== postId || post.postType !== postType
+            ),
+          })),
         }
       : previous
   );

@@ -75,11 +75,12 @@ export default function FeedDiaryScreen({ navigation, route }: Props) {
     navigation.navigate("Main", { screen: "Feed" });
   };
 
-  const handleSend = async () => {
-    if (!isValidId || !content.trim()) return;
+  const handleSend = async (commentText: string) => {
+    const trimmedComment = commentText.trim();
+    if (!isValidId || !trimmedComment) return;
 
     try {
-      await mutateAsync({ content, targetId: id, targetType: "DIARY" });
+      await mutateAsync({ content: trimmedComment, targetId: id, targetType: "DIARY" });
       setContent("");
     } catch (commentError) {
       console.error("[FeedDiaryScreen] Failed to post comment:", commentError);
@@ -247,7 +248,7 @@ export default function FeedDiaryScreen({ navigation, route }: Props) {
               onSeedRefetch={item.isSeed ? refetch : undefined}
               commentValue={item.isSeed ? content : ""}
               onChangeComment={item.isSeed ? setContent : undefined}
-              onSubmitComment={item.isSeed ? () => void handleSend() : undefined}
+              onSubmitComment={item.isSeed ? handleSend : undefined}
               isCommentPending={item.isSeed ? isPending : false}
             />
           )}

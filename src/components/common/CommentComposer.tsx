@@ -1,9 +1,9 @@
 import {
   StyleSheet,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import { BottomSheetTextInput } from "@gorhom/bottom-sheet";
 import { SendIcon } from "@/assets/icons/CommonIcons";
 
 type Props = {
@@ -26,7 +26,7 @@ export default function CommentComposer({
   return (
     <View style={styles.container}>
       <View style={styles.row}>
-        <TextInput
+        <BottomSheetTextInput
           style={styles.input}
           placeholder={placeholder}
           placeholderTextColor="#9CA3AF"
