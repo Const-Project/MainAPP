@@ -51,6 +51,7 @@ export const useMissionQuiz = (params: GetQuizRequest) =>
     queryKey: ["mission-quiz", params.quizType],
     queryFn: () => getQuizApi(params),
     select: data => data.result,
+    staleTime: 30_000,
   });
 
 export const useAnswerQuiz = () => {
@@ -81,16 +82,32 @@ export const useAnswerQuiz = () => {
         queryClient.setQueryData(["home-panel"], context.previous);
       }
     },
-    onSuccess: async () => {
+    onSuccess: (response, variables) => {
       /*
        * 한글 주석:
-       * 퀴즈 완료 직후 홈 미션 패널과 홈 요약을 함께 갱신해야
-       * 사용자가 홈으로 돌아왔을 때 완료 상태가 즉시 반영된다.
+       * 퀴즈 제출 응답 후 홈 데이터 갱신은 백그라운드로 넘긴다.
+       * 완료 표시는 onMutate에서 이미 반영하므로 제출 화면이 refetch를 기다리지 않아도 된다.
        */
-      await queryClient.invalidateQueries({ queryKey: ["home-summary"] });
-      await queryClient.invalidateQueries({ queryKey: ["home-panel"] });
-      await queryClient.refetchQueries({ queryKey: ["home-summary"], type: "all" });
-      await queryClient.refetchQueries({ queryKey: ["home-panel"], type: "all" });
+      queryClient.setQueriesData<GetQuizResponse>(
+        { queryKey: ["mission-quiz"] },
+        old => {
+          if (!old || old.result.quizId !== variables.quizId) {
+            return old;
+          }
+
+          return {
+            ...old,
+            result: {
+              ...old.result,
+              ...response.result,
+            },
+          };
+        }
+      );
+      void Promise.allSettled([
+        queryClient.invalidateQueries({ queryKey: ["home-summary"] }),
+        queryClient.invalidateQueries({ queryKey: ["home-panel"] }),
+      ]);
     },
   });
 };

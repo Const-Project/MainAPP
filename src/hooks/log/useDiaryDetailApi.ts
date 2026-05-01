@@ -15,6 +15,7 @@ export const useDiaryDetail = (diaryId: number) =>
       queryFn: () => getDiaryDetail(diaryId),
       select: data => data.result,
       enabled: Number.isFinite(diaryId) && diaryId > 0,
+      staleTime: 60_000,
     }
   );
 

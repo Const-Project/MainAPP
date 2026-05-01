@@ -1,6 +1,8 @@
 import { useState } from "react";
 import * as WebBrowser from "expo-web-browser";
 import * as Linking from "expo-linking";
+import Constants from "expo-constants";
+import type { KakaoOAuthToken } from "@react-native-seoul/kakao-login";
 import { supabase } from "@/apis/supabase";
 import { useBackendLogin } from "./useBackendLogin";
 import { debugLog } from "@/utils/debug";
@@ -16,6 +18,10 @@ type OAuthResult = {
   isNewUser?: boolean;
   requiresNicknameSetup?: boolean;
   nickname?: string;
+};
+
+type KakaoLoginModule = {
+  login: () => Promise<KakaoOAuthToken>;
 };
 
 function extractSessionTokens(url: string) {
@@ -37,8 +43,8 @@ function extractSessionTokens(url: string) {
   };
 }
 
-function getOAuthRedirectUri() {
-  if (!Linking.hasCustomScheme()) {
+function getOAuthRedirectUri(isExpoGo: boolean) {
+  if (isExpoGo) {
     return Linking.createURL("auth/callback");
   }
 
@@ -51,8 +57,30 @@ export const useSupabaseOAuth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { mutateAsync: backendLogin } = useBackendLogin();
 
-  const redirectUri = getOAuthRedirectUri();
-  const isExpoGo = !Linking.hasCustomScheme();
+  const isExpoGo = Constants.appOwnership === "expo";
+  const redirectUri = getOAuthRedirectUri(isExpoGo);
+
+  const completeSupabaseLogin = async (accessToken: string): Promise<OAuthResult> => {
+    debugLog("SupabaseOAuth", "Sending access token to backend");
+    const backendRes = await backendLogin(accessToken);
+
+    if (!backendRes.isSuccess) {
+      console.error("[SupabaseOAuth] Backend login failed with message:", backendRes.message);
+      throw new Error(backendRes.message);
+    }
+
+    debugLog("SupabaseOAuth", "Backend login complete", {
+      isNewUser: backendRes.result?.newUser,
+      requiresNicknameSetup: backendRes.result?.requiresNicknameSetup,
+      nickname: backendRes.result?.nickname,
+    });
+    return {
+      success: true,
+      isNewUser: backendRes.result?.newUser,
+      requiresNicknameSetup: backendRes.result?.requiresNicknameSetup,
+      nickname: backendRes.result?.nickname,
+    };
+  };
 
   const completeLogin = async (url: string): Promise<OAuthResult> => {
     debugLog("SupabaseOAuth", "Callback received", { url });
@@ -75,25 +103,50 @@ export const useSupabaseOAuth = () => {
     });
 
     debugLog("SupabaseOAuth", "Supabase session stored");
-    debugLog("SupabaseOAuth", "Sending access token to backend");
-    const backendRes = await backendLogin(accessToken);
+    return completeSupabaseLogin(accessToken);
+  };
 
-    if (!backendRes.isSuccess) {
-      console.error("[SupabaseOAuth] Backend login failed with message:", backendRes.message);
-      throw new Error(backendRes.message);
+  const getKakaoLoginModule = (): KakaoLoginModule => {
+    try {
+      return require("@react-native-seoul/kakao-login") as KakaoLoginModule;
+    } catch {
+      throw new Error("Kakao Native SDK가 현재 development build에 포함되어 있지 않습니다.");
+    }
+  };
+
+  const performKakaoNativeOAuth = async (): Promise<OAuthResult> => {
+    debugLog("SupabaseOAuth", "Kakao native login started");
+
+    const kakaoLogin = getKakaoLoginModule();
+    const kakaoToken = await kakaoLogin.login();
+
+    debugLog("SupabaseOAuth", "Kakao native token received", {
+      hasAccessToken: Boolean(kakaoToken.accessToken),
+      hasIdToken: Boolean(kakaoToken.idToken),
+      scopes: kakaoToken.scopes,
+    });
+
+    if (!kakaoToken.idToken) {
+      throw new Error("Kakao idToken이 없습니다. Kakao OpenID Connect 설정을 확인해주세요.");
     }
 
-    debugLog("SupabaseOAuth", "Backend login complete", {
-      isNewUser: backendRes.result?.newUser,
-      requiresNicknameSetup: backendRes.result?.requiresNicknameSetup,
-      nickname: backendRes.result?.nickname,
+    const { data, error } = await supabase.auth.signInWithIdToken({
+      provider: "kakao",
+      token: kakaoToken.idToken,
     });
-    return {
-      success: true,
-      isNewUser: backendRes.result?.newUser,
-      requiresNicknameSetup: backendRes.result?.requiresNicknameSetup,
-      nickname: backendRes.result?.nickname,
-    };
+
+    if (error) {
+      console.error("[SupabaseOAuth] signInWithIdToken error:", error);
+      throw error;
+    }
+
+    const accessToken = data.session?.access_token;
+
+    if (!accessToken) {
+      throw new Error("Supabase access_token 발급에 실패했습니다.");
+    }
+
+    return completeSupabaseLogin(accessToken);
   };
 
   const performOAuth = async (provider: OAuthProvider): Promise<OAuthResult> => {
@@ -101,6 +154,12 @@ export const useSupabaseOAuth = () => {
     debugLog("SupabaseOAuth", "performOAuth started", { provider, redirectUri });
 
     try {
+      if (provider === "kakao" && !isExpoGo) {
+        const result = await performKakaoNativeOAuth();
+        debugLog("SupabaseOAuth", "Kakao native flow completed", result);
+        return result;
+      }
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {

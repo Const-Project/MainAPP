@@ -1,38 +1,24 @@
 import { Image, ImageBackground, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import type { GardenInfo } from "@/types/profile/profileApi.type";
-import WaterIcon from "@/assets/icons/water.svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const mailboxImage = require("@/assets/images/profile/letterbox.png");
-const wateringImage = require("@/assets/images/background/watering.png");
-const dropImage = require("@/assets/images/profile/drop.png");
-const ACTION_RAIL_BOTTOM_OFFSET = 128;
-const MAX_WATER_COUNT = 3;
 
 type Props = {
   background: any;
   garden: GardenInfo;
   isMe: boolean;
-  leftWaterCountForOthers: number;
-  isWateringVisible: boolean;
-  onWater: () => void;
   onPressGuestbook: () => void;
-  waterDisabled?: boolean;
 };
 
 export default function ProfileGardenScene({
   background,
   garden,
   isMe,
-  leftWaterCountForOthers,
-  isWateringVisible,
-  onWater,
   onPressGuestbook,
-  waterDisabled = false,
 }: Props) {
   const insets = useSafeAreaInsets();
-  const canWater = !isMe && garden.isWateringAbleByMe && !waterDisabled;
   const topOverlayOffset = insets.top + 144;
 
   return (
@@ -45,27 +31,13 @@ export default function ProfileGardenScene({
         </Text>
       ) : null}
 
-      {!isMe ? (
-        <View style={[styles.waterCountBadge, { top: topOverlayOffset }]}>
-          <Image source={dropImage} style={styles.waterDropIcon} resizeMode="contain" />
-          <Text style={styles.waterCountText}>{leftWaterCountForOthers}/{MAX_WATER_COUNT}</Text>
-        </View>
-      ) : null}
-
       <View style={styles.sceneBody}>
         {garden.avatarInfo?.avatarImageUrl ? (
-          <>
-            <Image
-              source={{ uri: garden.avatarInfo.avatarImageUrl }}
-              style={styles.avatarImage}
-              resizeMode="contain"
-            />
-            <Image
-              source={wateringImage}
-              style={[styles.wateringImage, !isWateringVisible && styles.wateringImageHidden]}
-              resizeMode="contain"
-            />
-          </>
+          <Image
+            source={{ uri: garden.avatarInfo.avatarImageUrl }}
+            style={styles.avatarImage}
+            resizeMode="contain"
+          />
         ) : (
           <View style={styles.emptyAvatarBubble}>
             <Text style={styles.emptyAvatarTitle}>정원 정보가 준비되지 않았습니다.</Text>
@@ -84,19 +56,6 @@ export default function ProfileGardenScene({
           </View>
         ) : null}
       </View>
-
-      {!isMe ? (
-        <View style={[styles.actionRail, { bottom: ACTION_RAIL_BOTTOM_OFFSET + insets.bottom }]}>
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={onWater}
-            style={[styles.actionButton, !canWater && styles.actionButtonDisabled]}
-            disabled={!canWater}
-          >
-            <WaterIcon width={60} height={60} opacity={!canWater ? 0.4 : 1} />
-          </TouchableOpacity>
-        </View>
-      ) : null}
 
       {!isMe ? (
         <View style={[styles.guestbookWrap, { paddingBottom: insets.bottom + 16 }]}>
@@ -120,14 +79,6 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(8, 20, 10, 0.08)",
   },
-  waterCountBadge: {
-    position: "absolute",
-    right: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    zIndex: 3,
-  },
   scenePlantName: {
     position: "absolute",
     left: 0,
@@ -141,18 +92,6 @@ const styles = StyleSheet.create({
     textShadowRadius: 4,
     zIndex: 3,
   },
-  waterDropIcon: {
-    width: 18,
-    height: 18,
-  },
-  waterCountText: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#FFFFFF",
-    textShadowColor: "rgba(0,0,0,0.18)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
-  },
   sceneBody: {
     flex: 1,
     justifyContent: "center",
@@ -165,16 +104,6 @@ const styles = StyleSheet.create({
   avatarImage: {
     width: 300,
     height: 300,
-  },
-  wateringImage: {
-    position: "absolute",
-    left: "24%",
-    bottom: 196,
-    width: 118,
-    height: 118,
-  },
-  wateringImageHidden: {
-    opacity: 0,
   },
   mailboxWrap: {
     position: "absolute",
@@ -205,24 +134,6 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: "#4B5563",
     textAlign: "center",
-  },
-  actionRail: {
-    position: "absolute",
-    right: 12,
-    zIndex: 3,
-    gap: 8,
-  },
-  actionButton: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: "#FFFFFF",
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-  },
-  actionButtonDisabled: {
-    backgroundColor: "rgba(255,255,255,0.5)",
   },
   guestbookWrap: {
     paddingHorizontal: 20,

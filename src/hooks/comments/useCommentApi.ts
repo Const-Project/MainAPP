@@ -28,6 +28,14 @@ const getDetailQueryKey = (targetType: "DIARY" | "AVATAR_POST", targetId: number
     ? ["diary-detail", targetId]
     : ["avatar-post-detail", targetId];
 
+const normalizeCreatedComment = (comment: PostCommentResponse) => ({
+  commentId: comment.commentId ?? comment.id,
+  writerId: comment.writerId,
+  profileImageUrl: comment.profileImageUrl ?? null,
+  writer: comment.writer,
+  content: comment.content,
+});
+
 export const usePostComment = (onSuccessRefetch?: () => void) => {
   const queryClient = useQueryClient();
   const { userId } = useTokenStore();
@@ -63,6 +71,32 @@ export const usePostComment = (onSuccessRefetch?: () => void) => {
       );
 
       return { previous, queryKey };
+    },
+    onSuccess: (response, { targetType, targetId }) => {
+      const queryKey = getDetailQueryKey(targetType, targetId);
+      const createdComment = normalizeCreatedComment(response.result);
+
+      queryClient.setQueryData<DetailCache>(queryKey, old => {
+        if (!old) {
+          return old;
+        }
+
+        const withoutOptimistic = old.result.comments.filter(comment => comment.commentId >= 0);
+        const alreadyExists = withoutOptimistic.some(
+          comment => comment.commentId === createdComment.commentId
+        );
+
+        return {
+          ...old,
+          result: {
+            ...old.result,
+            comments: alreadyExists ? withoutOptimistic : [...withoutOptimistic, createdComment],
+            commentCount: alreadyExists
+              ? old.result.commentCount
+              : Math.max(old.result.commentCount, withoutOptimistic.length + 1),
+          },
+        };
+      });
     },
     onError: (_err, _vars, context) => {
       if (context?.previous) {

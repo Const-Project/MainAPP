@@ -35,6 +35,15 @@ export default function HomeAvatarStage({
     }
   }, [isEmotionAnswered]);
 
+  useEffect(() => {
+    if (!showAnsweredBubble) {
+      return;
+    }
+
+    const timer = setTimeout(() => setShowAnsweredBubble(false), 4200);
+    return () => clearTimeout(timer);
+  }, [showAnsweredBubble]);
+
   const handlePressMascot = () => {
     if (isEmotionAnswered) {
       setShowAnsweredBubble(prev => !prev);
@@ -132,10 +141,10 @@ const styles = StyleSheet.create({
   },
   leftCompanion: {
     position: "absolute",
-    left: 26,
-    bottom: 4,
+    left: 18,
+    bottom: 28,
     alignItems: "center",
-    width: 154,
+    width: 172,
   },
   balloonWrap: {
     alignItems: "center",
@@ -162,7 +171,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     transform: [{ rotate: "45deg" }],
     marginTop: -9,
-    marginLeft: -60,
+    marginLeft: -42,
   },
   balloonText: {
     fontSize: 13,
@@ -189,7 +198,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   mascotButton: {
-    marginTop: -10,
+    marginTop: -8,
   },
   characterImage: {
     width: 120,

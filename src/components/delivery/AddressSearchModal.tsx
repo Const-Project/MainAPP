@@ -1,5 +1,6 @@
 import { Modal, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { WebView, type WebViewMessageEvent } from "react-native-webview";
+import type { ComponentType } from "react";
+import type { WebViewMessageEvent, WebViewProps } from "react-native-webview";
 
 export type SelectedAddress = {
   postalCode: string;
@@ -59,7 +60,17 @@ const POSTCODE_HTML = `
 </html>
 `;
 
+function getWebView(): ComponentType<WebViewProps> | null {
+  try {
+    return require("react-native-webview").WebView as ComponentType<WebViewProps>;
+  } catch {
+    return null;
+  }
+}
+
 export default function AddressSearchModal({ visible, onClose, onSelect }: Props) {
+  const WebView = visible ? getWebView() : null;
+
   const handleMessage = (event: WebViewMessageEvent) => {
     try {
       const message = JSON.parse(event.nativeEvent.data) as {
@@ -85,15 +96,24 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
             <Text style={styles.closeButtonText}>닫기</Text>
           </TouchableOpacity>
         </View>
-        <WebView
-          originWhitelist={["*"]}
-          source={{ html: POSTCODE_HTML, baseUrl: "https://postcode.map.daum.net" }}
-          onMessage={handleMessage}
-          javaScriptEnabled
-          domStorageEnabled
-          startInLoadingState
-          style={styles.webView}
-        />
+        {WebView ? (
+          <WebView
+            originWhitelist={["*"]}
+            source={{ html: POSTCODE_HTML, baseUrl: "https://postcode.map.daum.net" }}
+            onMessage={handleMessage}
+            javaScriptEnabled
+            domStorageEnabled
+            startInLoadingState
+            style={styles.webView}
+          />
+        ) : (
+          <View style={styles.fallback}>
+            <Text style={styles.fallbackTitle}>주소 검색을 열 수 없습니다.</Text>
+            <Text style={styles.fallbackDescription}>
+              현재 설치된 development build에 WebView 네이티브 모듈이 포함되어 있지 않습니다.
+            </Text>
+          </View>
+        )}
       </SafeAreaView>
     </Modal>
   );
@@ -129,5 +149,23 @@ const styles = StyleSheet.create({
   },
   webView: {
     flex: 1,
+  },
+  fallback: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 24,
+    gap: 8,
+  },
+  fallbackTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#171717",
+  },
+  fallbackDescription: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: "#6B7280",
+    textAlign: "center",
   },
 });

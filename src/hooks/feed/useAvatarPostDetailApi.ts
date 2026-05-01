@@ -14,6 +14,7 @@ export const useAvatarPostDetail = (postId: number) =>
     queryFn: () => getAvatarPostDetail(postId),
     select: data => data.result,
     enabled: Number.isFinite(postId) && postId > 0,
+    staleTime: 60_000,
   });
 
 export default useAvatarPostDetail;

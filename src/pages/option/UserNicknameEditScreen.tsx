@@ -73,12 +73,13 @@ export default function UserNicknameEditScreen({ navigation }: Props) {
             style={styles.input}
             value={draftNickname}
             onChangeText={setDraftNickname}
-            placeholder="닉네임을 입력해주세요"
+            placeholder={data.userNickname ?? "닉네임을 입력해주세요"}
             placeholderTextColor="#BFBFBF"
             maxLength={10}
           />
           <Text style={styles.maxLength}>최대 10자</Text>
         </View>
+        <Text style={styles.currentNameHint}>현재 닉네임: {data.userNickname}</Text>
       </View>
 
       <View style={styles.footer}>
@@ -152,6 +153,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#7C7C7C",
     marginLeft: 8,
+  },
+  currentNameHint: {
+    alignSelf: "stretch",
+    fontSize: 13,
+    lineHeight: 19,
+    color: "#7C7C7C",
   },
   footer: {
     position: "absolute",

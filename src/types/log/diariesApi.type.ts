@@ -2,7 +2,7 @@ export type DiaryListItem = {
   diaryId: number;
   title: string;
   content: string;
-  imageUrl: string;
+  imageUrl: string | null;
   likeCount: number;
   createdAt: string; // ISO
   updatedAt: string; // ISO

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -18,7 +18,7 @@ import usePostComment from "@/hooks/comments/useCommentApi";
 import { useAvatarPostDetail } from "@/hooks/feed/useAvatarPostDetailApi";
 import { useRandomFeedSession } from "@/hooks/feed/useRandomFeedSession";
 import type { FeedDetailResult } from "@/types/feed/detail";
-import type { RandomFeedPostType } from "@/types/feed/randomFeedApi.type";
+import type { RandomFeedPostType, RandomFeedSessionItem } from "@/types/feed/randomFeedApi.type";
 import { createTimingLogger } from "@/utils/debug";
 
 type Props = RootStackScreenProps<"FeedAvatar">;
@@ -28,6 +28,7 @@ type FeedListItem = {
   postId: number;
   postType: RandomFeedPostType;
   isSeed: boolean;
+  sessionItem?: RandomFeedSessionItem;
 };
 
 export default function FeedAvatarScreen({ navigation, route }: Props) {
@@ -84,6 +85,57 @@ export default function FeedAvatarScreen({ navigation, route }: Props) {
       console.error("[FeedAvatarScreen] Failed to post comment:", commentError);
     }
   };
+
+  const seedResult: FeedDetailResult | undefined = data
+    ? {
+        id: data.id,
+        writerId: data.writerId,
+        writerName: data.writerName,
+        profileImageUrl: data.profileImageUrl,
+        content: data.content,
+        imageUrl: data.imageUrl,
+        isLiked: data.isLiked,
+        likeCount: data.likeCount,
+        commentCount: data.commentCount,
+        comments: data.comments,
+        createdAt: data.createdAt,
+        updatedAt: data.updatedAt,
+        isPublic: data.isPublic,
+      }
+    : undefined;
+
+  const listData = useMemo<FeedListItem[]>(() => {
+    if (!isValidId || !data) {
+      return [];
+    }
+
+    const seenKeys = new Set<string>([`AVATAR_POST:${id}`]);
+    const nextListData: FeedListItem[] = [
+      {
+        key: `seed-AVATAR_POST-${id}`,
+        postId: id,
+        postType: "AVATAR_POST",
+        isSeed: true,
+      },
+    ];
+
+    for (const item of randomSession?.items ?? []) {
+      const itemKey = `${item.postType}:${item.postId}`;
+      if (seenKeys.has(itemKey)) {
+        continue;
+      }
+      seenKeys.add(itemKey);
+      nextListData.push({
+        key: `random-${item.postType}-${item.postId}`,
+        postId: item.postId,
+        postType: item.postType,
+        isSeed: false,
+        sessionItem: item,
+      });
+    }
+
+    return nextListData;
+  }, [data, id, isValidId, randomSession?.items]);
 
   if (!isValidId) {
     return (
@@ -154,46 +206,6 @@ export default function FeedAvatarScreen({ navigation, route }: Props) {
     );
   }
 
-  const seedResult: FeedDetailResult = {
-    id: data.id,
-    writerId: data.writerId,
-    writerName: data.writerName,
-    profileImageUrl: data.profileImageUrl,
-    content: data.content,
-    imageUrl: data.imageUrl,
-    isLiked: data.isLiked,
-    likeCount: data.likeCount,
-    commentCount: data.commentCount,
-    comments: data.comments,
-    createdAt: data.createdAt,
-    updatedAt: data.updatedAt,
-    isPublic: data.isPublic,
-  };
-
-  const seenKeys = new Set<string>([`AVATAR_POST:${id}`]);
-  const listData: FeedListItem[] = [
-    {
-      key: `seed-AVATAR_POST-${id}`,
-      postId: id,
-      postType: "AVATAR_POST",
-      isSeed: true,
-    },
-  ];
-
-  for (const item of randomSession?.items ?? []) {
-    const itemKey = `${item.postType}:${item.postId}`;
-    if (seenKeys.has(itemKey)) {
-      continue;
-    }
-    seenKeys.add(itemKey);
-    listData.push({
-      key: `random-${item.postType}-${item.postId}`,
-      postId: item.postId,
-      postType: item.postType,
-      isSeed: false,
-    });
-  }
-
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
       <KeyboardAvoidingView
@@ -212,6 +224,11 @@ export default function FeedAvatarScreen({ navigation, route }: Props) {
           keyExtractor={item => item.key}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
+          initialNumToRender={2}
+          maxToRenderPerBatch={2}
+          updateCellsBatchingPeriod={80}
+          windowSize={5}
+          removeClippedSubviews={Platform.OS === "android"}
           refreshControl={
             <RefreshControl
               refreshing={isRefetching && !isLoading}
@@ -230,6 +247,7 @@ export default function FeedAvatarScreen({ navigation, route }: Props) {
               postId={item.postId}
               postType={item.postType}
               isSeed={item.isSeed}
+              sessionItem={item.sessionItem}
               seedResult={item.isSeed ? seedResult : undefined}
               onSeedRefetch={item.isSeed ? refetch : undefined}
               commentValue={item.isSeed ? content : ""}

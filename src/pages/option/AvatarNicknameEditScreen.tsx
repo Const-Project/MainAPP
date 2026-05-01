@@ -5,7 +5,6 @@ import {
   Text,
   TouchableOpacity,
   View,
-  useWindowDimensions,
 } from "react-native";
 import { useMemo, useRef, useState } from "react";
 
@@ -29,14 +28,11 @@ const ITEM_WIDTH = 258;
 const ITEM_GAP = 16;
 
 export default function AvatarNicknameEditScreen({ navigation }: Props) {
-  const { width: screenWidth } = useWindowDimensions();
   const { data, isLoading, error, refetch } = useHomeApi();
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
 
   // 캐러셀 아이템이 화면 중앙에 오도록 좌우 패딩 계산
-  const sidePadding = (screenWidth - ITEM_WIDTH) / 2;
-
   // 아바타가 있는 정원 목록만 필터링
   const avatars = useMemo<SelectableAvatar[]>(() => {
     if (!data?.gardenSummaries) return [];
@@ -121,8 +117,8 @@ export default function AvatarNicknameEditScreen({ navigation }: Props) {
           showsHorizontalScrollIndicator={false}
           snapToInterval={ITEM_WIDTH + ITEM_GAP}
           decelerationRate="fast"
-          contentContainerStyle={{ paddingHorizontal: sidePadding }}
-          ItemSeparatorComponent={() => <View style={{ width: ITEM_GAP }} />}
+          contentContainerStyle={styles.carouselContent}
+          ItemSeparatorComponent={() => <View style={styles.itemSeparator} />}
           onMomentumScrollEnd={e => {
             // 스크롤 위치로 현재 선택 인덱스 갱신
             const index = Math.round(e.nativeEvent.contentOffset.x / (ITEM_WIDTH + ITEM_GAP));
@@ -206,7 +202,14 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
     alignItems: "center",
     gap: 16,
-    paddingTop: 160,
+    paddingTop: 96,
+  },
+  carouselContent: {
+    paddingHorizontal: 58,
+    alignItems: "center",
+  },
+  itemSeparator: {
+    width: ITEM_GAP,
   },
   // 개별 아바타 카드
   carouselItem: {
@@ -216,6 +219,8 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "#72D14E",
     overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
   },
   carouselItemSelected: {
     backgroundColor: "#EEF9EA",
@@ -225,8 +230,8 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   carouselImage: {
-    width: "100%",
-    height: "100%",
+    width: ITEM_WIDTH - 24,
+    height: 292 - 24,
   },
   // 아바타 이름 텍스트
   carouselName: {

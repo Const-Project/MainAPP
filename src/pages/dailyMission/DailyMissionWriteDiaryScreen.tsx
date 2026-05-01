@@ -103,13 +103,17 @@ export default function DailyMissionWriteDiaryScreen({ navigation }: Props) {
         content: content.trim(),
         isPublic,
         imageId: uploadedImage.imageId,
-        imageUrl: uploadedImage.imageUrl,
       });
 
-      await queryClient.invalidateQueries({ queryKey: ["home-summary"] });
-      await queryClient.invalidateQueries({ queryKey: ["calendar"] });
-      await queryClient.invalidateQueries({ queryKey: ["diaries"] });
       goHome();
+      void Promise.allSettled([
+        queryClient.invalidateQueries({ queryKey: ["home-summary"] }),
+        queryClient.invalidateQueries({ queryKey: ["home-panel"] }),
+        queryClient.invalidateQueries({ queryKey: ["calendar"] }),
+        queryClient.invalidateQueries({ queryKey: ["diaries"] }),
+        queryClient.invalidateQueries({ queryKey: ["feed"] }),
+        queryClient.invalidateQueries({ queryKey: ["random-feed-session"] }),
+      ]);
     } catch (error) {
       const message = error instanceof Error ? error.message : "일기 저장에 실패했습니다.";
       Alert.alert("일기 저장 실패", message);

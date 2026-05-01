@@ -17,6 +17,8 @@ export const useAvatarMasters = () =>
     queryKey: ["avatar-masters"],
     queryFn: getAvatarMastersApi,
     select: data => data.result,
+    refetchOnMount: "always",
+    staleTime: 0,
   });
 
 export const useUploadCreationAvatar = () =>

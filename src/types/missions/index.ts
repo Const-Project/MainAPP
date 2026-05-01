@@ -25,14 +25,22 @@ export interface WriteDiaryRequest {
   content: string;
   isPublic: boolean;
   imageId: number;
-  imageUrl: string;
 }
 
 export interface WriteDiaryResponse {
   isSuccess: boolean;
   code: string;
   message: string;
-  result: string;
+  result: {
+    diaryId: number;
+    title: string;
+    content: string;
+    imageUrl: string | null;
+    likeCount: number;
+    createdAt: string;
+    updatedAt: string;
+    public: boolean;
+  };
 }
 
 export interface TodayKeyword {

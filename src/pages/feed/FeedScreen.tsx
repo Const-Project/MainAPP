@@ -1,10 +1,8 @@
-﻿import React, { useCallback } from "react";
+import React, { useCallback } from "react";
 import {
-  RefreshControl,
   View,
   Text,
   TouchableOpacity,
-  ScrollView,
   StyleSheet,
   Image,
 } from "react-native";
@@ -21,7 +19,16 @@ const refreshIcon = require("../../../assets/refresh-icon.png");
 type Props = MainTabScreenProps<"Feed">;
 
 export default function FeedScreen({ navigation }: Props) {
-  const { data: result, isLoading, isRefetching, error, refetch } = useFeed();
+  const {
+    data: posts,
+    isLoading,
+    isRefetching,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+    error,
+    refetch,
+  } = useFeed();
 
   const handleUserPlusClick = () => {
     navigation.navigate("Follow");
@@ -39,7 +46,9 @@ export default function FeedScreen({ navigation }: Props) {
     void refetch();
   }, [refetch]);
 
-  const dataForRender = result && result.length > 0 ? result : [];
+  const handleLoadMore = useCallback(() => {
+    void fetchNextPage();
+  }, [fetchNextPage]);
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -76,24 +85,17 @@ export default function FeedScreen({ navigation }: Props) {
           onAction={() => void refetch()}
         />
       ) : (
-        <ScrollView
-          style={styles.scrollView}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={isRefetching && !isLoading}
-              onRefresh={handleRefetch}
-              tintColor="#7DC960"
-            />
-          }
-        >
-          <FeedList
-            feedData={{ result: dataForRender }}
-            onSelectPost={handleSelectPost}
-            isLoading={isLoading}
-            error={null}
-          />
-        </ScrollView>
+        <FeedList
+          posts={posts ?? []}
+          onSelectPost={handleSelectPost}
+          isLoading={isLoading}
+          isFetchingNextPage={isFetchingNextPage}
+          hasNextPage={hasNextPage}
+          onLoadMore={handleLoadMore}
+          onRefresh={handleRefetch}
+          isRefreshing={isRefetching && !isLoading}
+          error={error}
+        />
       )}
     </SafeAreaView>
   );
@@ -134,8 +136,5 @@ const styles = StyleSheet.create({
   headerButton: {
     width: 24,
     alignItems: "center",
-  },
-  scrollView: {
-    flex: 1,
   },
 });

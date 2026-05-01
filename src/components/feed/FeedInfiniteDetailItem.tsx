@@ -1,13 +1,15 @@
 import FeedAvatarDetailCard from "@/components/feed/FeedAvatarDetailCard";
 import FeedDiaryDetailCard from "@/components/feed/FeedDiaryDetailCard";
+import FeedRandomSessionDetailCard from "@/components/feed/FeedRandomSessionDetailCard";
 import FeedSeedDetailCard from "@/components/feed/FeedSeedDetailCard";
 import type { FeedDetailResult } from "@/types/feed/detail";
-import type { RandomFeedPostType } from "@/types/feed/randomFeedApi.type";
+import type { RandomFeedPostType, RandomFeedSessionItem } from "@/types/feed/randomFeedApi.type";
 
 type Props = {
   postId: number;
   postType: RandomFeedPostType;
   isSeed: boolean;
+  sessionItem?: RandomFeedSessionItem;
   seedResult?: FeedDetailResult;
   onSeedRefetch?: () => void | Promise<unknown>;
   commentValue?: string;
@@ -20,6 +22,7 @@ export default function FeedInfiniteDetailItem({
   postId,
   postType,
   isSeed,
+  sessionItem,
   seedResult,
   onSeedRefetch,
   commentValue = "",
@@ -39,6 +42,10 @@ export default function FeedInfiniteDetailItem({
         isCommentPending={isCommentPending}
       />
     );
+  }
+
+  if (sessionItem) {
+    return <FeedRandomSessionDetailCard item={sessionItem} />;
   }
 
   return postType === "DIARY" ? (

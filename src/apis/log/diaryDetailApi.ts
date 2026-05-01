@@ -1,5 +1,6 @@
 import type { ApiResponse } from "@/types/common/apiResponse.type";
 import type { GETDiaryDetailResponse } from "@/types/log/diaryDetailApi.type";
+import type { DiaryListItem } from "@/types/log/diariesApi.type";
 import api from "@/apis/instance";
 
 export type UpdateDiaryPayload = {
@@ -18,7 +19,7 @@ export const getDiaryDetail = async (
 export const updateDiaryDetail = async (
   diaryId: number,
   payload: UpdateDiaryPayload
-): ApiResponse<GETDiaryDetailResponse> => {
-  const res = await api.patch(`/api/v1/diaries/${diaryId}`, payload);
+): ApiResponse<DiaryListItem> => {
+  const res = await api.put(`/api/v1/diaries/${diaryId}`, payload);
   return res.data;
 };

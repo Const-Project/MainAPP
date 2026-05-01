@@ -10,6 +10,10 @@ export interface RandomFeedSessionItem {
   postId: number;
   postType: RandomFeedPostType;
   author: RandomFeedAuthor;
+  title?: string;
+  content?: string;
+  caption?: string;
+  imageUrl?: string | null;
   likeCount: number;
   commentCount: number;
   createdAt: string;

@@ -298,11 +298,13 @@ export default function FeedDetail({
           </TouchableOpacity>
         </View>
 
-        <Image
-          source={{ uri: result.imageUrl }}
-          style={styles.mainImage}
-          resizeMode="contain"
-        />
+        {result.imageUrl ? (
+          <Image
+            source={{ uri: result.imageUrl }}
+            style={styles.mainImage}
+            resizeMode="contain"
+          />
+        ) : null}
 
         <Text style={styles.content}>{result.content}</Text>
 
@@ -329,7 +331,7 @@ export default function FeedDetail({
               onPress={handleOpenComments}
             >
               <ChatIcon size={20} color="#6B7280" />
-              <Text style={styles.actionText}>댓글 {comments.length}</Text>
+              <Text style={styles.actionText}>댓글 {result.commentCount}</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.spacer} />
@@ -495,8 +497,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#FFFFFF",
     overflow: "hidden",
-    alignItems: "center",
-    justifyContent: "center",
   },
   sheetHandle: {
     width: 44,
@@ -514,6 +514,7 @@ const styles = StyleSheet.create({
   },
   sheetContent: {
     flex: 1,
+    width: "100%",
   },
   commentList: {
     flex: 1,

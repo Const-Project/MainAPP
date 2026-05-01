@@ -4,6 +4,7 @@ export interface FeedPost {
   postId: number;
   postType: PostType;
   imageUrl: string;
+  createdAt: string;
 }
 
 export interface FeedResponse {

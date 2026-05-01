@@ -6,21 +6,25 @@ import type { SurveyAnswerKind } from "@/types/missions";
 const EMOTION_SURVEY_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 
 type EmotionSurveyState = {
+  userId: string | null;
   lastAnsweredAt: number | null;
   lastAnswerKind: SurveyAnswerKind | null;
-  markAnswered: (answerKind: SurveyAnswerKind, answeredAt?: number) => void;
+  markAnswered: (answerKind: SurveyAnswerKind, userId?: string | number | null, answeredAt?: number) => void;
   resetIfExpired: () => void;
+  resetForUser: (userId?: string | number | null) => void;
   reset: () => void;
 };
 
 export const useEmotionSurveyStore = create<EmotionSurveyState>()(
   persist(
     set => ({
+      userId: null,
       lastAnsweredAt: null,
       lastAnswerKind: null,
 
-      markAnswered: (answerKind, answeredAt = Date.now()) =>
+      markAnswered: (answerKind, userId = null, answeredAt = Date.now()) =>
         set(() => ({
+          userId: userId != null ? String(userId) : null,
           lastAnsweredAt: answeredAt,
           lastAnswerKind: answerKind,
         })),
@@ -46,8 +50,24 @@ export const useEmotionSurveyStore = create<EmotionSurveyState>()(
           return state;
         }),
 
+      resetForUser: userId =>
+        set(state => {
+          const nextUserId = userId != null ? String(userId) : null;
+
+          if (state.userId === null || state.userId === nextUserId) {
+            return state;
+          }
+
+          return {
+            userId: nextUserId,
+            lastAnsweredAt: null,
+            lastAnswerKind: null,
+          };
+        }),
+
       reset: () =>
         set(() => ({
+          userId: null,
           lastAnsweredAt: null,
           lastAnswerKind: null,
         })),
@@ -56,6 +76,7 @@ export const useEmotionSurveyStore = create<EmotionSurveyState>()(
       name: "emotion-survey",
       storage: createJSONStorage(() => AsyncStorage),
       partialize: state => ({
+        userId: state.userId,
         lastAnsweredAt: state.lastAnsweredAt,
         lastAnswerKind: state.lastAnswerKind,
       }),

@@ -63,6 +63,7 @@ export default function HomeScreen({ navigation }: Props) {
     lastAnsweredAt,
     lastAnswerKind,
     markAnswered,
+    resetForUser,
     resetIfExpired,
   } = useEmotionSurveyStore();
   const [currentPage, setCurrentPage] = useState(0);
@@ -169,6 +170,10 @@ export default function HomeScreen({ navigation }: Props) {
   const initialPage = Math.max(0, Math.min(3, (userInfo?.lastAccessedSlotNumber ?? 1) - 1));
 
   useEffect(() => {
+    resetForUser(userInfo?.id);
+  }, [resetForUser, userInfo?.id]);
+
+  useEffect(() => {
     setCurrentPage(initialPage);
   }, [initialPage]);
 
@@ -246,18 +251,16 @@ export default function HomeScreen({ navigation }: Props) {
         ))}
       </PagerView>
 
-      {!isCurrentGardenLocked ? (
-        <View pointerEvents="none" style={styles.paginationWrap}>
-          <View style={styles.pagination}>
-            {scenes.map((scene, index) => (
-              <View
-                key={scene.key}
-                style={[styles.dot, currentPage === index ? styles.dotActive : styles.dotInactive]}
-              />
-            ))}
-          </View>
+      <View pointerEvents="none" style={styles.paginationWrap}>
+        <View style={styles.pagination}>
+          {scenes.map((scene, index) => (
+            <View
+              key={scene.key}
+              style={[styles.dot, currentPage === index ? styles.dotActive : styles.dotInactive]}
+            />
+          ))}
         </View>
-      ) : null}
+      </View>
 
       {!isCurrentGardenLocked ? (
         <HomeBottomSheet
@@ -286,7 +289,7 @@ export default function HomeScreen({ navigation }: Props) {
         onClose={() => setIsEmotionModalOpen(false)}
         onAnswered={answer => {
           setEmotionAnswerKind(answer);
-          markAnswered(answer);
+          markAnswered(answer, userInfo?.id);
           setIsEmotionModalOpen(false);
         }}
       />

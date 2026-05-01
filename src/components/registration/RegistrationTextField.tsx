@@ -51,18 +51,21 @@ const styles = StyleSheet.create({
   },
   input: {
     fontSize: 15,
+    lineHeight: 21,
     color: "#171717",
     backgroundColor: "transparent",
     paddingHorizontal: 0,
-    paddingVertical: 10,
+    paddingTop: 10,
+    paddingBottom: 8,
   },
   titleInput: {
     fontSize: 26,
     fontWeight: "400",
-    letterSpacing: -0.3,
+    letterSpacing: 0,
     paddingVertical: 6,
   },
   singleLine: {
+    minHeight: 44,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "#E0E0E0",
   },

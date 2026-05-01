@@ -38,7 +38,8 @@
           "color": "#3AB40B"
         }
       ],
-      "expo-font"
+      "expo-font",
+      "expo-build-properties"
     ],
     "extra": {
       "eas": {

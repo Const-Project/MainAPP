@@ -79,11 +79,17 @@ export default function MyDiary({ onSelectDiary }: Props) {
               style={styles.diaryItem}
               onPress={() => onSelectDiary?.(item.diaryId)}
             >
-              <Image
-                source={{ uri: item.imageUrl }}
-                style={styles.diaryImage}
-                defaultSource={require("@/assets/images/char.png")}
-              />
+              {item.imageUrl ? (
+                <Image
+                  source={{ uri: item.imageUrl }}
+                  style={styles.diaryImage}
+                  defaultSource={require("@/assets/images/char.png")}
+                />
+              ) : (
+                <View style={styles.diaryImagePlaceholder}>
+                  <Text style={styles.diaryImagePlaceholderText}>{item.title}</Text>
+                </View>
+              )}
             </TouchableOpacity>
           )}
         />
@@ -129,6 +135,19 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
     resizeMode: "cover",
+  },
+  diaryImagePlaceholder: {
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 8,
+  },
+  diaryImagePlaceholderText: {
+    fontSize: 12,
+    lineHeight: 16,
+    color: "#6B7280",
+    textAlign: "center",
   },
   emptyContainer: {
     flex: 1,

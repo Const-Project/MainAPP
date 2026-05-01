@@ -1,6 +1,6 @@
-import * as ImageManipulator from "expo-image-manipulator";
 import { File } from "expo-file-system";
 import type { ImagePickerAsset } from "expo-image-picker";
+import type { Action } from "expo-image-manipulator";
 
 type PreparedUploadImage = {
   uri: string;
@@ -19,7 +19,7 @@ const getFileSize = (uri: string) => new File(uri).size;
 const getResizeAction = (
   asset: ImagePickerAsset,
   maxDimension: number
-): ImageManipulator.Action[] => {
+): Action[] => {
   const width = asset.width ?? 0;
   const height = asset.height ?? 0;
   const longestSide = Math.max(width, height);
@@ -38,14 +38,30 @@ export const prepareUploadImage = async (
   fileNamePrefix: string
 ): Promise<PreparedUploadImage> => {
   let fallbackUri = asset.uri;
+  let ImageManipulator: typeof import("expo-image-manipulator") | null = null;
+
+  try {
+    ImageManipulator = require("expo-image-manipulator");
+  } catch {
+    ImageManipulator = null;
+  }
+
+  if (!ImageManipulator) {
+    return {
+      uri: asset.uri,
+      fileName: makeJpegName(fileNamePrefix),
+      mimeType: "image/jpeg",
+    };
+  }
+  const manipulator = ImageManipulator;
 
   for (const maxDimension of DIMENSION_STEPS) {
     const resizeAction = getResizeAction(asset, maxDimension);
 
     for (const quality of QUALITY_STEPS) {
-      const result = await ImageManipulator.manipulateAsync(asset.uri, resizeAction, {
+      const result = await manipulator.manipulateAsync(asset.uri, resizeAction, {
         compress: quality,
-        format: ImageManipulator.SaveFormat.JPEG,
+        format: manipulator.SaveFormat.JPEG,
       });
       fallbackUri = result.uri;
 

@@ -19,7 +19,7 @@ type Props = RootStackScreenProps<"AvatarNicknameEditStep2">;
 export default function AvatarNicknameEditStep2Screen({ navigation, route }: Props) {
   const { avatarId, avatarName, avatarImageUrl } = route.params;
   const updateAvatarNickname = useUpdateAvatarNickname();
-  const [draftName, setDraftName] = useState(avatarName);
+  const [draftName, setDraftName] = useState("");
 
   const trimmed = draftName.trim();
   const isValid = trimmed.length >= 1 && trimmed.length <= 6;
@@ -58,12 +58,13 @@ export default function AvatarNicknameEditStep2Screen({ navigation, route }: Pro
             style={styles.input}
             value={draftName}
             onChangeText={setDraftName}
-            placeholder="닉네임을 입력해주세요"
+            placeholder={avatarName}
             placeholderTextColor="#BFBFBF"
             maxLength={6}
           />
           <EditIcon size={24} color="#7C7C7C" />
         </View>
+        <Text style={styles.currentNameHint}>현재 닉네임: {avatarName}</Text>
       </View>
 
       <View style={styles.footer}>
@@ -121,10 +122,12 @@ const styles = StyleSheet.create({
     borderColor: "#72D14E",
     backgroundColor: "#EEF9EA",
     overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
   },
   avatarImage: {
-    width: "100%",
-    height: "100%",
+    width: 234,
+    height: 268,
   },
   inputRow: {
     flexDirection: "row",
@@ -142,6 +145,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#171717",
     paddingVertical: 0,
+  },
+  currentNameHint: {
+    alignSelf: "stretch",
+    fontSize: 13,
+    lineHeight: 19,
+    color: "#7C7C7C",
   },
   footer: {
     paddingHorizontal: 20,

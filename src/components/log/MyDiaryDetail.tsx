@@ -1,6 +1,9 @@
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { ChatIcon, EditIcon, HeartIcon } from "@/assets/icons/CommonIcons";
 import Comment from "@/components/common/Comment";
+import type { RootStackParamList } from "@/navigation/types";
 import type { GETDiaryDetailResponse } from "@/types/log/diaryDetailApi.type";
 
 type Props = {
@@ -9,6 +12,9 @@ type Props = {
 };
 
 export default function MyDiaryDetail({ detail, onEdit }: Props) {
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
   const formatDate = (iso: string) => {
     const date = new Date(iso);
     return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일`;
@@ -53,18 +59,27 @@ export default function MyDiaryDetail({ detail, onEdit }: Props) {
 
       <View style={styles.commentSection}>
         {detail.comments.length > 0 ? (
-          detail.comments.map(comment => (
-            <Comment
-              key={comment.commentId}
-              comment={{
-                id: comment.commentId,
-                writerId: comment.writerId,
-                profileImageUrl: comment.profileImageUrl,
-                writer: comment.writer?.trim() || "익명",
-                content: comment.content ?? "",
-              }}
-            />
-          ))
+          detail.comments.map(comment => {
+            const writerId = comment.writerId;
+
+            return (
+              <Comment
+                key={comment.commentId}
+                comment={{
+                  id: comment.commentId,
+                  writerId,
+                  profileImageUrl: comment.profileImageUrl,
+                  writer: comment.writer?.trim() || "익명",
+                  content: comment.content ?? "",
+                }}
+                onAuthorPress={
+                  writerId
+                    ? () => navigation.navigate("Profile", { userId: writerId })
+                    : undefined
+                }
+              />
+            );
+          })
         ) : (
           <Text style={styles.emptyText}>아직 작성된 댓글이 없습니다.</Text>
         )}

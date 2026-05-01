@@ -1,6 +1,5 @@
 ﻿import { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import type { AxiosError } from "axios";
 import PagerView from "react-native-pager-view";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { RootStackScreenProps } from "@/navigation/types";
@@ -9,11 +8,11 @@ import StatusView from "@/components/common/StatusView";
 import HomeToast from "@/components/home/HomeToast";
 import ProfileGardenScene from "@/components/profile/ProfileGardenScene";
 import ScreenHeader from "@/components/common/ScreenHeader";
-import { useFriendWater, useUserProfile } from "@/hooks/profile/useProfileApi";
+import { useUserProfile } from "@/hooks/profile/useProfileApi";
 import { useFollowUser } from "@/hooks/follow/useFollowApi";
 import { useBlockUser, useUnblockUser } from "@/hooks/block/useBlockApi";
 import useTokenStore from "@/stores/useTokenStore";
-import { createTimingLogger, debugLog } from "@/utils/debug";
+import { createTimingLogger } from "@/utils/debug";
 import { FollowStatus } from "@/types/profile/profileApi.type";
 
 type Props = RootStackScreenProps<"Profile">;
@@ -26,31 +25,11 @@ type BlockConfirmState = {
   onConfirm: () => Promise<void> | void;
 } | null;
 
-const FRIEND_WATER_ACTION_COOLDOWN_MS = 700;
-
-const getFriendWaterErrorMessage = (
-  status: number | null | undefined,
-  serverMessage: string | null | undefined
-) => {
-  if (
-    serverMessage === "팔로우한 사용자만 물 주기가 가능합니다." ||
-    (status === 403 && serverMessage === "요청에 대한 권한이 없습니다.")
-  ) {
-    return "친구 추가 후 물을 줄 수 있어요.";
-  }
-
-  if (serverMessage === "차단된 사용자입니다.") {
-    return "차단된 사용자에게는 물을 줄 수 없어요.";
-  }
-
-  return serverMessage ?? "친구 물주기에 실패했습니다.";
-};
-
 const getActionErrorMessage = (
   error: unknown,
   fallbackMessage: string
 ) => {
-  const axiosError = error as AxiosError<{ message?: string }>;
+  const axiosError = error as { response?: { data?: { message?: string } } };
   return axiosError.response?.data?.message ?? fallbackMessage;
 };
 
@@ -65,14 +44,10 @@ export default function ProfileScreen({ navigation, route }: Props) {
   const { userId: myUserId } = useTokenStore();
   const userId = route.params.userId;
   const { data, error, isLoading, refetch } = useUserProfile(userId);
-  const waterMutation = useFriendWater(userId);
   const followMutation = useFollowUser(myUserId);
   const blockMutation = useBlockUser();
   const unblockMutation = useUnblockUser();
   const [currentPage, setCurrentPage] = useState(0);
-  const [wateringGardenId, setWateringGardenId] = useState<number | null>(null);
-  const [optimisticallyWateredGardenIds, setOptimisticallyWateredGardenIds] = useState<number[]>([]);
-  const [isFriendWaterCooldownActive, setIsFriendWaterCooldownActive] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isBlockedUser, setIsBlockedUser] = useState(false);
   const [blockConfirmState, setBlockConfirmState] = useState<BlockConfirmState>(null);
@@ -94,19 +69,6 @@ export default function ProfileScreen({ navigation, route }: Props) {
     initialLoadTimingRef.current = null;
   }, [data]);
 
-  useEffect(() => {
-    if (!data) {
-      return;
-    }
-
-    setOptimisticallyWateredGardenIds(previous =>
-      previous.filter(gardenId => {
-        const garden = data.userGardens.find(item => item.gardenId === gardenId);
-        return garden?.isWateringAbleByMe ?? false;
-      })
-    );
-  }, [data]);
-
   const handleBack = () => {
     if (navigation.canGoBack()) {
       navigation.goBack();
@@ -121,72 +83,6 @@ export default function ProfileScreen({ navigation, route }: Props) {
       userId,
       userNickname: data?.userNickname,
     });
-  };
-
-  const handleFriendWater = async (gardenId: number) => {
-    if (waterMutation.isPending || isFriendWaterCooldownActive || isBlockedUser) {
-      return;
-    }
-
-    if (!data || data.followStatus !== FollowStatus.FOLLOWING) {
-      setToastMessage("친구 추가 후 물을 줄 수 있어요.");
-      return;
-    }
-
-    const targetGarden = data.userGardens.find(garden => garden.gardenId === gardenId);
-    if (!targetGarden?.isWateringAbleByMe) {
-      setToastMessage(
-        data.leftWaterCountForOthers <= 0
-          ? "오늘 줄 수 있는 친구 물주기를 모두 사용했어요."
-          : "오늘은 이미 물을 주었습니다."
-      );
-      return;
-    }
-
-    const finishActionTiming = createTimingLogger("ProfileScreen", "friend water action", {
-      userId,
-      gardenId,
-    });
-
-    setOptimisticallyWateredGardenIds(previous =>
-      previous.includes(gardenId) ? previous : [...previous, gardenId]
-    );
-    setIsFriendWaterCooldownActive(true);
-    setWateringGardenId(gardenId);
-    setToastMessage("친구 정원에 물을 주었습니다.");
-
-    setTimeout(() => {
-      setWateringGardenId(prev => (prev === gardenId ? null : prev));
-    }, 1000);
-
-    setTimeout(() => {
-      setIsFriendWaterCooldownActive(false);
-    }, FRIEND_WATER_ACTION_COOLDOWN_MS);
-
-    try {
-      await waterMutation.mutateAsync(gardenId);
-      finishActionTiming({ startedImmediately: true });
-    } catch (error) {
-      const axiosError = error as AxiosError<{ message?: string }>;
-      const status = axiosError.response?.status;
-      const serverMessage = axiosError.response?.data?.message;
-
-      setOptimisticallyWateredGardenIds(previous => previous.filter(id => id !== gardenId));
-      setIsFriendWaterCooldownActive(false);
-      setWateringGardenId(prev => (prev === gardenId ? null : prev));
-      finishActionTiming({
-        startedImmediately: true,
-        rolledBack: true,
-        status: status ?? null,
-      });
-      debugLog("ProfileScreen", "friend water action failed", {
-        userId,
-        gardenId,
-        status: status ?? null,
-        serverMessage: serverMessage ?? null,
-      });
-      setToastMessage(getFriendWaterErrorMessage(status, serverMessage));
-    }
   };
 
   const handleToggleBlock = () => {
@@ -366,6 +262,18 @@ export default function ProfileScreen({ navigation, route }: Props) {
                 현재 API 기준으로 표시할 정원 데이터가 없어 기본 정보만 표시합니다.
               </Text>
             </View>
+
+            {!isMe ? (
+              <View style={styles.emptyGuestbookWrap}>
+                <TouchableOpacity
+                  style={styles.guestbookButton}
+                  onPress={handleOpenGuestbook}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.guestbookButtonText}>방명록 작성</Text>
+                </TouchableOpacity>
+              </View>
+            ) : null}
           </ScrollView>
         </SafeAreaView>
 
@@ -396,16 +304,7 @@ export default function ProfileScreen({ navigation, route }: Props) {
               background={scene.background}
               garden={scene.garden}
               isMe={isMe}
-              leftWaterCountForOthers={data.leftWaterCountForOthers}
-              isWateringVisible={wateringGardenId === scene.garden.gardenId}
-              onWater={() => void handleFriendWater(scene.garden.gardenId)}
               onPressGuestbook={handleOpenGuestbook}
-              waterDisabled={
-                isBlockedUser ||
-                waterMutation.isPending ||
-                isFriendWaterCooldownActive ||
-                optimisticallyWateredGardenIds.includes(scene.garden.gardenId)
-              }
             />
           </View>
         ))}
@@ -587,5 +486,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     color: "#6B7280",
+  },
+  emptyGuestbookWrap: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+  },
+  guestbookButton: {
+    height: 48,
+    borderRadius: 8,
+    backgroundColor: "#2F7D32",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  guestbookButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#FFFFFF",
   },
 });

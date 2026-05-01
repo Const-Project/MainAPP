@@ -167,8 +167,9 @@ const styles = StyleSheet.create({
     height: 268,
   },
   inputWrap: {
-    width: 353,
-    height: 60,
+    width: "100%",
+    maxWidth: 353,
+    minHeight: 60,
     borderWidth: 1,
     borderColor: "#BFBFBF",
     borderRadius: 8,
@@ -186,9 +187,10 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 16,
-    lineHeight: 26,
+    lineHeight: 22,
     color: "#171717",
     paddingVertical: 0,
+    marginRight: 8,
   },
   maxCount: {
     fontSize: 14,
