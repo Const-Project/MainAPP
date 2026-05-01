@@ -53,6 +53,39 @@ type ConfirmModalState = {
   onConfirm: () => Promise<ConfirmModalState | void> | ConfirmModalState | void;
 };
 
+type CommentFooterProps = {
+  disabled: boolean;
+  onSubmit?: (text: string) => Promise<void> | void;
+  onClearExternalValue?: () => void;
+};
+
+function CommentFooter({ disabled, onSubmit, onClearExternalValue }: CommentFooterProps) {
+  const [draft, setDraft] = useState("");
+
+  const handleSubmit = async () => {
+    const trimmedDraft = draft.trim();
+    if (!trimmedDraft || disabled) {
+      return;
+    }
+
+    await onSubmit?.(trimmedDraft);
+    setDraft("");
+    onClearExternalValue?.();
+  };
+
+  return (
+    <View style={styles.composerContainer}>
+      <CommentComposer
+        value={draft}
+        onChangeText={setDraft}
+        onSubmit={() => void handleSubmit()}
+        disabled={disabled}
+        bottomSheetInput
+      />
+    </View>
+  );
+}
+
 export default function FeedDetail({
   result,
   reportTargetLabel = "게시물",
@@ -77,7 +110,6 @@ export default function FeedDetail({
   const [hiddenCommentIds, setHiddenCommentIds] = useState<number[]>([]);
   const [confirmModalState, setConfirmModalState] = useState<ConfirmModalState | null>(null);
   const [isConfirmPending, setIsConfirmPending] = useState(false);
-  const [draftComment, setDraftComment] = useState(commentValue);
 
   const comments = useMemo(
     () =>
@@ -216,23 +248,9 @@ export default function FeedDetail({
     bottomSheetModalRef.current?.dismiss();
   };
 
-  const handleChangeComment = useCallback(
-    (text: string) => {
-      setDraftComment(text);
-    },
-    []
-  );
-
-  const handleSubmitComment = useCallback(async () => {
-    if (!draftComment.trim() || isCommentPending) {
-      return;
-    }
-
-    const submittedComment = draftComment;
-    await onSubmitComment?.(submittedComment);
-    setDraftComment("");
+  const handleClearExternalCommentValue = useCallback(() => {
     onChangeComment?.("");
-  }, [draftComment, isCommentPending, onChangeComment, onSubmitComment]);
+  }, [onChangeComment]);
 
   const renderBackdrop = useCallback(
     (props: React.ComponentProps<typeof BottomSheetBackdrop>) => (
@@ -255,18 +273,15 @@ export default function FeedDetail({
 
       return (
         <BottomSheetFooter {...props} bottomInset={0}>
-          <View style={styles.composerContainer}>
-            <CommentComposer
-              value={draftComment}
-              onChangeText={handleChangeComment}
-              onSubmit={handleSubmitComment}
-              disabled={isCommentPending}
-            />
-          </View>
+          <CommentFooter
+            disabled={isCommentPending}
+            onSubmit={onSubmitComment}
+            onClearExternalValue={handleClearExternalCommentValue}
+          />
         </BottomSheetFooter>
       );
     },
-    [draftComment, handleChangeComment, handleSubmitComment, isCommentPending, onChangeComment, onSubmitComment]
+    [handleClearExternalCommentValue, isCommentPending, onChangeComment, onSubmitComment]
   );
 
   return (

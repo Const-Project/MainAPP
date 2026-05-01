@@ -1,5 +1,6 @@
 import {
   StyleSheet,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -12,6 +13,7 @@ type Props = {
   onSubmit: () => void;
   disabled?: boolean;
   placeholder?: string;
+  bottomSheetInput?: boolean;
 };
 
 export default function CommentComposer({
@@ -20,13 +22,15 @@ export default function CommentComposer({
   onSubmit,
   disabled = false,
   placeholder = "댓글을 입력해주세요.",
+  bottomSheetInput = false,
 }: Props) {
   const canSubmit = !disabled && value.trim().length > 0;
+  const InputComponent = bottomSheetInput ? BottomSheetTextInput : TextInput;
 
   return (
     <View style={styles.container}>
       <View style={styles.row}>
-        <BottomSheetTextInput
+        <InputComponent
           style={styles.input}
           placeholder={placeholder}
           placeholderTextColor="#9CA3AF"
